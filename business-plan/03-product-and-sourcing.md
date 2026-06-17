@@ -85,3 +85,22 @@ the niche or the supplier is wrong. Don't proceed on hope.
 - **Bundles** (hero + complement) to lift AOV without adding much complexity.
 
 Few SKUs = simpler compliance, simpler ops, less cash tied up, sharper brand.
+
+## 3.6 Selling across categories (supplements + vitamins + skincare)
+
+Selling supplements, vitamins **and** skincare under one brand ("beauty + wellness")
+is a proven, coherent model — but treat it with discipline:
+
+- **Architect for all three, launch one hero per category** (the demo store
+  ships ~2–3 SKUs per category, not 30). Prove the economics (file 04) before
+  going wide. Breadth multiplies compliance, inventory, and support load.
+- **Skincare uses a different supplier and a different regime.** Find a
+  **cosmetic-GMP (ISO 22716)** manufacturer with a safety-assessment / CPSR
+  capability — *not* your supplement facility. Verify with `02 §2.7`.
+- **The cross-sell is the point:** a vitamin C supplement buyer is a natural
+  vitamin C serum buyer. Bundles across categories lift AOV and LTV.
+- **Two compliance regimes, one gate:** route supplement/vitamin copy through
+  the structure/function check and skincare copy through the cosmetic check
+  (the `api/claims.py` gate does both; the server audits every product on start).
+- **Margins differ:** skincare often carries strong gross margins but watch
+  shelf life, actives stability, and higher return/irritation risk — model it.

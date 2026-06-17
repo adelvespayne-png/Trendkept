@@ -140,3 +140,73 @@ print run. A non-compliant label is a recall waiting to happen.
 
 **If any box is unchecked, you do not sell yet.** This is the equivalent of the
 trading rule "if the trend isn't confirmed, you stay out."
+
+---
+
+## 2.7 Cosmetics / Skincare — a SEPARATE regulatory regime
+
+> Adding skincare roughly **doubles your compliance surface**. Skincare is
+> regulated as **cosmetics**, not supplements — different rules, different
+> claim traps. Read this before listing a single serum.
+
+### The core distinction: cosmetic vs. drug
+- A **cosmetic** is intended to cleanse or beautify / change appearance
+  (moisturise, smooth the look of, brighten the look of).
+- A product becomes a **drug** the moment it claims to affect the body's
+  **structure or function** or to **treat/prevent a condition**. A drug needs
+  FDA approval — which you will not have. This is the cosmetics equivalent of a
+  supplement disease claim, and just as business-ending.
+
+### Skincare claims — NEVER say (these make it an unapproved drug):
+- "Treats / cures / heals" anything; "repairs the skin barrier," "regenerates,"
+  "rebuilds collagen," "stimulates collagen production."
+- "Anti-bacterial / anti-fungal / anti-inflammatory / antiseptic."
+- "Treats acne / eczema / psoriasis / rosacea / dermatitis."
+- **Sunscreen / SPF / "protects against UV"** — sunscreen is an **OTC drug**
+  with its own monograph; do not sell it as a cosmetic.
+- "Botox-like," "filler alternative," "penetrates to repair."
+
+### Skincare claims — ALLOWED (appearance / beauty claims):
+- "Hydrates," "moisturises," "smooths the look of skin," "for radiant-looking
+  skin," "improves the appearance of dullness," "reduces the **appearance** of
+  fine lines."
+- The rule of thumb baked into our claims gate: structural words like
+  "wrinkles," "firms," "lifts" are only acceptable when framed as
+  **appearance** ("reduces the appearance of…", "for firmer-**looking** skin").
+
+### US — MoCRA (Modernization of Cosmetics Regulation Act, 2022)
+The biggest recent change. With counsel, confirm your obligations, which may
+include:
+- **Facility registration** and **product listing** with the FDA.
+- A **responsible person** named on labels.
+- **Safety substantiation** records for each product.
+- **Adverse-event** recordkeeping and serious-adverse-event reporting.
+- **Fragrance allergen** labeling (as rules finalise).
+
+### EU/UK cosmetics (if selling there)
+- **EU Cosmetics Regulation 1223/2009 / UK Cosmetics Regulation**: every
+  product needs a **Cosmetic Product Safety Report (CPSR)** by a qualified
+  assessor, a **Responsible Person** in-market, **CPNP/SCPN notification**, GMP
+  (ISO 22716), and strict ingredient/labeling rules. This is **stricter** than
+  the US — budget for it.
+
+### Skincare label essentials (manufacturer/assessor must verify)
+Identity, net quantity, **full INCI ingredient list**, responsible-person name
+& address, batch code, period-after-opening / best-before, warnings, and
+"for external use only." No supplement-style FDA disclaimer (that's a
+supplement-only artifact).
+
+### Added checklist items for skincare
+- [ ] Cosmetics manufacturer is **ISO 22716 / cosmetic-GMP** compliant.
+- [ ] **Safety assessment** on file (MoCRA substantiation / EU CPSR).
+- [ ] MoCRA facility registration + product listing (US) / CPNP-SCPN (EU/UK).
+- [ ] **Responsible person** named on labels.
+- [ ] INCI ingredient list + allergens correct on artwork.
+- [ ] No drug claims anywhere (run skincare copy through the *cosmetic* gate).
+- [ ] Confirm any "active" (e.g. retinol %, acid %) is at a cosmetic, not drug,
+      level and is permitted in each market.
+
+> The automated claims gate (`api/claims.py`) now screens **two regimes**:
+> supplement (structure/function + disclaimer) and cosmetic (appearance-only, no
+> drug claims). Every product's copy is audited against the right one on server
+> start — but a human + counsel still sign off.

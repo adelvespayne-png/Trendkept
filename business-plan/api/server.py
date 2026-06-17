@@ -30,7 +30,7 @@ import uuid
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 # --- Make sibling modules and the ../tools calculator importable -------------
 HERE = Path(__file__).resolve().parent
@@ -101,8 +101,14 @@ class Handler(BaseHTTPRequestHandler):
         path = urlparse(self.path).path
         if path == "/api/health":
             return self._send_json(200, {"status": "ok", "time": _now()})
+        if path == "/api/categories":
+            return self._send_json(200, {"categories": catalog.list_categories()})
         if path == "/api/products":
-            return self._send_json(200, {"products": catalog.list_products()})
+            category = parse_qs(urlparse(self.path).query).get("category", [None])[0]
+            return self._send_json(200, {
+                "categories": catalog.list_categories(),
+                "products": catalog.list_products(category),
+            })
         if path.startswith("/api/"):
             return self._send_json(404, {"error": "unknown endpoint"})
         return self._serve_static(path)
@@ -123,9 +129,12 @@ class Handler(BaseHTTPRequestHandler):
     # ---- endpoint handlers --------------------------------------------------
     def _handle_claims(self, data: dict) -> None:
         copy = data.get("copy")
+        product_type = data.get("product_type", "supplement")
         if not isinstance(copy, str) or not copy.strip():
             return self._send_json(400, {"error": "field 'copy' (string) required"})
-        result = claims.screen(copy)
+        if not isinstance(product_type, str):
+            return self._send_json(400, {"error": "'product_type' must be a string"})
+        result = claims.screen(copy, product_type)
         return self._send_json(200, result.to_dict())
 
     def _handle_economics(self, data: dict) -> None:
@@ -232,14 +241,47 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.write(body)
 
 
+def audit_catalog() -> list[str]:
+    """Run every catalog product's own claim through the compliance gate for
+    its regime. Non-compliant copy must never ship -- this is the automated
+    backstop (see ../02 and ../06). Returns a list of failure descriptions.
+    """
+    failures = []
+    for product in catalog.list_products():
+        copy = product.get("claim", "")
+        # Supplements/vitamins must carry the disclaimer to pass; append it for
+        # the audit exactly as it ships on the product (catalog stores it
+        # separately in 'fda_disclaimer').
+        if product.get("fda_disclaimer"):
+            copy = f"{copy} {product['fda_disclaimer']}"
+        result = claims.screen(copy, product.get("product_type", "supplement"))
+        if not result.passed:
+            failures.append(
+                f"{product['id']} ({product['product_type']}): "
+                f"hits={result.prohibited_hits} caution={result.caution_hits} "
+                f"needs_disclaimer={result.needs_fda_disclaimer}"
+            )
+    return failures
+
+
 def main() -> int:
     port = int(os.environ.get("PORT", "8000"))
     host = os.environ.get("HOST", "127.0.0.1")
+
+    failures = audit_catalog()
+    if failures:
+        print("COMPLIANCE AUDIT FAILED -- fix catalog copy before selling:")
+        for f in failures:
+            print("  - " + f)
+    else:
+        print("Compliance audit: all catalog claims passed their regime's gate.")
+
     httpd = ThreadingHTTPServer((host, port), Handler)
     print(f"Stillwater demo server on http://{host}:{port}")
     print("  GET  /                 -> website")
-    print("  GET  /api/products     -> catalog")
-    print("  POST /api/claims-check -> compliance gate")
+    print("  GET  /api/categories   -> categories")
+    print("  GET  /api/products     -> catalog (optional ?category=)")
+    print("  POST /api/claims-check -> compliance gate (optional product_type)")
     print("  POST /api/economics    -> unit-economics gates")
     print("  POST /api/orders       -> mock order/subscription")
     print("Ctrl-C to stop.")

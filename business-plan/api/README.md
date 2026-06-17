@@ -36,11 +36,18 @@ Then open <http://127.0.0.1:8000> for the storefront.
 | Method | Path | Purpose |
 |--------|------|---------|
 | GET | `/api/health` | Liveness |
-| GET | `/api/products` | Catalog with compliant copy + FDA disclaimer |
-| POST | `/api/claims-check` | Run the compliance gate. Body: `{"copy": "..."}` |
+| GET | `/api/categories` | The three categories (Supplements, Vitamins, Skincare) |
+| GET | `/api/products` | Catalog with compliant copy; optional `?category=skincare` |
+| POST | `/api/claims-check` | Run the compliance gate. Body: `{"copy":"...","product_type":"supplement"\|"skincare"}` |
 | POST | `/api/economics` | Run the unit-economics gates. Body: `{"price":35,"cogs":9,"expected_orders":6,...}` |
 | POST | `/api/orders` | Create a mock order/subscription. Body: `{"sku":"...","email":"...","marketing_consent":true}` |
 | GET | `/` | The storefront |
+
+> **Two compliance regimes.** The claims gate screens **supplements/vitamins**
+> (structure/function + FDA disclaimer) and **skincare/cosmetics** (appearance
+> claims only, no drug claims) with different rules. On startup the server
+> **audits every catalog product's copy** against its regime and refuses to
+> claim compliance if any fail — non-compliant copy can't slip through unnoticed.
 
 ### Examples
 

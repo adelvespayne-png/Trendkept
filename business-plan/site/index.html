@@ -3,63 +3,124 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Stillwater — Magnesium Glycinate for a Healthy Sleep Cycle</title>
+  <title>Stillwater — Tested Supplements, Vitamins & Skincare</title>
   <meta name="description"
-        content="Stillwater Magnesium Glycinate supports relaxation and a healthy sleep cycle. Third-party tested, Certificate of Analysis published." />
+        content="Stillwater: third-party tested supplements, vitamins and simple effective skincare. Honest claims, published lab results, easy one-click-cancel subscriptions." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
+  <!-- ANNOUNCEMENT BAR (honest policy promises, not fake hype) -->
+  <div class="announce">
+    <div class="wrap announce-row">
+      <span>✦ Free UK shipping over £40</span>
+      <span>✦ 30-day money-back guarantee</span>
+      <span>✦ Third-party tested · cancel anytime</span>
+    </div>
+  </div>
+
   <header class="site-header">
     <div class="wrap nav">
-      <div class="brand">Stillwater</div>
+      <a class="brand" href="#top">Stillwater</a>
       <nav>
-        <a href="#product">Product</a>
+        <a href="#shop">Shop</a>
         <a href="#trust">Why trust us</a>
         <a href="#faq">FAQ</a>
+        <a class="btn btn-primary btn-sm" href="#shop">Shop now</a>
       </nav>
     </div>
   </header>
 
-  <main>
+  <main id="top">
     <!-- HERO -->
     <section class="hero">
+      <div class="hero-bg" aria-hidden="true"></div>
       <div class="wrap hero-grid">
         <div class="hero-copy">
-          <p class="eyebrow">One product. Done properly.</p>
-          <h1>Magnesium glycinate for your evening wind-down</h1>
-          <!-- Compliant structure/function claim only. No disease claims. -->
+          <p class="eyebrow">Health &amp; beauty, done honestly</p>
+          <!-- Compliant claims only: structure/function for supplements,
+               appearance claims for skincare. No disease or drug claims. -->
+          <h1>Supplements, vitamins &amp; skincare<br />you can actually trust</h1>
           <p class="lede">
-            Stillwater supports relaxation and a healthy sleep cycle, with a
-            highly absorbable form of magnesium. Third-party tested. Certificate
-            of Analysis published for every batch.
+            A small, focused range — third-party tested, with published lab
+            results. Honest claims, fair prices, and subscriptions you can
+            cancel in one click.
           </p>
           <div class="cta-row">
-            <a class="btn btn-primary" href="#product">See the product</a>
-            <a class="btn btn-ghost" href="#trust">How we prove quality</a>
+            <a class="btn btn-primary btn-lg" href="#shop">Shop the range</a>
+            <a class="btn btn-ghost btn-lg" href="#trust">How we prove quality</a>
           </div>
           <ul class="trust-chips">
-            <li>cGMP-made</li>
-            <li>3rd-party tested</li>
-            <li>CoA published</li>
-            <li>Easy one-click cancel</li>
+            <li>✓ cGMP-made</li>
+            <li>✓ 3rd-party tested</li>
+            <li>✓ Lab results published</li>
+            <li>✓ Easy one-click cancel</li>
           </ul>
         </div>
-        <div class="hero-card" aria-hidden="true">
-          <div class="bottle">
-            <span>Stillwater</span>
-            <small>Magnesium Glycinate</small>
-            <em>60 servings</em>
+        <div class="hero-visual" aria-hidden="true">
+          <div class="ptile tile-supplements">Mg</div>
+          <div class="ptile tile-vitamins">D3</div>
+          <div class="ptile tile-skincare">C</div>
+          <div class="hero-badge">
+            <strong>Tested</strong>
+            <span>every batch</span>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- PRODUCT (populated from /api/products) -->
-    <section id="product" class="section">
+    <!-- VALUE PROPS STRIP -->
+    <section class="valueprops">
+      <div class="wrap valueprops-row">
+        <div class="vp"><div class="vp-ic">🧪</div><div><strong>Third-party tested</strong><span>Independent labs, published results</span></div></div>
+        <div class="vp"><div class="vp-ic">🚚</div><div><strong>Free shipping over £40</strong><span>Fast, tracked delivery</span></div></div>
+        <div class="vp"><div class="vp-ic">↩️</div><div><strong>30-day guarantee</strong><span>Not happy? Money back</span></div></div>
+        <div class="vp"><div class="vp-ic">🔓</div><div><strong>Cancel anytime</strong><span>One click, no hoops</span></div></div>
+      </div>
+    </section>
+
+    <!-- SHOP (populated from /api/products) -->
+    <section id="shop" class="section">
       <div class="wrap">
-        <h2>The product</h2>
-        <div id="product-root" class="product-root">
-          <p class="muted">Loading product…</p>
+        <div class="section-head">
+          <h2>Shop the range</h2>
+          <p class="muted max">
+            A few hero products per category — not an endless aisle. Enter your
+            email once, then add what you like.
+          </p>
+        </div>
+        <div class="shop-email">
+          <div class="field">
+            <label for="email">Email (for your order &amp; receipt)</label>
+            <input type="email" id="email" placeholder="you@example.com" />
+          </div>
+          <label class="consent">
+            <input type="checkbox" id="consent" />
+            <span>Email me product tips and refill reminders. Optional — you can
+              unsubscribe anytime.</span>
+          </label>
+          <div class="order-result" id="order-result"></div>
+        </div>
+        <div id="category-nav" class="category-nav"></div>
+        <div id="shop-root" class="shop-root">
+          <p class="muted">Loading products…</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- GUARANTEE -->
+    <section class="guarantee">
+      <div class="wrap guarantee-inner">
+        <div class="guarantee-mark">30</div>
+        <div>
+          <h2>Try it for 30 days, risk-free</h2>
+          <p class="muted">
+            If you don't feel good about your purchase within 30 days, contact us
+            for a full refund — keep the bottle. No forms, no friction. We'd
+            rather earn a repeat customer than win an argument.
+          </p>
         </div>
       </div>
     </section>
@@ -67,26 +128,31 @@
     <!-- TRUST -->
     <section id="trust" class="section section-alt">
       <div class="wrap">
-        <h2>Why you can trust this</h2>
-        <p class="muted max">
-          The supplement aisle is full of unverifiable claims. Our entire model
-          is the opposite: prove everything, claim only what's allowed.
-        </p>
+        <div class="section-head">
+          <h2>Why you can trust this</h2>
+          <p class="muted max">
+            The wellness aisle is full of unverifiable claims. Our entire model
+            is the opposite: prove everything, claim only what's allowed.
+          </p>
+        </div>
         <div class="cards">
           <div class="card">
-            <h3>Made in a cGMP facility</h3>
-            <p>Manufactured under current Good Manufacturing Practices — not
-               sourced from an anonymous marketplace.</p>
+            <div class="card-ic">🏭</div>
+            <h3>Made in certified facilities</h3>
+            <p>Supplements in cGMP facilities; skincare in cosmetic-GMP (ISO
+               22716) — never anonymous marketplace stock.</p>
           </div>
           <div class="card">
-            <h3>Tested every batch</h3>
-            <p>Each lot has a Certificate of Analysis for identity, potency and
-               contaminants. We publish it.</p>
+            <div class="card-ic">🔬</div>
+            <h3>Tested &amp; published</h3>
+            <p>Supplements get a Certificate of Analysis per batch for identity,
+               potency and contaminants. We publish it.</p>
           </div>
           <div class="card">
-            <h3>Honest subscription</h3>
-            <p>Clear price, clear schedule, genuine one-click cancel. No free
-               trials, no surprise auto-ship.</p>
+            <div class="card-ic">🤝</div>
+            <h3>Honest by design</h3>
+            <p>Clear prices, compliant claims, genuine one-click cancel. No free
+               trials, no surprise auto-ship, no hype.</p>
           </div>
         </div>
       </div>
@@ -94,24 +160,33 @@
 
     <!-- FAQ -->
     <section id="faq" class="section">
-      <div class="wrap">
-        <h2>FAQ</h2>
+      <div class="wrap narrow">
+        <div class="section-head">
+          <h2>FAQ</h2>
+        </div>
         <details>
-          <summary>Is this a medicine?</summary>
-          <p>No. Stillwater is a dietary supplement, not a medicine. It is not
-             intended to diagnose, treat, cure, or prevent any disease. Speak to
-             your doctor before starting any supplement, especially if you are
-             pregnant, nursing, or taking medication.</p>
+          <summary>Is this medicine?</summary>
+          <p>No. Our supplements and vitamins are dietary supplements, and our
+             skincare is cosmetic — neither is medicine. They are not intended to
+             diagnose, treat, cure, or prevent any disease. Speak to your doctor
+             before starting any supplement, especially if you are pregnant,
+             nursing, or taking medication.</p>
         </details>
         <details>
           <summary>How does the subscription work?</summary>
-          <p>You receive a fresh supply every 30 days at a discount. You can
-             cancel any time in one click — no phone calls, no hoops.</p>
+          <p>You receive a fresh supply on your chosen schedule at a discount.
+             You can cancel any time in one click — no phone calls, no hoops.</p>
         </details>
         <details>
           <summary>Where can I see the lab results?</summary>
-          <p>We publish the Certificate of Analysis for each batch. Ask support
-             and we'll point you to your batch's results.</p>
+          <p>For supplements and vitamins we publish the Certificate of Analysis
+             for each batch. Ask support and we'll point you to your batch's
+             results.</p>
+        </details>
+        <details>
+          <summary>What's your returns policy?</summary>
+          <p>30-day money-back guarantee. If you're not happy, contact us within
+             30 days for a full refund.</p>
         </details>
       </div>
     </section>
@@ -119,26 +194,38 @@
     <!-- TOOLS NOTE -->
     <section class="section section-alt">
       <div class="wrap">
-        <p class="muted small">
+        <p class="muted small center">
           Building this brand? The same backend powers two internal tools:
           a <strong>claims-compliance gate</strong> (every line of copy is
-          screened before a human approves it) and a
-          <strong>unit-economics calculator</strong> (no marketing channel
-          scales until LTV:CAC ≥ 3 and payback &lt; 90 days). See the
-          <code>business-plan/</code> folder.
+          screened — for supplements <em>and</em> cosmetics — before a human
+          approves it) and a <strong>unit-economics calculator</strong> (no
+          marketing channel scales until LTV:CAC ≥ 3 and payback &lt; 90 days).
+          See the <code>business-plan/</code> folder.
         </p>
       </div>
     </section>
   </main>
 
   <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div>
+        <div class="brand brand-light">Stillwater</div>
+        <p class="fineprint">Clean, tested supplements, vitamins &amp; skincare.</p>
+      </div>
+      <div class="footer-links">
+        <a href="#shop">Shop</a>
+        <a href="#trust">Why trust us</a>
+        <a href="#faq">FAQ</a>
+      </div>
+    </div>
     <div class="wrap">
-      <!-- The FDA disclaimer is required wherever structure/function claims
-           are made. It is injected from the catalog at runtime too. -->
+      <!-- FDA disclaimer required wherever structure/function claims are made
+           (supplements/vitamins). Skincare carries its own cosmetic notice. -->
       <p id="fda-disclaimer" class="disclaimer">
-        This statement has not been evaluated by the Food and Drug
-        Administration. This product is not intended to diagnose, treat, cure,
-        or prevent any disease.
+        Statements regarding dietary supplements have not been evaluated by the
+        Food and Drug Administration and are not intended to diagnose, treat,
+        cure, or prevent any disease. Skincare products are cosmetics for
+        external use only.
       </p>
       <p class="fineprint">
         © Stillwater (reference brand). Demo storefront for the business plan in
