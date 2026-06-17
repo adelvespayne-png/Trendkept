@@ -266,6 +266,73 @@ def _cmd_trade(args: argparse.Namespace) -> int:
     return 0
 
 
+def _manage_one(client, strat, position: dict, args) -> None:
+    from .alpaca import AlpacaError, decide_management
+
+    symbol = position.get("symbol", "")
+    qty = position.get("qty", "?")
+    try:
+        bars = client.daily_bars(symbol)
+    except AlpacaError as exc:
+        print(f"  {symbol}: could not load bars: {exc}")
+        return
+
+    stop_order = client.find_stop_order(symbol)
+    current_stop = (float(stop_order["stop_price"])
+                    if stop_order and stop_order.get("stop_price") else None)
+
+    action = decide_management(strat, bars, current_stop, symbol=symbol)
+    print(f"  {symbol} ({qty} sh, last {bars[-1].close:.2f}): {action.describe()}")
+
+    if not args.confirm or action.kind == "hold":
+        return
+
+    if action.kind == "exit":
+        if stop_order:
+            client.cancel_order(stop_order["id"])
+        client.close_position(symbol)
+        print(f"    -> position closed at market; stop order cancelled.")
+    elif action.kind == "raise_stop" and stop_order:
+        client.replace_order(stop_order["id"], action.new_stop)
+        print(f"    -> stop raised to {action.new_stop:.2f}.")
+    elif action.kind in ("set_stop", "raise_stop"):
+        # No existing stop order to amend: place a fresh protective sell-stop.
+        client.submit_stop_sell(symbol, qty, action.new_stop)
+        print(f"    -> protective stop placed at {action.new_stop:.2f}.")
+
+
+def _cmd_manage(args: argparse.Namespace) -> int:
+    from .alpaca import AlpacaClient, AlpacaError
+
+    try:
+        client = AlpacaClient(paper=not args.live, feed=args.feed)
+        if args.symbol:
+            pos = client.get_position(args.symbol)
+            positions = [pos] if pos else []
+        else:
+            positions = client.positions()
+    except AlpacaError as exc:
+        print(f"Alpaca error: {exc}", file=sys.stderr)
+        return 1
+
+    mode = "LIVE" if args.live else "paper"
+    if not positions:
+        print(f"No open positions on the {mode} account. Nothing to manage.")
+        return 0
+
+    if args.live and args.confirm and not args.i_understand_live:
+        print("Refusing to manage LIVE positions without --i-understand-live.",
+              file=sys.stderr)
+        return 1
+
+    strat = _build_strategy(args)
+    print(f"Managing {len(positions)} position(s) on {mode}"
+          + ("" if args.confirm else "  [DRY RUN — re-run with --confirm to act]"))
+    for pos in positions:
+        _manage_one(client, strat, pos, args)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="archie",
@@ -338,6 +405,26 @@ def build_parser() -> argparse.ArgumentParser:
                     dest="i_understand_live",
                     help="required acknowledgement to place LIVE orders")
     tp.set_defaults(func=_cmd_trade)
+
+    # Manage open Alpaca positions: trail stops up, exit on trend break.
+    mp = sub.add_parser("manage",
+                        help="trail stops and exit broken trends on open "
+                             "Alpaca positions")
+    mp.add_argument("symbol", nargs="?", default=None,
+                    help="manage just this symbol (default: all positions)")
+    mp.add_argument("--feed", default="iex", help="Alpaca data feed (default iex)")
+    mp.add_argument("--fast-ma", type=int, default=50, dest="fast_ma")
+    mp.add_argument("--slow-ma", type=int, default=200, dest="slow_ma")
+    mp.add_argument("--breakout-lookback", type=int, default=20,
+                    dest="breakout_lookback")
+    mp.add_argument("--confirm", action="store_true",
+                    help="actually amend/cancel/close orders (otherwise dry run)")
+    mp.add_argument("--live", action="store_true",
+                    help="manage the LIVE account instead of paper")
+    mp.add_argument("--i-understand-live", action="store_true",
+                    dest="i_understand_live",
+                    help="required acknowledgement to act on LIVE positions")
+    mp.set_defaults(func=_cmd_manage)
 
     return parser
 

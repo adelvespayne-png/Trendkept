@@ -231,6 +231,23 @@ class AlpacaClient:
             order["type"] = "market"
         return self._request("POST", f"{self.trading_host}/v2/orders", body=order)
 
+    def submit_stop_sell(
+        self, symbol: str, qty, stop_price: float, tif: str = "gtc"
+    ) -> dict:
+        """Place a standalone protective sell-stop (good-till-cancelled).
+
+        Used when an open position has somehow lost its protective stop.
+        """
+        order = {
+            "symbol": symbol,
+            "qty": str(qty),
+            "side": "sell",
+            "type": "stop",
+            "time_in_force": tif,
+            "stop_price": f"{stop_price:.2f}",
+        }
+        return self._request("POST", f"{self.trading_host}/v2/orders", body=order)
+
     def list_orders(self, status: str = "open") -> List[dict]:
         url = f"{self.trading_host}/v2/orders?status={status}&limit=100"
         result = self._request("GET", url)
@@ -243,6 +260,35 @@ class AlpacaClient:
             f"{self.trading_host}/v2/orders/{order_id}",
             body={"stop_price": f"{stop_price:.2f}"},
         )
+
+    def cancel_order(self, order_id: str) -> dict:
+        return self._request(
+            "DELETE", f"{self.trading_host}/v2/orders/{order_id}"
+        )
+
+    def close_position(self, symbol: str) -> dict:
+        """Liquidate the whole position in ``symbol`` at market."""
+        return self._request(
+            "DELETE",
+            f"{self.trading_host}/v2/positions/{urllib.parse.quote(symbol)}",
+        )
+
+    def find_stop_order(self, symbol: str) -> Optional[dict]:
+        """The open protective sell-stop for ``symbol``, if one exists.
+
+        Searches top-level orders and the ``legs`` of bracket/OTO parents,
+        because the stop appears nested until the entry fills.
+        """
+        symbol = symbol.upper()
+        for order in self.list_orders(status="open"):
+            for candidate in [order, *(order.get("legs") or [])]:
+                if (candidate.get("symbol", "").upper() == symbol
+                        and candidate.get("side") == "sell"
+                        and "stop" in (candidate.get("type") or "")
+                        and candidate.get("status") in (
+                            "new", "held", "accepted", "pending_new")):
+                    return candidate
+        return None
 
 
 def plan_trade(
@@ -286,4 +332,71 @@ def plan_trade(
         risk_per_share=risk_per_share,
         dollar_risk=qty * risk_per_share,
         account_equity=equity,
+    )
+
+
+@dataclass
+class ManagementAction:
+    """What to do with an open position on the latest bar.
+
+    ``kind`` is ``"exit"``, ``"raise_stop"``, ``"set_stop"`` (no protective stop
+    was found — install one), or ``"hold"``.
+    """
+
+    kind: str
+    reason: str
+    symbol: str = ""
+    new_stop: Optional[float] = None
+    current_stop: Optional[float] = None
+
+    def describe(self) -> str:
+        if self.kind == "exit":
+            return f"EXIT {self.symbol}: {self.reason}"
+        if self.kind == "raise_stop":
+            return (f"RAISE STOP {self.symbol}: "
+                    f"{self.current_stop:.2f} -> {self.new_stop:.2f} "
+                    f"({self.reason})")
+        if self.kind == "set_stop":
+            return f"SET STOP {self.symbol}: {self.new_stop:.2f} ({self.reason})"
+        cur = f" (stop {self.current_stop:.2f})" if self.current_stop else ""
+        return f"HOLD {self.symbol}: {self.reason}{cur}"
+
+
+def decide_management(
+    strategy,
+    bars: List[Bar],
+    current_stop: Optional[float],
+    symbol: str = "",
+) -> ManagementAction:
+    """Decide how to manage an open long, using only the latest confirmed bar.
+
+    Trend-break exit takes priority; otherwise the stop only ever ratchets up.
+    Pure and side-effect-free so it can be tested without touching the broker.
+    """
+    i = len(bars) - 1
+
+    if strategy.exit_on_trend_break(bars, i):
+        return ManagementAction(
+            "exit", "trend break: close below 50-day MA or a lower low",
+            symbol=symbol, current_stop=current_stop,
+        )
+
+    candidate = strategy.initial_stop(bars, i)  # stop under latest swing low
+
+    if current_stop is None:
+        return ManagementAction(
+            "set_stop", "no protective stop found; installing one",
+            symbol=symbol, new_stop=candidate,
+        )
+
+    new_stop = strategy.trail_stop(bars, i, current_stop)
+    if new_stop > current_stop + 1e-6:
+        return ManagementAction(
+            "raise_stop", "higher swing low formed",
+            symbol=symbol, new_stop=new_stop, current_stop=current_stop,
+        )
+
+    return ManagementAction(
+        "hold", "trend intact, stop unchanged",
+        symbol=symbol, current_stop=current_stop,
     )

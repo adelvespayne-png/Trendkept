@@ -141,6 +141,34 @@ attached, so rule #3 (a stop the moment you enter) is enforced by the broker,
 not your nerves. Position size is computed from your *real* account equity so
 "risk 1%" means 1% of the actual account.
 
+### Managing open positions (trail stops, exit broken trends)
+Rules #5 and #6 — trail the stop up, exit when the trend breaks — run with
+`manage`. It reads each open position, and on the latest daily bar either:
+
+* **exits** (cancels the stop, closes at market) if the trend broke — a close
+  below the 50-day average or a lower low; or
+* **raises the stop** under the newest higher swing low (never lowers it); or
+* **installs a stop** if a position somehow has none; or
+* **holds**.
+
+```bash
+# Review what would happen to every open position (DRY RUN — acts on nothing)
+python -m archie.cli manage
+
+# Just one symbol, and actually amend/close orders on the paper account
+python -m archie.cli manage AAPL --confirm
+```
+
+Because the rules act on **daily** bars, run `manage` once per day after the
+close — e.g. a cron entry:
+
+```cron
+30 21 * * 1-5  cd /path/to/Archie && /usr/bin/python3 -m archie.cli manage --confirm >> manage.log 2>&1
+```
+
+The same safety rails apply: paper by default, dry run unless `--confirm`, and
+LIVE management needs `--live --i-understand-live`.
+
 > 🔴 **Live trading risks real money.** Live orders require **both** `--live`
 > **and** `--i-understand-live`, on top of `--confirm`. Don't reach for them
 > until you've paper-traded the rules without flinching. Free Alpaca data uses
@@ -170,10 +198,10 @@ Profit factor    : inf
 | `archie/strategy.py` | The rules above, as signals (trend filter, entries, stop, exit) |
 | `archie/backtest.py` | Bar-by-bar simulator: risk-based sizing, trailing stops, stats |
 | `archie/fetch.py` | Free no-key data: Stooq + Yahoo |
-| `archie/alpaca.py` | Alpaca data + account/positions/orders |
-| `archie/cli.py` | `backtest`, `scan`, `fetch`, `account`, `trade` commands |
+| `archie/alpaca.py` | Alpaca data, account/positions/orders, trade & manage logic |
+| `archie/cli.py` | `backtest`, `scan`, `fetch`, `account`, `trade`, `manage` |
 | `examples/` | Synthetic + real (AAPL) sample data and the generator |
-| `tests/` | 39 unit tests (`python -m unittest discover -s tests`) |
+| `tests/` | 47 unit tests (`python -m unittest discover -s tests`) |
 
 **A note on honesty:** every signal is *causal* — a value at bar *i* is computed
 only from bars at or before *i*. Swing pivots need confirmation bars, so a pivot
