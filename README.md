@@ -75,19 +75,77 @@ Nothing to install. Clone and run:
 # Backtest the rules over a price history
 python -m archie.cli backtest examples/sample_uptrend.csv --account 1000 --risk 0.02 -v
 
+# The same on real AAPL data (bundled)
+python -m archie.cli backtest examples/aapl_2015_2017.csv --account 1000 --risk 0.02 -v
+
 # Ask the rules what to do *today* (the paper-trading helper)
-python -m archie.cli scan examples/sample_uptrend.csv --account 1000 --risk 0.02
+python -m archie.cli scan examples/aapl_2015_2017.csv --account 1000 --risk 0.02
+```
+
+### Real data, straight from a ticker
+With a network connection you can skip the CSV entirely. Free, no API key:
+
+```bash
+# Stooq (default) or Yahoo — auto tries both
+python -m archie.cli backtest --symbol AAPL --account 1000 --risk 0.02 -v
+python -m archie.cli scan     --symbol MSFT --provider yahoo
+
+# Save history to a CSV for offline/repeatable runs
+python -m archie.cli fetch AAPL --out data/aapl.csv
+python -m archie.cli backtest data/aapl.csv --account 1000
 ```
 
 ### Your own data
-Provide a CSV with a header row and columns `date,open,high,low,close`
-(`volume` optional). Daily bars, oldest or newest first — Archie sorts by date.
+Provide a CSV with a header row. Column names are matched by meaning, so files
+from Yahoo (`Date,Open,High,Low,Close,Adj Close,Volume`), Stooq, brokers, or
+wide frames (`AAPL.Open`, …) all load as-is. Daily bars, any date order.
 
 ```csv
 date,open,high,low,close
 2023-01-03,100.00,101.20,99.50,100.80
 2023-01-04,100.80,102.10,100.40,101.90
 ```
+
+When an adjusted-close column is present, the **whole OHLC bar is scaled by the
+split/dividend factor** so a 2-for-1 split never reads as a 50% "lower low".
+Disable with `load_csv(path, adjust=False)` if your source is already raw.
+
+## Alpaca Markets (live data + paper trading)
+
+Archie talks to [Alpaca](https://alpaca.markets) for real-time-ish data and
+order placement — standard library only, no SDK. **Start with a free paper
+account.** Put your keys in the environment (never in code or shell history):
+
+```bash
+export APCA_API_KEY_ID=your_paper_key_id
+export APCA_API_SECRET_KEY=your_paper_secret
+```
+
+```bash
+# Account & open positions (paper)
+python -m archie.cli account
+
+# Data from Alpaca (split/dividend adjusted)
+python -m archie.cli backtest --symbol AAPL --provider alpaca --account 1000 -v
+
+# Scan a symbol and size a stop-protected order against your live equity.
+# DRY RUN by default — prints the order, sends nothing:
+python -m archie.cli trade AAPL --risk 0.01
+
+# Actually submit it to your PAPER account:
+python -m archie.cli trade AAPL --risk 0.01 --confirm
+```
+
+The entry is sent as an **OTO order** — a buy with a protective stop-loss
+attached, so rule #3 (a stop the moment you enter) is enforced by the broker,
+not your nerves. Position size is computed from your *real* account equity so
+"risk 1%" means 1% of the actual account.
+
+> 🔴 **Live trading risks real money.** Live orders require **both** `--live`
+> **and** `--i-understand-live`, on top of `--confirm`. Don't reach for them
+> until you've paper-traded the rules without flinching. Free Alpaca data uses
+> the `iex` feed; `--feed sip` needs a paid subscription. This software comes
+> with no warranty and is not financial advice.
 
 ### Example backtest output
 ```
@@ -107,13 +165,15 @@ Profit factor    : inf
 
 | Module | Responsibility |
 | --- | --- |
-| `archie/data.py` | `Bar` type + CSV loader |
+| `archie/data.py` | `Bar` type + robust CSV loader (column matching, adjustment) |
 | `archie/indicators.py` | SMAs and **causal** swing-point detection |
 | `archie/strategy.py` | The rules above, as signals (trend filter, entries, stop, exit) |
 | `archie/backtest.py` | Bar-by-bar simulator: risk-based sizing, trailing stops, stats |
-| `archie/cli.py` | `backtest` and `scan` commands |
-| `examples/` | Deterministic sample data + its generator |
-| `tests/` | Unit tests (`python -m unittest discover -s tests`) |
+| `archie/fetch.py` | Free no-key data: Stooq + Yahoo |
+| `archie/alpaca.py` | Alpaca data + account/positions/orders |
+| `archie/cli.py` | `backtest`, `scan`, `fetch`, `account`, `trade` commands |
+| `examples/` | Synthetic + real (AAPL) sample data and the generator |
+| `tests/` | 39 unit tests (`python -m unittest discover -s tests`) |
 
 **A note on honesty:** every signal is *causal* — a value at bar *i* is computed
 only from bars at or before *i*. Swing pivots need confirmation bars, so a pivot
