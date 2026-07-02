@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Archie — trade the trend. Follow the rules.</title>
+<meta name="description"
+      content="Archie doesn't predict markets. It makes you follow your own
+trend-following rules — backtested honestly, with the stop enforced by your
+broker instead of your nerves.">
+<style>
+  :root {
+    --surface: #fcfcfb; --page: #f9f9f7;
+    --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+    --ring: rgba(11,11,11,0.10); --accent: #2a78d6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface: #1a1a19; --page: #0d0d0d;
+      --ink: #ffffff; --ink-2: #c3c2b7;
+      --ring: rgba(255,255,255,0.10); --accent: #3987e5;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--ink);
+    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 780px; margin: 0 auto; padding: 48px 20px 80px; }
+  h1 { font-size: 40px; line-height: 1.15; margin: 24px 0 8px;
+    letter-spacing: -0.02em; }
+  .sub { font-size: 19px; color: var(--ink-2); max-width: 560px; }
+  h2 { font-size: 22px; margin: 56px 0 12px; }
+  .brand { font-weight: 700; color: var(--accent); font-size: 15px;
+    text-transform: uppercase; letter-spacing: 0.12em; }
+  .card { background: var(--surface); border: 1px solid var(--ring);
+    border-radius: 12px; padding: 20px 22px; margin: 16px 0; }
+  pre { background: var(--surface); border: 1px solid var(--ring);
+    border-radius: 12px; padding: 18px; overflow-x: auto; font-size: 13.5px;
+    line-height: 1.55; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  .rules { padding-left: 0; list-style: none; counter-reset: rule; }
+  .rules li { counter-increment: rule; margin: 14px 0; padding-left: 44px;
+    position: relative; }
+  .rules li::before { content: counter(rule); position: absolute; left: 0;
+    top: 2px; width: 28px; height: 28px; border-radius: 50%;
+    background: var(--accent); color: #fff; font-weight: 700; font-size: 14px;
+    display: flex; align-items: center; justify-content: center; }
+  .rules b { display: block; }
+  .tiers { display: grid; gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .tier { background: var(--surface); border: 1px solid var(--ring);
+    border-radius: 12px; padding: 20px; display: flex; flex-direction: column; }
+  .tier.featured { border-color: var(--accent); border-width: 2px; }
+  .tier .name { font-weight: 700; }
+  .tier .price { font-size: 28px; font-weight: 750; margin: 6px 0 2px; }
+  .tier .per { color: var(--muted); font-size: 13px; }
+  .tier ul { padding-left: 18px; margin: 12px 0 0; color: var(--ink-2);
+    font-size: 14px; flex: 1; }
+  .cta, button.cta { display: inline-block; background: var(--accent);
+    color: #fff; font-weight: 650; text-decoration: none; border: 0;
+    border-radius: 8px; padding: 12px 22px; font-size: 16px; cursor: pointer; }
+  .cta.ghost { background: transparent; color: var(--accent);
+    border: 1.5px solid var(--accent); }
+  form.signup { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+  form.signup input { flex: 1; min-width: 220px; padding: 12px 14px;
+    font: inherit; border: 1px solid var(--ring); border-radius: 8px;
+    background: var(--surface); color: var(--ink); }
+  .fine { color: var(--muted); font-size: 13px; }
+  .honest { border-left: 3px solid var(--accent); padding-left: 16px;
+    color: var(--ink-2); }
+  footer { margin-top: 72px; padding-top: 24px;
+    border-top: 1px solid var(--ring); color: var(--muted); font-size: 13px; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <div class="brand">Archie</div>
+  <h1>Trade the trend.<br>Follow the rules.</h1>
+  <p class="sub">Archie doesn't predict markets — nobody can. It makes you
+  follow your own written trend-following rules: backtested honestly, sized by
+  risk, with the stop-loss enforced by your broker instead of your nerves.</p>
+
+  <p style="margin-top:28px">
+    <a class="cta" href="#signup">Get the weekly Trend Check — free</a>
+    <a class="cta ghost" href="https://github.com/adelvespayne-png/Archie">
+      Star the open-source core</a>
+  </p>
+
+  <h2>The five rules (they're free — the whole point is following them)</h2>
+  <ol class="rules">
+    <li><b>Trade only a confirmed uptrend.</b> Price above the 50- and 200-day
+      averages, averages aligned, higher highs and higher lows. Otherwise:
+      stay out. No exceptions.</li>
+    <li><b>Enter without chasing.</b> A pullback that resumes, or a breakout —
+      never a move that's already run far.</li>
+    <li><b>Set the stop the moment you enter.</b> Just below the last swing
+      low. Decided before the trade, not during the drawdown.</li>
+    <li><b>Size by risk, not by gut.</b> If the stop is hit, lose no more than
+      1–2% of the account. Ever.</li>
+    <li><b>Let winners run; cut the break.</b> Trail the stop up under each
+      higher low. Exit completely when the trend breaks.</li>
+  </ol>
+
+  <div class="card honest">
+    <b>The honest part.</b> You can be wrong more than half the time and still
+    come out ahead — because each loss is capped small and winners run. That
+    only works if you follow the rules <i>every time</i>. That's the hard part.
+    That's what Archie is for.
+  </div>
+
+  <h2>See it work — honestly</h2>
+  <p>Every Archie backtest is <b>causal</b>: a signal at bar <i>i</i> uses only
+  data up to bar <i>i</i>. Backtests that peek at the future look brilliant and
+  trade terribly; Archie refuses to peek, and says so in the results.</p>
+<pre><code>$ python -m archie.cli backtest --symbol AAPL --account 1000 --risk 0.02
+
+Starting equity  : 1,000.00
+Ending equity    : 1,252.00
+Total return     : +25.20%
+Max drawdown     : -2.28%
+Expectancy       : +7.13R per trade</code></pre>
+  <p class="fine">Real bundled example. Idealized fills — an optimistic
+  ceiling, not a promise. Past and backtested performance do not predict
+  future results.</p>
+
+  <h2>Pricing</h2>
+  <div class="tiers">
+    <div class="tier">
+      <div class="name">Open core</div>
+      <div class="price">Free</div>
+      <div class="per">MIT-licensed, forever</div>
+      <ul>
+        <li>The full rules engine</li>
+        <li>Honest backtesting CLI</li>
+        <li>Daily scan &amp; paper trading</li>
+        <li>Broker stop management</li>
+      </ul>
+      <a class="cta ghost" href="https://github.com/adelvespayne-png/Archie">
+        GitHub</a>
+    </div>
+    <div class="tier featured">
+      <div class="name">Archie Pro</div>
+      <div class="price">£12<span class="per">/mo</span></div>
+      <div class="per">or £99/yr · 14-day trial</div>
+      <ul>
+        <li>The dashboard cockpit</li>
+        <li>Multi-symbol watchlist scans</li>
+        <li>Trade journal with R-multiple discipline score</li>
+        <li>Daily "what the rules say" email</li>
+      </ul>
+      <a class="cta" href="#signup">Join the waiting list</a>
+    </div>
+  </div>
+
+  <h2 id="signup">The Trend Check — free, every Sunday</h2>
+  <p>The engine's verdict on 20 liquid tickers — uptrend confirmed, no entry,
+  or trend broken — plus one honest lesson in risk. No predictions, no hype,
+  unsubscribe anytime.</p>
+  <!-- Wire this to your list provider (Buttondown/ConvertKit): set action="…" -->
+  <form class="signup" action="#" method="post"
+        onsubmit="alert('Connect this form to your newsletter provider — see business/LAUNCH_CHECKLIST.md'); return false;">
+    <input type="email" name="email" required placeholder="you@example.com"
+           aria-label="Email address">
+    <button class="cta" type="submit">Subscribe free</button>
+  </form>
+
+  <footer>
+    Archie is analysis software and education, <b>not investment advice</b>.
+    It makes no personal recommendations and never touches your money — you
+    connect your own broker. Trading involves risk of loss. Past or backtested
+    performance does not predict future results; backtests use idealized
+    fills. &copy; Archie Trading Tools.
+  </footer>
+</main>
+</body>
+</html>
