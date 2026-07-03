@@ -1,0 +1,640 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<title>Trendrail — Owner's Manual</title><style>
+@page { size: A4; margin: 18mm 16mm; }
+* { box-sizing: border-box; }
+body { font: 10.5pt/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #111; margin: 0; }
+.cover { text-align: left; padding-top: 90mm; page-break-after: always; }
+.cover .brand { color: #2a78d6; font-weight: 700; letter-spacing: .14em;
+  text-transform: uppercase; font-size: 12pt; }
+.cover h1 { font-size: 30pt; margin: 8pt 0 6pt; letter-spacing: -.02em; }
+.cover p { color: #555; font-size: 12pt; max-width: 130mm; }
+.toc { page-break-after: always; }
+.toc ol { font-size: 11pt; line-height: 2; }
+section.doc { page-break-before: always; }
+h1 { font-size: 19pt; margin: 0 0 10pt; letter-spacing: -.01em;
+  border-bottom: 2.5pt solid #2a78d6; padding-bottom: 6pt; }
+h2 { font-size: 13.5pt; margin: 16pt 0 6pt; }
+h3 { font-size: 11.5pt; margin: 13pt 0 4pt; }
+p { margin: 6pt 0; }
+ul, ol { margin: 6pt 0; padding-left: 18pt; }
+li { margin: 3pt 0; }
+code { font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 9.2pt; background: #f2f1ee; padding: 1pt 3pt;
+  border-radius: 3pt; }
+pre { background: #f2f1ee; border: .5pt solid #ddd; border-radius: 5pt;
+  padding: 8pt 10pt; overflow-wrap: anywhere; white-space: pre-wrap; }
+pre code { background: none; padding: 0; }
+table { border-collapse: collapse; width: 100%; margin: 8pt 0;
+  font-size: 9.3pt; }
+th, td { border-bottom: .5pt solid #ccc; padding: 4pt 6pt;
+  text-align: left; vertical-align: top; }
+th { color: #555; font-weight: 600; border-bottom: 1pt solid #999; }
+tr { page-break-inside: avoid; }
+blockquote { border-left: 2.5pt solid #2a78d6; margin: 8pt 0;
+  padding: 2pt 0 2pt 10pt; color: #444; }
+hr { border: 0; border-top: .5pt solid #ccc; margin: 12pt 0; }
+a { color: #2a78d6; text-decoration: none; }
+h1, h2, h3 { page-break-after: avoid; }
+pre, blockquote { page-break-inside: avoid; }
+.footer-note { color: #777; font-size: 9pt; margin-top: 18pt;
+  border-top: .5pt solid #ccc; padding-top: 8pt; }
+</style></head><body>
+<div class="cover">
+  <div class="brand">Trendrail</div>
+  <h1>The Owner's Manual</h1>
+  <p>Everything, in one document: the steps to take right now, the business
+  plan, the financial projections, the go-to-market playbook, the legal
+  guide, the 90-day checklist, and the ready-to-paste launch content.</p>
+  <p><b>Start with section 1 and work top to bottom.</b></p>
+  <p style="color:#888">Compiled 03 July 2026 · regenerate with
+  <code>python business/build_manual.py --pdf</code></p>
+</div>
+<div class="toc"><h1>Contents</h1><ol><li>START HERE — your steps, in order</li><li>The business plan</li><li>Trendrail Pro — financial projections</li><li>Trendrail Pro — go-to-market playbook</li><li>Trendrail Pro — legal &amp; structure guide</li><li>Trendrail Pro — first-90-days launch checklist</li><li>Launch pack — Show HN</li><li>Launch pack — r/algotrading</li><li>Launch pack — r/swingtrading</li><li>Launch pack — The Trend Check #1</li></ol>
+<p class="footer-note">Trendrail is analysis software and education, not
+investment advice. Trading involves risk of loss; past and backtested
+performance do not predict future results. This document contains business
+planning material, not legal or financial advice — the one-hour solicitor
+review in the Legal guide covers the specifics.</p></div>
+<section class="doc"><h1>START HERE — your steps, in order</h1><p>This is the front door to the whole package. Do these steps in order; every one is explained. Nothing needs anyone's permission and nothing before month 3 costs more than ~£150. The documents after this section contain the full detail — this section is what you <i>do</i>.</p>
+<h2>Step 0 — Today, from your phone (~30 minutes)</h2>
+<ol>
+<li><b>Check the domain (2 min).</b> Go to Cloudflare Registrar or Namecheap and search <code>trendrail.com</code>. It showed no DNS records when checked (July 2026), so it is very likely free (~£10/yr). If it's somehow taken, buy <code>trendkept.com</code> (checked clear across .com/.io/.co.uk) and say so — the rebrand is a five-minute job for your Claude session.</li>
+<li><b>Trademark sanity check (5 min).</b> Search "Trendrail" at trademarks.ipo.gov.uk and in the Companies House name search. You're looking for an existing trading-software company with the same name. Don't <i>register</i> a trademark yet — that waits for revenue (~£170, later).</li>
+<li><b>Rename the GitHub repository (2 min).</b> Repo → Settings → rename <code>Archie</code> to <code>Trendrail</code>. Old links redirect automatically. Then merge the working branch (<code>claude/business-plan-ownership-8m18uu</code>) — or ask Claude to open the pull request and just click Merge.</li>
+</ol>
+<h2>Step 1 — This weekend, part one: the company (~1 hour)</h2>
+<ol>
+<li><b>Incorporate Trendrail Ltd (~£50, 40 min).</b> gov.uk → "Set up a limited company" → register online. You need: the company name (<b>Trendrail Ltd</b>), your details as sole director and sole shareholder (1 share, £1), and a SIC code — use <b>62012</b> (business and domestic software development). Before you start, buy a <b>registered-office address service</b> (~£40/yr, e.g. 1st Formations) so your home address isn't on the public record. Approval usually lands within 24 hours.</li>
+<li><b>Business bank account (20 min, free).</b> Download <b>Tide</b> or</li>
+</ol>
+<p><b>Starling</b>, choose a business account, photograph your ID, enter the company number from the step above. Approved in a day or two. Never mix this money with personal money.</p>
+<h2>Step 2 — This weekend, part two: domain, email, website (~1.5 hours)</h2>
+<ol>
+<li><b>Buy <code>trendrail.com</code></b> at Cloudflare Registrar (~£10/yr — you'll use Cloudflare for the website anyway).</li>
+<li><b>Business email — yes, you need one, and here's the exact setup.</b></li>
+</ol>
+<ul>
+<li><b>Why:</b> payment processors (Paddle/Stripe) trust a domain address; newsletter deliverability needs your own domain (otherwise you're in spam folders — that's revenue); and every business account signup stays separate from your personal email, which matters the day you sell the company.</li>
+<li><b>Create three addresses</b> (all can land in one inbox): <code>hello@trendrail.com</code> (public: support, website, social profiles), <code>[yourname]@trendrail.com</code> (private: bank, Paddle, Cloudflare, GitHub signups), and <code>news@trendrail.com</code> (the newsletter's sending address).</li>
+<li><b>Where:</b> if you already pay for any iCloud+ storage tier, custom email domains are <b>included free</b> — iPhone Settings → [your name] → iCloud → Custom Email Domain → add <code>trendrail.com</code>, create the addresses, and mail arrives in the Mail app you already use. No iCloud+? Use Zoho Mail's free tier. Upgrade to Google Workspace (~£5/mo) only once revenue exists.</li>
+<li>Either way it's ten minutes of copy-pasting DNS records (MX, SPF, DKIM) from the email provider into Cloudflare. Screenshot anything confusing and ask Claude.</li>
+</ul>
+<ol>
+<li><b>Put the landing page live (free, 20 min).</b> pages.cloudflare.com → Create a project → connect GitHub → pick the Trendrail repo → set the build output directory to <code>site</code> → deploy → add the custom domain <code>trendrail.com</code>. The page is already built (<code>site/index.html</code>), including per-visitor appearance settings (theme, accent colour, text size).</li>
+<li><b>Create the newsletter (15 min).</b> buttondown.com → free tier → name it</li>
+</ol>
+<p><b>The Trend Check</b> → set the sending address to <code>news@trendrail.com</code> (it gives you two more DNS records — paste into Cloudflare). Then give Claude your Buttondown form URL and the landing-page signup box gets wired to it.</p>
+<h2>Step 3 — Next week: become user #1 (~1 hour, then 15 min/day)</h2>
+<ol>
+<li><b>Open an Alpaca paper-trading account</b> (free, alpaca.markets — choose</li>
+</ol>
+<p><i>paper</i>, which is fake money). Put the two API keys in your environment as the README shows.</p>
+<ol>
+<li><b>Run the daily routine yourself:</b> open the dashboard (<code>python -m trendrail.web</code>), scan your watchlist, and run <code>python -m trendrail.cli manage</code> after market close. Fifteen minutes a day. This is quality control <i>and</i> it generates the honest screenshots and journal history that become your launch content.</li>
+</ol>
+<h2>Step 4 — Weeks 2–4: launch (the part only you can do)</h2>
+<ol>
+<li><b>Record a 60-second demo</b> of the dashboard (scan → backtest → hover the equity curve). It goes at the top of the README and the landing page.</li>
+<li><b>Post, one channel per 3–4 days, in this order.</b> All three posts are pre-written in <code>business/launch/</code> — copy, paste, post from your own accounts:</li>
+</ol>
+<ul>
+<li><b>Show HN</b> (<code>show_hn.md</code>) — Tuesday–Thursday, ~2pm UTC. Stay in the comments all day; the replies are the marketing.</li>
+<li><b>r/algotrading</b> (<code>reddit_algotrading.md</code>) a few days later.</li>
+<li><b>r/swingtrading</b> (<code>reddit_swingtrading.md</code>) the week after. Claude drafts your comment replies if you paste the thread; the posting account and the final voice must be yours — communities ban obvious proxies, and this brand runs on trust.</li>
+</ul>
+<ol>
+<li><b>Start the Sunday streak.</b> Run <code>python business/launch/trend_check.py --default</code>, paste the generated table into the Issue #1 template (<code>trend_check_001.md</code>), add two sentences, send. <b>Every Sunday, no matter what.</b> The streak is the single non-negotiable habit in this plan. (A GitHub Action can auto-generate the draft each Sunday — ask Claude to build it.)</li>
+</ol>
+<h2>Your operating rhythm from then on (~2–4 focused hours/week)</h2>
+<ul>
+<li><b>Daily, 15 min:</b> dashboard scan on the paper account; answer any support.</li>
+<li><b>One evening:</b> paste the week's content piece (Claude drafts it) to the scheduled channel; reply to comments.</li>
+<li><b>Sunday, ~30 min:</b> send The Trend Check; write down the four numbers — visitors, newsletter subscribers, paying subscribers, cancellations.</li>
+<li><b>Monthly, 1 h:</b> give the four numbers to Claude → the financial model is re-run with reality instead of assumptions.</li>
+<li><b>Month 3:</b> turn on payments (Paddle + licence keys + the legal pack — see the Legal guide and checklist), run the Product Hunt launch.</li>
+</ul>
+<h2>What this business is (one page, plain English)</h2>
+<p><b>Trendrail sells discipline to hobbyist stock traders.</b> The free, open-source core is a toolkit that tests a written set of trend-following rules against real market history and says what the rules would do today. <b>Trendrail Pro (£12/mo or £99/yr)</b> is the cockpit around it: a browser dashboard, a watchlist that scans many stocks at once, a trade journal that scores rule-following, a daily "what the rules say" email — and the stop-loss order placed <i>with</i> the broker, so exits are enforced by the broker rather than willpower.</p>
+<p><b>Why people pay:</b> the best-documented fact about retail trading is that most people lose money not from bad picks but from broken discipline — no stop-loss, oversized positions, panic exits. Someone who just torched £2,000 ignoring their own rules doesn't compare £12/month to other software; they compare it to the £2,000. Comparable subscription tools (TradingView, Edgewonk, TraderSync) prove the market pays. Trendrail's wedge is that nobody else sells discipline: everyone else sells predictions and hype, which is exactly why a calm, open-source, no-promises product stands out — and why it stays on the right side of financial regulation.</p>
+<p><b>The money:</b> ~£10.50/subscriber/month blended revenue, ~£200/month total running costs, break-even at ~20 subscribers. Two ways to win: monthly profit, plus the business itself becomes a sellable asset (small subscription software businesses sell for roughly 2–4× annual revenue).</p>
+<p><b>Risk to reward, honestly:</b> worst realistic case is ~£3,000 cash over year one plus your evenings — and even then the code plus audience has salvage value on micro-acquisition marketplaces. The conservative scenario (the most likely one) builds a £8–10k/month asset by years 3–4 but does <b>not</b> reach £1M in five years. The base scenario (the plan working) crosses £1M in combined kept-profit and business value around month 26. No plan can guarantee the base case; this one caps the downside, forces early exits via review gates, and leaves the upside uncapped — the same logic as the trading rules it sells.</p>
+<p><b>The review gates (the business's stop-losses):</b></p>
+<ul>
+<li><b>Month 3:</b> 1,000 newsletter subs <i>or</i> 500 GitHub stars — else change the message, not the product, and re-run for 8 weeks.</li>
+<li><b>Month 6:</b> 50 paying subscribers — else freeze features; 8 weeks of distribution only.</li>
+<li><b>Month 12:</b> £2k monthly recurring revenue → let it run (full-time at £5k). Under → keep as a side asset or sell the codebase + audience. Exiting a non-winner at a small profit is winning.</li>
+</ul>
+<h2>Who does what</h2>
+<p><b>You (it's a short list):</b> identity-bound admin (company, bank, domain, account signups), pressing "post" under your own name, replying to comments in your own voice, the Sunday send, and the owner decisions (pricing, launch timing, acting on the gates).</p>
+<p><b>Claude (Code sessions on the repo, or Cowork for desktop work):</b> everything else — building every product feature on the roadmap, drafting all content and newsletter issues, comment-reply suggestions, the legal document drafts for the solicitor to review, monthly financial-model updates, and automations like the Sunday draft generator. You describe the outcome in plain English; you never need to touch code.</p></section><section class="doc"><h1>The business plan</h1><p><b>One line:</b> sell the discipline, not the predictions. Trendrail Pro is a paid tool that makes retail traders follow a written trend-following ruleset — backtest it, get today's signal, and have the broker (not their nerves) enforce the stop.</p>
+<p><b>Owner:</b> you, 100%. No investors, no partners, no permission needed.</p>
+<hr>
+<h2>0. Read this first — the honest part</h2>
+<p>Nobody can guarantee you'll become a millionaire, and every plan that promises it is selling you something. What this plan gives you instead:</p>
+<ol>
+<li><b>A real asset you already own</b> — working software with a clear philosophy.</li>
+<li><b>A business model that is legal, ownable solo, and scales without staff.</b></li>
+<li><b>Numbers you can check</b> (<code>business/FINANCIALS.md</code>, regenerated by <code>python business/model.py --md</code>): the base scenario crosses £1M net worth (cumulative profit + business value at 3× ARR) around <b>month 26</b>; the conservative scenario <b>doesn't get there in five years</b> — and the plan tells you at which checkpoints to double down or fold (§9).</li>
+</ol>
+<p>The same edge as the trading rules applies to the business: <b>cap the downside (your costs are ~£200/mo and your time), and let the winner run if you get one.</b> You can be "wrong" about several marketing channels and still win, because the losing channels cost little and a winning channel compounds.</p>
+<h2>1. Why THIS business</h2>
+<p>You asked for a business chosen for you. Criteria used:</p>
+<ul>
+<li><b>You already own the hard part.</b> Trendrail is a working engine: strategy, backtester, data loaders, broker integration, 60 passing tests. Competitors start from zero; you start from a product.</li>
+<li><b>The market is huge and perpetually renewing.</b> Millions of retail traders; tens of thousands of new ones every month. Their #1 failure mode is well-documented and permanent: not bad ideas, but <b>indiscipline</b> — no stop, oversized positions, chasing, panic exits. Trendrail exists precisely to remove those failure modes.</li>
+<li><b>Nobody else sells discipline.</b> TradingView sells charts. Trade Ideas sells scans. Signal sellers sell (dubious) predictions. The wedge:</li>
+</ul>
+<p><i>"We don't predict anything. We make you follow your own rules."</i> That message is differentiated, defensible, and — crucially — <b>compliant</b> (see §6 and LEGAL.md): a tool that executes the user's ruleset is not investment advice.</p>
+<ul>
+<li><b>Solo-ownable.</b> Software subscriptions, no inventory, no staff, no custom client work. The whole company runs on your laptop and a £200/mo stack.</li>
+<li><b>Two ways to win.</b> Monthly profit while you run it, and a sellable asset (small SaaS businesses routinely sell for 2–4× ARR on Acquire.com and similar marketplaces) when you're done.</li>
+</ul>
+<h2>2. The product ladder</h2>
+<table><tr><th>Tier</th><th>Price</th><th>What it is</th></tr>
+<tr><td><b>Trendrail (open core)</b></td><td>Free, MIT</td><td>What's in this repo today: CLI backtest/scan/trade/manage. This is the <i>marketing engine</i> — every GitHub star, blog post, and "Show HN" is free distribution.</td></tr>
+<tr><td><b>Trendrail Pro</b></td><td><b>£12/mo or £99/yr</b></td><td>The dashboard (<code>trendrail/web.py</code> is the seed — see §4), multi-symbol watchlist scans, the trade journal with R-multiple discipline scoring, daily "what do the rules say" email, one-click broker stop management.</td></tr>
+<tr><td><b>Trendrail Pro Lifetime</b></td><td>£299 (launch-window only)</td><td>Early cashflow + evangelists. Cap at 200 sold.</td></tr>
+</table>
+<p>Why this shape:</p>
+<ul>
+<li><b>Open core is the moat.</b> "The rules are free and open source; pay for the cockpit" builds trust in a market drowning in scams — and trust is the scarcest commodity in retail trading.</li>
+<li><b>£12/mo is an impulse price</b> for someone risking hundreds per trade, and cheap enough to survive as a "keeper" subscription. £99/yr front-loads cash.</li>
+<li><b>The journal is the retention hook.</b> A subscriber with 40 logged trades and a discipline score will not churn — their history lives here. Churn is the single most important number in the model (see FINANCIALS.md).</li>
+</ul>
+<h2>3. Who buys it</h2>
+<p><b>Primary:</b> the self-directed retail swing trader, 25–55, account £1k–£100k, has been burned once by no-stop/oversize/chase, actively looking for structure. They're on r/swingtrading, r/algotrading, FinTwit/X, and YouTube trading channels. There are hundreds of thousands of them in the UK/US alone, and the population refreshes constantly.</p>
+<p><b>Secondary:</b> the systematic-curious programmer (Hacker News, GitHub) who wants a clean, dependency-free engine and will pay for the tooling around it.</p>
+<p><b>Not the customer:</b> day-traders wanting real-time tick data and "signals groups" wanting predictions. Saying no to them keeps the product simple and the compliance position clean.</p>
+<h2>4. Product roadmap (12 months)</h2>
+<p>The repo already contains month 0. Ship order is chosen so <b>every month has a marketable release</b>:</p>
+<table><tr><th>Month</th><th>Ship</th><th>Why</th></tr>
+<tr><td>0</td><td>✅ Engine + CLI (done, in this repo)</td><td>The asset</td></tr>
+<tr><td>0</td><td>✅ Local web dashboard (<code>python -m trendrail.web</code>)</td><td>Non-CLI users can now use it — 10× the audience</td></tr>
+<tr><td>1</td><td>✅ Watchlist: scan N symbols at once, one page (done, in the dashboard)</td><td>The daily habit begins</td></tr>
+<tr><td>2</td><td>Trade journal + R-multiple discipline score</td><td>The retention hook</td></tr>
+<tr><td>3</td><td>Payments (Stripe/Paddle) + licence keys; <b>launch Pro</b></td><td>Revenue on</td></tr>
+<tr><td>4</td><td>Daily email: "what the rules say" for your watchlist</td><td>Habit → subscription that survives</td></tr>
+<tr><td>5</td><td>Hosted version (same code, small VPS) for non-installers</td><td>Removes the biggest funnel drop</td></tr>
+<tr><td>6</td><td>Broker coverage #2 (e.g. IBKR)</td><td>Widens the market</td></tr>
+<tr><td>7–9</td><td>Discipline analytics: where YOU break rules; portfolio heat</td><td>The thing nobody else has</td></tr>
+<tr><td>10–12</td><td>Community: subscriber forum, monthly "rule review" call</td><td>Moat deepens, churn falls</td></tr>
+</table>
+<p>Rule for all of it: <b>stay boring.</b> No AI predictions, no crypto pivots, no real-time anything. The brand is the boring thing that works.</p>
+<h2>5. How people find it (summary — full playbook in GO_TO_MARKET.md)</h2>
+<ol>
+<li><b>Open-source distribution:</b> Show HN, r/algotrading, GitHub trending. The free CLI is the top of the funnel.</li>
+<li><b>Content that IS the product philosophy:</b> weekly posts/videos with titles like "You don't need better entries, you need smaller losses" — every backtest chart generated by Trendrail is content with the product in it.</li>
+<li><b>The newsletter as the mid-funnel:</b> free weekly "trend check" email on</li>
+</ol>
+<p>20 liquid tickers, generated by the engine — subscribers convert to Pro.</p>
+<ol>
+<li><b>Comparison &amp; SEO pages:</b> "position size calculator", "trailing stop rules", "trend following backtest" — searches with buying intent that big players ignore.</li>
+</ol>
+<h2>6. Why this is legal to sell (details in LEGAL.md)</h2>
+<p>The bright line: <b>Trendrail executes the user's ruleset on the user's data; it never gives person-specific recommendations, never manages money, and never promises returns.</b> That keeps it software/education, outside FCA-regulated investment advice — the same footing as TradingView or a backtesting library. LEGAL.md covers the company structure (UK Ltd), the disclaimers already baked into the product, refunds, and the three things you must never do (personal recommendations, performance promises, holding client funds).</p>
+<h2>7. The money (details in FINANCIALS.md — regenerate with <code>python business/model.py --md</code>)</h2>
+<ul>
+<li>Blended revenue ≈ <b>£10.50/subscriber/month</b> before ~4% payment fees.</li>
+<li>Fixed costs ≈ <b>£200/month</b>. Break-even at <b>~20 subscribers</b>.</li>
+<li><b>Base scenario:</b> ~550 subscribers by month 12 (≈£5.6k MRR — quit-the-job territory), £1M net worth crossed ~month 26.</li>
+<li><b>Conservative scenario:</b> ~£1.5k MRR by month 12; £1M is <i>not</i> reached in five years. This is the most likely outcome and it still produces a £10k+/mo asset by year 4 — a good business, just not a jackpot.</li>
+<li><b>The lever that matters is churn</b>, which is why months 2, 4, and 7–9 of the roadmap are all retention features.</li>
+</ul>
+<h2>8. Risks, stated plainly</h2>
+<table><tr><th>Risk</th><th>Likelihood</th><th>Mitigation</th></tr>
+<tr><td><b>No distribution</b> — great tool, nobody knows</td><td><b>High — this kills most tool businesses</b></td><td>The whole GTM playbook; review gates below; open-source as free reach</td></tr>
+<tr><td>A bear market makes trend-following look dumb for a year</td><td>Medium</td><td>The message "the rules kept you OUT" is <i>strongest</i> in a bear market — lean into it</td></tr>
+<tr><td>Copycats</td><td>Medium</td><td>They can copy features, not the brand/trust/journal history; open core makes "cheaper clone" pointless</td></tr>
+<tr><td>Platform dependence (broker API changes)</td><td>Medium</td><td>Engine is broker-agnostic by design; add a second broker by month 6</td></tr>
+<tr><td>Regulatory drift</td><td>Low</td><td>The §6 bright line + annual LEGAL.md review</td></tr>
+<tr><td>You burn out</td><td>Medium</td><td>The cadence in §10 is ~10 focused h/week until MRR pays for your time</td></tr>
+</table>
+<h2>9. Review gates — the business's stop-losses</h2>
+<p>Set these <b>now</b>, before emotion is involved (rule #3, applied to the company):</p>
+<ul>
+<li><b>Month 3 gate:</b> 1,000 newsletter subscribers or 500 GitHub stars? If neither, the positioning is wrong — change the message, not the product.</li>
+<li><b>Month 6 gate:</b> 50 paying subscribers? If not, pause feature work; do nothing but distribution for 8 weeks.</li>
+<li><b>Month 12 gate:</b> £2k MRR? If yes — this is a winner; let it run (consider going full-time at £5k MRR). If no — the honest options are: keep it as a £500/mo side asset, or sell the codebase/audience on a micro-acquisition marketplace. <b>Exiting a non-winner at a small profit is winning.</b></li>
+</ul>
+<h2>10. Operating cadence (solo owner)</h2>
+<ul>
+<li><b>Daily (15 min):</b> run <code>manage</code> on your own paper account (you are user #1; dogfooding is QA), answer support.</li>
+<li><b>Weekly (half day):</b> one piece of content + the newsletter; ship one small improvement; check the four numbers: visitors, trials, MRR, churn.</li>
+<li><b>Monthly (2 h):</b> regenerate FINANCIALS.md with actuals replacing assumptions; write a one-paragraph "investor update" to yourself.</li>
+<li><b>Quarterly:</b> re-read §9 and act on the gates. No exceptions — that's the whole point of writing rules down.</li>
+</ul>
+<h2>11. First 90 days</h2>
+<p>Step-by-step in LAUNCH_CHECKLIST.md. Short version: incorporate (~£50, Companies House), buy the domain, deploy <code>site/index.html</code> with an email capture, post the open-source repo everywhere it belongs, ship the watchlist + journal, turn on payments in month 3.</p>
+<hr>
+<p><i>Companion documents:</i> <a href="FINANCIALS.md">FINANCIALS.md</a> · <a href="GO_TO_MARKET.md">GO_TO_MARKET.md</a> · <a href="LEGAL.md">LEGAL.md</a> · <a href="LAUNCH_CHECKLIST.md">LAUNCH_CHECKLIST.md</a> · landing page in <a href="../site/"><code>site/</code></a> · the product seed in <a href="../trendrail/web.py"><code>trendrail/web.py</code></a> (<code>python -m trendrail.web</code>).</p></section><section class="doc"><h1>Trendrail Pro — financial projections</h1><blockquote>
+<p>Generated by <code>python business/model.py --md</code>. Do not edit by hand — change the assumptions in <code>business/model.py</code> and regenerate.</p>
+</blockquote>
+<h2>Assumptions</h2>
+<ul>
+<li>Pricing: £12/mo or £99/yr (40% choose annual) -&gt; blended ARPU £10.50/mo before 4% payment fees.</li>
+<li>Costs: £200/mo fixed + £0.10/subscriber/mo. Owner salary excluded — profit is the owner's pay.</li>
+<li>Business valuation: 3x ARR (small owner-operated SaaS trades at roughly 2-4x).</li>
+<li>Horizon: 60 months. All figures GBP.</li>
+</ul>
+<h2>Scenarios</h2>
+<h3>Conservative</h3>
+<p><i>Content gets modest traction; you keep the day job. This is the most likely outcome and the one to budget your life around.</i></p>
+<table><tr><th>Month</th><th>Visitors</th><th>Active subs</th><th>MRR (net)</th><th>Profit /mo</th><th>Cum. profit</th><th>Valuation (3x ARR)</th><th>Net worth</th></tr>
+<tr><td>1</td><td>2,000</td><td>10</td><td>£101</td><td>£-100</td><td>£-100</td><td>£3,629</td><td>£3,529</td></tr>
+<tr><td>6</td><td>2,939</td><td>64</td><td>£646</td><td>£439</td><td>£984</td><td>£23,250</td><td>£24,235</td></tr>
+<tr><td>12</td><td>4,663</td><td>146</td><td>£1,470</td><td>£1,256</td><td>£6,357</td><td>£52,935</td><td>£59,292</td></tr>
+<tr><td>18</td><td>7,400</td><td>262</td><td>£2,641</td><td>£2,415</td><td>£17,731</td><td>£95,067</td><td>£112,798</td></tr>
+<tr><td>24</td><td>11,743</td><td>437</td><td>£4,403</td><td>£4,159</td><td>£37,963</td><td>£158,493</td><td>£196,455</td></tr>
+<tr><td>30</td><td>15,000</td><td>675</td><td>£6,799</td><td>£6,532</td><td>£71,255</td><td>£244,770</td><td>£316,025</td></tr>
+<tr><td>36</td><td>15,000</td><td>853</td><td>£8,598</td><td>£8,313</td><td>£117,000</td><td>£309,534</td><td>£426,534</td></tr>
+<tr><td>42</td><td>15,000</td><td>976</td><td>£9,839</td><td>£9,542</td><td>£171,399</td><td>£354,213</td><td>£525,613</td></tr>
+<tr><td>48</td><td>15,000</td><td>1,061</td><td>£10,695</td><td>£10,389</td><td>£231,769</td><td>£385,036</td><td>£616,805</td></tr>
+<tr><td>54</td><td>15,000</td><td>1,120</td><td>£11,286</td><td>£10,974</td><td>£296,257</td><td>£406,300</td><td>£702,557</td></tr>
+<tr><td>60</td><td>15,000</td><td>1,160</td><td>£11,694</td><td>£11,378</td><td>£363,586</td><td>£420,969</td><td>£784,555</td></tr>
+</table>
+<p><b>Milestones</b></p>
+<ul>
+<li>Profit covers its own costs: month 2 (~year 1)</li>
+<li>MRR £1,000 (real side income): month 9 (~year 1)</li>
+<li>MRR £5,000 (quit-the-job territory): month 26 (~year 3)</li>
+<li>MRR £10,000: month 43 (~year 4)</li>
+<li>Net worth £250,000: month 27 (~year 3)</li>
+<li>Net worth £1,000,000: not within 60 months</li>
+</ul>
+<h3>Base</h3>
+<p><i>The plan works: weekly content compounds, a channel or two takes off, churn stays tame because the tool is genuinely used daily.</i></p>
+<table><tr><th>Month</th><th>Visitors</th><th>Active subs</th><th>MRR (net)</th><th>Profit /mo</th><th>Cum. profit</th><th>Valuation (3x ARR)</th><th>Net worth</th></tr>
+<tr><td>1</td><td>4,000</td><td>28</td><td>£282</td><td>£79</td><td>£79</td><td>£10,161</td><td>£10,240</td></tr>
+<tr><td>6</td><td>7,049</td><td>204</td><td>£2,057</td><td>£1,836</td><td>£5,467</td><td>£74,037</td><td>£79,504</td></tr>
+<tr><td>12</td><td>13,914</td><td>553</td><td>£5,571</td><td>£5,316</td><td>£27,674</td><td>£200,560</td><td>£228,234</td></tr>
+<tr><td>18</td><td>27,464</td><td>1,201</td><td>£12,108</td><td>£11,788</td><td>£80,210</td><td>£435,877</td><td>£516,087</td></tr>
+<tr><td>24</td><td>30,000</td><td>1,996</td><td>£20,115</td><td>£19,716</td><td>£179,869</td><td>£724,155</td><td>£904,024</td></tr>
+<tr><td>30</td><td>30,000</td><td>2,580</td><td>£26,002</td><td>£25,544</td><td>£319,432</td><td>£936,066</td><td>£1,255,498</td></tr>
+<tr><td>36</td><td>30,000</td><td>3,009</td><td>£30,329</td><td>£29,828</td><td>£488,330</td><td>£1,091,840</td><td>£1,580,170</td></tr>
+<tr><td>42</td><td>30,000</td><td>3,324</td><td>£33,510</td><td>£32,977</td><td>£678,791</td><td>£1,206,348</td><td>£1,885,139</td></tr>
+<tr><td>48</td><td>30,000</td><td>3,556</td><td>£35,848</td><td>£35,292</td><td>£885,102</td><td>£1,290,522</td><td>£2,175,624</td></tr>
+<tr><td>54</td><td>30,000</td><td>3,727</td><td>£37,567</td><td>£36,994</td><td>£1,103,066</td><td>£1,352,398</td><td>£2,455,463</td></tr>
+<tr><td>60</td><td>30,000</td><td>3,852</td><td>£38,830</td><td>£38,245</td><td>£1,329,594</td><td>£1,397,882</td><td>£2,727,476</td></tr>
+</table>
+<p><b>Milestones</b></p>
+<ul>
+<li>Profit covers its own costs: month 1 (~year 1)</li>
+<li>MRR £1,000 (real side income): month 4 (~year 1)</li>
+<li>MRR £5,000 (quit-the-job territory): month 12 (~year 1)</li>
+<li>MRR £10,000: month 17 (~year 2)</li>
+<li>Net worth £250,000: month 13 (~year 2)</li>
+<li>Net worth £1,000,000: month 26 (~year 3)</li>
+</ul>
+<h3>Ambitious</h3>
+<p><i>A breakout: front page of HN/Product Hunt, a big YouTube collab, word of mouth. Plan for it, don't count on it.</i></p>
+<table><tr><th>Month</th><th>Visitors</th><th>Active subs</th><th>MRR (net)</th><th>Profit /mo</th><th>Cum. profit</th><th>Valuation (3x ARR)</th><th>Net worth</th></tr>
+<tr><td>1</td><td>6,000</td><td>60</td><td>£605</td><td>£399</td><td>£399</td><td>£21,773</td><td>£22,172</td></tr>
+<tr><td>6</td><td>13,727</td><td>523</td><td>£5,269</td><td>£5,017</td><td>£14,934</td><td>£189,700</td><td>£204,634</td></tr>
+<tr><td>12</td><td>37,056</td><td>1,820</td><td>£18,350</td><td>£17,968</td><td>£84,490</td><td>£660,595</td><td>£745,085</td></tr>
+<tr><td>18</td><td>100,033</td><td>5,235</td><td>£52,765</td><td>£52,042</td><td>£295,593</td><td>£1,899,543</td><td>£2,195,136</td></tr>
+<tr><td>24</td><td>120,000</td><td>10,599</td><td>£106,835</td><td>£105,575</td><td>£801,093</td><td>£3,846,067</td><td>£4,647,160</td></tr>
+<tr><td>30</td><td>120,000</td><td>14,814</td><td>£149,320</td><td>£147,639</td><td>£1,586,770</td><td>£5,375,524</td><td>£6,962,294</td></tr>
+<tr><td>36</td><td>120,000</td><td>18,113</td><td>£182,576</td><td>£180,564</td><td>£2,591,758</td><td>£6,572,719</td><td>£9,164,477</td></tr>
+<tr><td>42</td><td>120,000</td><td>20,695</td><td>£208,606</td><td>£206,337</td><td>£3,768,414</td><td>£7,509,833</td><td>£11,278,246</td></tr>
+<tr><td>48</td><td>120,000</td><td>22,717</td><td>£228,982</td><td>£226,511</td><td>£5,079,443</td><td>£8,243,366</td><td>£13,322,809</td></tr>
+<tr><td>54</td><td>120,000</td><td>24,299</td><td>£244,932</td><td>£242,302</td><td>£6,495,655</td><td>£8,817,544</td><td>£15,313,199</td></tr>
+<tr><td>60</td><td>120,000</td><td>25,537</td><td>£257,416</td><td>£254,663</td><td>£7,994,199</td><td>£9,266,987</td><td>£17,261,186</td></tr>
+</table>
+<p><b>Milestones</b></p>
+<ul>
+<li>Profit covers its own costs: month 1 (~year 1)</li>
+<li>MRR £1,000 (real side income): month 2 (~year 1)</li>
+<li>MRR £5,000 (quit-the-job territory): month 6 (~year 1)</li>
+<li>MRR £10,000: month 9 (~year 1)</li>
+<li>Net worth £250,000: month 7 (~year 1)</li>
+<li>Net worth £1,000,000: month 14 (~year 2)</li>
+</ul>
+<h2>Reading the numbers</h2>
+<p>The single highest-leverage variable is churn: at 6%/mo the average subscriber stays ~17 months; at 4%/mo, 25 months. Retention work (the daily <code>manage</code> habit, the journal, the weekly email) is worth more than any acquisition hack. The conservative scenario never reaches £1M — which is exactly why the plan includes explicit review gates (see PLAN.md §9) instead of blind persistence.</p></section><section class="doc"><h1>Trendrail Pro — go-to-market playbook</h1><p>Distribution is the whole game (PLAN.md §8: "no distribution" is the risk that kills tool businesses). This file is the concrete plan: the message, the channels in priority order, a 12-week content calendar, the launch sequence, and the numbers that tell you whether it's working.</p>
+<h2>1. Positioning — say this, everywhere, verbatim</h2>
+<blockquote>
+<p><b>Trendrail doesn't predict markets. It makes you follow your own rules.</b></p>
+<p>Written trend-following rules, backtested honestly, with the stop-loss</p>
+<p>enforced by your broker instead of your nerves.</p>
+</blockquote>
+<p>Supporting messages (rotate; never dilute):</p>
+<ul>
+<li>"You don't need better entries. You need smaller losses." (the R-multiple pitch)</li>
+<li>"Every backtest here is causal — no peeking at the future. Most backtests lie to you; ours refuses." (the honesty pitch — devs love this)</li>
+<li>"The edge isn't any single rule. It's following all of them, every time." (the discipline pitch)</li>
+</ul>
+<p><b>Anti-positioning</b> (what we never say): no return promises, no "signals", no "beat the market", no screenshots of gains as marketing. This is both the compliance line (LEGAL.md) and the trust wedge — every competitor screaming "300% returns" makes the calm brand more visible.</p>
+<h2>2. Channels, in priority order</h2>
+<h3>Tier 1 — do these first, they're free and fit the asset</h3>
+<ol>
+<li><b>Show HN / Hacker News.</b> A dependency-free, causally-honest backtester is catnip. Title: <i>"Show HN: Trendrail – a dependency-free trend-following backtester that refuses to peek at the future"</i>. Post Tue–Thu ~14:00 UTC. Be in the comments all day. Goal: stars + newsletter signups.</li>
+<li><b>Reddit:</b> r/algotrading (technical honesty angle), r/swingtrading (discipline angle), r/UKInvesting. <b>Rule: give value 10× before any link.</b> Post full backtest write-ups, answer sizing questions with the maths, let people ask for the tool.</li>
+<li><b>GitHub itself.</b> Good README (done), topics/tags, a demo GIF of the dashboard, CONTRIBUTING.md. Stars → trending → passive inbound forever.</li>
+</ol>
+<h3>Tier 2 — the compounding engine (start week 1, pays off month 3+)</h3>
+<ol>
+<li><b>The weekly newsletter: "The Trend Check".</b> Every Sunday: the engine's verdict on ~20 liquid tickers (uptrend confirmed / no entry / trend broke), one R-multiple lesson, one honest backtest. It is literally generated by the product — the newsletter IS a product demo. This is the single most important channel: an owned list converts at 10–50× social.</li>
+<li><b>SEO pages that match buying intent</b> (each one is a small tool page): position size calculator, trailing stop calculator, "trend following rules", "backtest [TICKER]". Low competition, high intent, evergreen.</li>
+<li><b>YouTube/Shorts:</b> screen-recorded 3-minute honest backtests. "I backtested the 50/200 rules on AAPL for 10 years. Here's every trade." No face needed.</li>
+</ol>
+<h3>Tier 3 — spikes (use once the funnel exists)</h3>
+<ol>
+<li><b>Product Hunt</b> at Pro launch (month 3).</li>
+<li><b>Podcast/YouTube guesting</b> in the retail-trading niche: the pitch is the contrarian one — "stop trying to predict".</li>
+<li><b>Affiliates</b> (20% recurring) for trading educators who teach risk management — aligned ones exist and they need exactly this tool.</li>
+</ol>
+<h2>3. The funnel, explicitly</h2>
+<pre><code>HN / Reddit / SEO / YouTube          (strangers)
+        ↓
+Free CLI on GitHub + landing page    (site/index.html)
+        ↓
+"The Trend Check" newsletter         (owned audience — the real asset)
+        ↓
+Trendrail Pro trial (14 days)           (dashboard + watchlist + journal)
+        ↓
+£12/mo or £99/yr                     (subscriber)
+        ↓
+Journal history + daily email        (retention — the moat)</code></pre>
+<p>Every piece of content links one step down the funnel, never straight to the paywall.</p>
+<h2>4. 12-week content calendar (repeatable)</h2>
+<table><tr><th>Wk</th><th>Piece (blog + cross-post)</th><th>Channel push</th></tr>
+<tr><td>1</td><td>"The five rules, written down" (the README, humanized)</td><td>Show HN</td></tr>
+<tr><td>2</td><td>"Position sizing: the only maths that matters" + calculator page</td><td>r/swingtrading</td></tr>
+<tr><td>3</td><td>"I backtested AAPL 2015–2017. Every trade, every loss."</td><td>r/algotrading</td></tr>
+<tr><td>4</td><td>"Why your backtest is lying to you (look-ahead bias)"</td><td>HN, dev Twitter</td></tr>
+<tr><td>5</td><td>"R-multiples: how to be wrong 60% of the time and profit"</td><td>newsletter feature</td></tr>
+<tr><td>6</td><td>"The stop-loss goes in BEFORE the trade" (broker OTO orders)</td><td>YouTube demo</td></tr>
+<tr><td>7</td><td>"What a confirmed uptrend actually looks like" (chart teardown)</td><td>Reddit</td></tr>
+<tr><td>8</td><td>"Trailing stops: locking in gains mechanically"</td><td>YouTube</td></tr>
+<tr><td>9</td><td>"The never-chase rule: why extension kills"</td><td>newsletter</td></tr>
+<tr><td>10</td><td>"Paper trade until you don't flinch" (the psychology)</td><td>podcast pitch</td></tr>
+<tr><td>11</td><td>"Building a watchlist the rules can actually scan"</td><td>Pro teaser</td></tr>
+<tr><td>12</td><td><b>Pro launch:</b> "The cockpit for the rules"</td><td>Product Hunt + everything</td></tr>
+</table>
+<p>Then repeat with new tickers/markets — the engine generates infinite honest material.</p>
+<h2>5. Launch sequence for Pro (month 3)</h2>
+<ol>
+<li>T-14 days: lifetime deal (£299, cap 200) offered to the newsletter only.</li>
+<li>T-7: "founding subscriber" pricing (£79/yr locked forever) to newsletter.</li>
+<li>T-0: Product Hunt + Show HN ("Trendrail now has a cockpit") + Reddit posts.</li>
+<li>T+7: publish real launch numbers ("open startup" post — transparency is on-brand and is itself content).</li>
+</ol>
+<h2>6. Metrics — the four numbers (check weekly, no more often)</h2>
+<table><tr><th>Number</th><th>Healthy at month 3</th><th>Healthy at month 12</th></tr>
+<tr><td>Unique visitors /mo</td><td>3,000+</td><td>15,000+</td></tr>
+<tr><td>Newsletter subs (total)</td><td>1,000+</td><td>8,000+</td></tr>
+<tr><td>Paying subscribers</td><td>50+ (post-launch)</td><td>500+</td></tr>
+<tr><td>Monthly churn</td><td>&lt;7%</td><td>&lt;5%</td></tr>
+</table>
+<p>These map directly onto the scenario knobs in <code>business/model.py</code> — replace the assumptions with your actuals monthly and regenerate FINANCIALS.md to see which scenario you're actually living in. That's the review-gate input (PLAN.md §9).</p></section><section class="doc"><h1>Trendrail Pro — legal &amp; structure guide</h1><p><b>This is orientation, not legal advice.</b> Before taking money, spend one hour with a UK solicitor/accountant to confirm the specifics (~£150–£300 — the best money the business will spend). This file exists so that hour is efficient.</p>
+<h2>1. Company structure</h2>
+<ul>
+<li><b>Form a UK private limited company</b> (e.g. "Trendrail Ltd"). ~£50 online at Companies House, done in a day. Why a Ltd and not sole trader: liability protection (you sell to traders; someone will lose money and be angry), credibility with payment processors, clean asset to sell later, and corporation-tax flexibility.</li>
+<li>You own 100% of the shares. Director: you. Registered office: a registered- office service (~£40/yr), not your home address.</li>
+<li>Open a business bank account (Starling/Tide are free) — never mix funds.</li>
+<li>Register for VAT only when turnover approaches the threshold (currently £90k/yr); your accountant will time it. Use <b>Paddle</b> as merchant of record early on and it handles VAT/sales tax globally for you — worth its ~5% for a solo owner.</li>
+</ul>
+<h2>2. The regulatory bright line (the part that matters most)</h2>
+<p>Selling <b>software and education</b> is unregulated. Giving <b>investment advice</b> or making <b>personal recommendations</b> requires FCA authorisation in the UK (and equivalents elsewhere). Trendrail is designed to stay on the safe side of the line — keep it there:</p>
+<p><b>Trendrail may (all fine):</b></p>
+<ul>
+<li>Execute <i>the user's</i> mechanical ruleset on market data and show the result.</li>
+<li>Compute position sizes from a formula the user configures.</li>
+<li>Say "the 50/200 ruleset's conditions are met for AAPL today" — that's a factual statement about data, like a calculator or a chart.</li>
+<li>Teach risk-management concepts generally.</li>
+</ul>
+<p><b>Trendrail (and you, in all marketing) must NEVER:</b></p>
+<ol>
+<li>Make a <b>personal recommendation</b> — "given your situation, you should buy X". No "buy/sell" language directed at a person. The tool reports rule states; the user decides.</li>
+<li><b>Promise or imply returns</b> — no "make £X", no cherry-picked gain screenshots in ads, no "beat the market". (Also the marketing wedge — see GO_TO_MARKET.md §1.)</li>
+<li><b>Hold or manage client money</b> — users connect <i>their own</i> broker with</li>
+</ol>
+<p><i>their own</i> API keys; funds never touch you.</p>
+<p>Also stay away from: running a "signals group" (drifts into advice), copy-trading features (regulated), and managing anyone's account "just this once" (absolutely regulated).</p>
+<p>The product already embodies this: dry-run by default, <code>--confirm</code> for every order, <code>--live --i-understand-live</code> double-gate, and a disclaimer on every surface. Keep those; they are compliance features, not just safety features.</p>
+<h2>3. Documents needed before charging money</h2>
+<p>All are standard SaaS boilerplate; a solicitor can review the pack in the same hour:</p>
+<ul>
+<li><b>Terms of Service</b> — key clauses: no advice given; no warranty on data accuracy or outcomes; user is responsible for orders their broker executes; limitation of liability to fees paid; English law.</li>
+<li><b>Privacy policy</b> (UK GDPR) — you hold emails and (if hosted) watchlists/ journals. Never hold broker API secrets on your servers if avoidable; the local-first design means you usually don't. Register with the ICO (~£40/yr).</li>
+<li><b>Refund policy</b> — 14-day no-questions refund. UK consumer law requires cooling-off for digital services anyway, and generous refunds kill disputes.</li>
+<li><b>The disclaimer</b>, on the site, in the app, in the newsletter footer:</li>
+</ul>
+<p><i>"Trendrail is analysis software, not investment advice. Trading involves risk of loss. Past or backtested performance does not predict future results. Backtests use idealized fills."</i></p>
+<h2>4. Intellectual property &amp; licensing</h2>
+<ul>
+<li>The current repo is <b>MIT</b> — that ships; it's the open core and the marketing engine (PLAN.md §2). You cannot un-MIT what's published, and you shouldn't want to.</li>
+<li><b>Pro features live in a separate private repository</b> owned by the Ltd, under a commercial licence (licence key per subscription). The dashboard in this repo is the free seed; watchlist/journal/email/hosted are Pro.</li>
+<li>Register the trademark ("Trendrail" word mark, class 9/42, UK IPO ~£170) once revenue exists — do a name search <i>before</i> buying the domain in case a clash forces a rename while it's still cheap.</li>
+<li>Contributor licence: keep it simple — small PRs to the open core under MIT are fine; anything substantial, ask contributors to confirm MIT licensing in the PR (the default anyway).</li>
+</ul>
+<h2>5. Taxes (UK, headline only — accountant confirms)</h2>
+<ul>
+<li>Corporation tax on profits (19–25%); pay yourself small salary + dividends (the standard owner-director mix your accountant will set up).</li>
+<li><b>Your own trading profits are separate from the company</b> — the company sells software; you trade your personal account personally.</li>
+<li>Budget ~£600–£1,200/yr for an accountant from year 1. Fixed cost is in the model (<code>business/model.py</code>).</li>
+</ul>
+<h2>6. Annual review</h2>
+<p>Once a year (put it in the calendar): re-check the FCA perimeter guidance hasn't moved, ToS/privacy still match the product, ICO registration renewed, and the disclaimer still appears on every new surface shipped that year.</p></section><section class="doc"><h1>Trendrail Pro — first-90-days launch checklist</h1><p>Work top to bottom. Nothing here needs anyone's permission, and nothing costs more than ~£150 until money is already coming in. Time budget: ~10 focused hours/week.</p>
+<h2>Week 1 — foundations (one sitting each)</h2>
+<ul>
+<li>&#9744; Name search: Companies House + UK IPO trademark search + domain availability for "Trendrail" / fallback name. Decide once, move on.</li>
+<li>&#9744; Buy the domain (~£10). Suggested: <code>trendrail.com</code> (checked: no DNS records as of 2026-07) or <code>trendrail.io</code> / <code>.co.uk</code> — whatever survives the registrar check.</li>
+<li>&#9744; Incorporate the Ltd at Companies House (~£50, online, same day). Registered-office service, you as sole director/shareholder.</li>
+<li>&#9744; Open a free business bank account (Starling/Tide).</li>
+<li>&#9744; Deploy <code>site/index.html</code> (GitHub Pages / Cloudflare Pages — free).</li>
+<li>&#9744; Create the newsletter list ("The Trend Check") on Buttondown or ConvertKit free tier; wire the landing-page form to it.</li>
+<li>&#9744; Set up a support email (hello@…) on the domain.</li>
+</ul>
+<h2>Week 2 — make the free tier shine (it's the top of the funnel)</h2>
+<ul>
+<li>&#9744; Record a 60-second GIF/video: <code>python -m trendrail.web</code>, scan, backtest, equity curve. Put it at the top of the README and the landing page.</li>
+<li>&#9744; Add GitHub topics: <code>trading</code>, <code>trend-following</code>, <code>backtesting</code>, <code>python</code>, <code>zero-dependencies</code>.</li>
+<li>&#9744; Write CONTRIBUTING.md (two paragraphs) and enable Discussions.</li>
+<li>&#9744; Dogfood: open an Alpaca paper account, run the daily <code>manage</code> cadence yourself from today onward. Your own journal becomes launch content.</li>
+</ul>
+<h2>Weeks 3–4 — first public swings</h2>
+<ul>
+<li>&#9744; Publish content pieces 1 &amp; 2 (calendar in GO_TO_MARKET.md §4).</li>
+<li>&#9744; <b>Show HN</b> — draft ready to paste in <code>business/launch/show_hn.md</code> (Tue–Thu ~14:00 UTC; stay in the comments all day).</li>
+<li>&#9744; Reddit value-posts — drafts ready in <code>business/launch/reddit_algotrading.md</code> and <code>business/launch/reddit_swingtrading.md</code>.</li>
+<li>&#9744; Send "The Trend Check" #1 — template + table generator ready in <code>business/launch/trend_check_001.md</code> and <code>business/launch/trend_check.py</code>. Weekly from now on, no matter what — the streak is the asset.</li>
+</ul>
+<h2>Month 2 — build the retention hooks (ship weekly)</h2>
+<ul>
+<li>&#9745; Watchlist page in the dashboard (scan N symbols at once) — <b>done, shipped in <code>trendrail/web.py</code></b>.</li>
+<li>&#9744; Trade journal: log entries/exits, auto-computed R-multiples, discipline score ("did you follow all five rules?").</li>
+<li>&#9744; Content pieces 5–8; keep the newsletter streak.</li>
+<li>&#9744; Collect a waiting list for Pro on the landing page ("founding subscriber" £79/yr, locked forever).</li>
+</ul>
+<h2>Month 3 — turn on the money</h2>
+<ul>
+<li>&#9744; Paddle account (merchant of record — handles VAT for you) or Stripe.</li>
+<li>&#9744; Licence-key gate for Pro features; 14-day trial, card required.</li>
+<li>&#9744; ToS, privacy policy, refund policy live (checklist in LEGAL.md §3); ICO registration (~£40); the one-hour solicitor review.</li>
+<li>&#9744; Lifetime deal (£299, cap 200) to the newsletter, T-14 before launch.</li>
+<li>&#9744; <b>Launch:</b> Product Hunt + Show HN + Reddit, same week.</li>
+<li>&#9744; T+7: publish the "open startup" launch-numbers post.</li>
+</ul>
+<h2>The gates (from PLAN.md §9 — check, don't negotiate)</h2>
+<ul>
+<li>&#9744; <b>Day 90:</b> 1,000 newsletter subs OR 500 GitHub stars? If neither, change the <i>message</i> (positioning), not the product, and re-run 8 weeks.</li>
+<li>&#9744; <b>Month 6:</b> 50 paying subscribers? If not: freeze features, 8 weeks of distribution only.</li>
+<li>&#9744; <b>Month 12:</b> £2k MRR → let it run. Under → keep as side asset or sell the codebase + audience (Acquire.com, Tiny Acquisitions). Exiting a non-winner at a small profit is winning.</li>
+</ul>
+<h2>Standing weekly rhythm (from day 1, ~10 h/week)</h2>
+<table><tr><th>When</th><th>What</th></tr>
+<tr><td>Daily, 15 min</td><td><code>manage</code> on the paper account; answer support</td></tr>
+<tr><td>One evening</td><td>Ship one small improvement</td></tr>
+<tr><td>One evening</td><td>Write the week's content piece</td></tr>
+<tr><td>Sunday, 1 h</td><td>Send "The Trend Check"; log the four numbers (GO_TO_MARKET.md §6)</td></tr>
+<tr><td>Month-end, 1 h</td><td>Put actuals into <code>business/model.py</code>, regenerate FINANCIALS.md, compare scenario</td></tr>
+</table></section><section class="doc"><h1>Launch pack — Show HN</h1><p><b>When:</b> Tuesday–Thursday, around 14:00–15:00 UTC (peak HN traffic). <b>Where:</b> https://news.ycombinator.com/submit <b>Golden rule:</b> clear your day. The submission is 10% of the work; being present, humble, and technical in the comments is the other 90%.</p>
+<hr>
+<h2>Title (pick one — A is recommended)</h2>
+<p>A) <code>Show HN: Trendrail – a dependency-free backtester that refuses to peek at the future</code></p>
+<p>B) <code>Show HN: Trendrail – trend-following rules as code, stdlib Python only</code></p>
+<h2>URL</h2>
+<p>Your GitHub repo link.</p>
+<h2>Text (paste as the submission text)</h2>
+<blockquote>
+<p>I built Trendrail because I kept breaking my own trading rules — and because</p>
+<p>every backtesting result I saw online looked too good to be true (it usually</p>
+<p>was: look-ahead bias).</p>
+<p></p>
+<p>Trendrail is a small toolkit that turns a written trend-following ruleset —</p>
+<p>confirmed uptrend only, stop below the last swing low, risk 1–2% per trade,</p>
+<p>trail the stop, exit on trend break — into code you can backtest and</p>
+<p>paper-trade. Design choices HN might find interesting:</p>
+<p></p>
+<p>- <b>Every signal is causal.</b> A value at bar i is computed only from bars</p>
+<p>≤ i. Swing pivots need confirmation bars before they exist, so the</p>
+<p>backtest can only act on information the market had actually revealed.</p>
+<p>- <b>Zero dependencies.</b> Pure Python stdlib, runs on 3.9+. The CSV loader</p>
+<p>copes with Yahoo/Stooq/broker exports and adjusts whole OHLC bars for</p>
+<p>splits so a 2:1 split never reads as a 50% "lower low".</p>
+<p>- <b>The stop is enforced by the broker, not willpower.</b> Orders go in as</p>
+<p>entry+stop pairs (OTO). Live trading is triple-gated behind</p>
+<p>--confirm --live --i-understand-live.</p>
+<p>- There's a local web dashboard (also stdlib only) — `python -m</p>
+<p>trendrail.web`.</p>
+<p></p>
+<p>It's MIT licensed. The honest caveat is in the README: backtests use</p>
+<p>idealized fills and are an optimistic ceiling, not a promise. Would love</p>
+<p>feedback on the causality approach and what I've missed.</p>
+</blockquote>
+<h2>Comment playbook</h2>
+<ul>
+<li>Answer every technical question, fast, with code references.</li>
+<li>If someone says "trend following doesn't work": don't argue returns. Say the tool's claim is narrower — <i>if</i> you trade rules, it makes you follow them, and the backtest is honest about what the rules did historically.</li>
+<li>If someone finds a bug: thank them, fix it same-day, reply with the commit. Nothing plays better on HN.</li>
+<li>Never mention Pro/pricing unless directly asked; if asked: "planning a paid hosted version later; the core stays MIT."</li>
+<li>Have the newsletter link in your HN profile, not in the post.</li>
+</ul></section><section class="doc"><h1>Launch pack — r/algotrading</h1><p><b>When:</b> a few days after the Show HN (momentum compounds). <b>Rules of the sub:</b> value first, no naked self-promo. This post teaches the look-ahead-bias lesson and mentions the tool once, at the end, as the implementation. Read the sub's rules on the day; if links are restricted, put the repo in a comment when asked.</p>
+<hr>
+<h2>Title</h2>
+<p><code>Your backtest is probably lying to you: a checklist for look-ahead bias (with a worked example)</code></p>
+<h2>Body</h2>
+<blockquote>
+<p>After getting burned by a backtest that made +40%/yr on paper and lost money</p>
+<p>live, I went through every place future information can leak into a</p>
+<p>"simple" moving-average strategy. Sharing the checklist since most of these</p>
+<p>are subtle:</p>
+<p></p>
+<p><b>1. Swing highs/lows don't exist when you think they do.</b> A swing low</p>
+<p>needs N bars <i>after</i> it to be confirmed. If your backtest puts the stop</p>
+<p>under a swing low on the day it forms, you're trading information from the</p>
+<p>future. Fix: only act on pivots once the confirmation bars have printed.</p>
+<p></p>
+<p><b>2. Split/dividend adjustment applied to close but not OHLC.</b> If you</p>
+<p>adjust closes but test stops against raw lows, a 2:1 split reads as a 50%</p>
+<p>crash and stops you out of every backtest position. Adjust the whole bar by</p>
+<p>the same factor.</p>
+<p></p>
+<p><b>3. Same-bar entry+exit optimism.</b> If price crosses your entry and your</p>
+<p>stop in one bar, which happened first? You don't know from daily data.</p>
+<p>Honest answer: assume the worst (stop first).</p>
+<p></p>
+<p><b>4. Gap-throughs filled at the stop price.</b> If the market opens below</p>
+<p>your stop, you don't get the stop price — you get the open. Model the fill</p>
+<p>as min(stop, open).</p>
+<p></p>
+<p><b>5. Position sizing off future equity.</b> Size from equity <i>at entry time</i>,</p>
+<p>including open-position drawdown, not from the final curve.</p>
+<p></p>
+<p>I ended up encoding all five into a small stdlib-Python backtester for a</p>
+<p>plain 50/200 trend-following ruleset (MIT, no dependencies) — happy to</p>
+<p>share the repo if useful, and genuinely interested in what leaks I've</p>
+<p>still missed.</p>
+</blockquote>
+<h2>Follow-up</h2>
+<p>When people ask for the link (they will — that's the point of "happy to share"), reply with the GitHub URL and one sentence: "The causality bits are in <code>indicators.py</code> (confirmed swings) and <code>backtest.py</code> (fill rules)."</p></section><section class="doc"><h1>Launch pack — r/swingtrading</h1><p><b>When:</b> week after the r/algotrading post. Different audience: less code, more discipline. No link in the post body — offer it in comments if asked (check the sub's self-promo rules on the day).</p>
+<hr>
+<h2>Title</h2>
+<p><code>I wrote my rules down and made them mechanical. The uncomfortable things I learned about my own discipline</code></p>
+<h2>Body</h2>
+<blockquote>
+<p>Six months ago I wrote my swing rules on paper: only confirmed uptrends</p>
+<p>(price above 50 &amp; 200 SMA, higher highs/lows), enter on pullback or</p>
+<p>breakout, stop below the last swing low, risk max 1–2% of the account,</p>
+<p>trail the stop, exit on trend break. Then I turned them into code so I</p>
+<p>couldn't argue with them, and paper-traded the output. What I actually</p>
+<p>learned:</p>
+<p></p>
+<p><b>1. Most days the correct action is nothing.</b> The rules found far fewer</p>
+<p>valid entries than I "found" by eye. Most of my discretionary trades would</p>
+<p>have been rule violations — chasing extended moves, or trading unconfirmed</p>
+<p>trends.</p>
+<p></p>
+<p><b>2. The stop distance decides the position size, not my conviction.</b></p>
+<p>Risking 1% with a stop 5% away means a position of 20% of the account. No</p>
+<p>"I really like this one" multiplier. My old sizing was pure mood.</p>
+<p></p>
+<p><b>3. A 100% win rate is a red flag, not a flex.</b> Backtesting my rules</p>
+<p>honestly showed the edge comes from the *average win being multiples of</p>
+<p>the average loss* (R-multiples), not from being right often. Once I</p>
+<p>understood that, losing small stopped hurting.</p>
+<p></p>
+<p><b>4. The stop has to go in with the entry order.</b> Every time "I'll watch</p>
+<p>it" was the plan, the plan failed. Now the broker holds the stop from</p>
+<p>second one; my nerves are not part of the system.</p>
+<p></p>
+<p>Not selling anything — the ruleset is the boring 50/200 stuff you all know.</p>
+<p>The change was making it mechanical so I couldn't improvise. Happy to share</p>
+<p>the write-up/code if anyone wants it.</p>
+</blockquote>
+<h2>Follow-up</h2>
+<p>Same as the algotrading post: give the repo link in comments when asked. When someone shares a discipline failure story, reply with empathy first — those threads are where subscribers come from.</p></section><section class="doc"><h1>Launch pack — The Trend Check #1</h1><p><b>How to produce this issue in ~20 minutes:</b></p>
+<ol>
+<li>Run <code>python business/launch/trend_check.py --default</code> (needs internet).</li>
+<li>Paste the generated table where marked.</li>
+<li>Fill the two [BRACKETED] spots.</li>
+<li>Send on Sunday. Same skeleton every week — only the table and the lesson change.</li>
+</ol>
+<hr>
+<p>Subject: <b>The Trend Check #1 — what the rules say this week</b></p>
+<hr>
+<p>Welcome to the first Trend Check.</p>
+<p>Every Sunday, this email does one boring, useful thing: it runs a written trend-following ruleset over ~20 liquid tickers and reports what the rules say — uptrend confirmed, no entry, or trend broken. No predictions. No hot takes. The ruleset is public and the code that produces this table is open source.</p>
+<h2>This week's board</h2>
+<p>[PASTE THE GENERATED TABLE HERE]</p>
+<p>A quick reminder of what the states mean:</p>
+<ul>
+<li><b>Uptrend confirmed</b> — price above the 50- and 200-day averages, averages aligned, structure making higher highs and lows. The rules allow an entry only here, and only on a pullback or breakout that isn't over-extended.</li>
+<li><b>No confirmed uptrend / stay out</b> — the rules say do nothing. Doing nothing is a position.</li>
+<li><b>Trend broken</b> — closed below the 50-day average or printed a lower low. If the rules had you in, they'd have you out.</li>
+</ul>
+<h2>One honest lesson: [THIS WEEK: R-multiples]</h2>
+<p>The only score that matters in this system is the R-multiple: profit measured in units of what you risked. Risk £10 on a trade (that's entry minus stop, times shares) and make £30 — that's +3R. Get stopped — that's −1R.</p>
+<p>Here's the maths that surprises everyone: at +3R average winners, you can be wrong 60% of the time and still grow the account. Win rate is a vanity metric; R-expectancy is the business model. Next week: why the stop goes in <i>with</i> the order, not after.</p>
+<p>— [YOUR NAME]</p>
+<p><i>Trendrail is analysis software and education, not investment advice. This table is the mechanical output of a published ruleset on public data. Trading involves risk of loss; past and backtested performance do not predict future results. Unsubscribe below — no hard feelings.</i></p>
+<hr>
+<h1>Issue skeletons for weeks 2–4 (so the streak never breaks)</h1>
+<ul>
+<li><b>#2 — The stop goes in with the order.</b> Lesson: OTO orders; willpower is not a risk-management system. Board + lesson + one reader question.</li>
+<li><b>#3 — Position sizing has no conviction knob.</b> Lesson: shares = (account × risk%) ÷ (entry − stop), with two worked examples (tight vs wide stop).</li>
+<li><b>#4 — Doing nothing is a position.</b> Lesson: count the board's "stay out" rows over four weeks; show how few valid entries a disciplined ruleset actually produces.</li>
+</ul></section>
+</body></html>
