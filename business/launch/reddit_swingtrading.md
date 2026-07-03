@@ -1,48 +1,62 @@
-# r/swingtrading post — ready to paste
+# r/swingtrading post — ready to fill and paste
 
-**When:** week after the r/algotrading post. Different audience: less code,
-more discipline. No link in the post body — offer it in comments if asked
-(check the sub's self-promo rules on the day).
+**Precondition — do not post before this is true:** you have **at least four
+weeks of real paper-trading logs** from running the rules daily (START_HERE
+Step 3). The post quotes your actual logs; the brackets below get filled
+with your real numbers. If the logs don't exist yet, the post waits. An
+invented version of this post would be astroturfing from a brand whose whole
+pitch is honesty — and these communities are good at catching it.
+
+**When:** the week after the r/algotrading post, logs permitting.
+**Sub rules:** check self-promo rules on the day; no link in the body —
+offer the repo in comments, with the one-line "I built this" disclosure.
 
 ---
 
 ## Title
 
-`I wrote my rules down and made them mechanical. The uncomfortable things I learned about my own discipline`
+`I made the classic trend rules mechanical so I couldn't improvise, then paper-traded them for [N] weeks. What the logs actually show`
 
 ## Body
 
-> Six months ago I wrote my swing rules on paper: only confirmed uptrends
-> (price above 50 & 200 SMA, higher highs/lows), enter on pullback or
-> breakout, stop below the last swing low, risk max 1–2% of the account,
-> trail the stop, exit on trend break. Then I turned them into code so I
-> couldn't argue with them, and paper-traded the output. What I actually
-> learned:
+> The rules are the boring ones everyone knows: only confirmed uptrends
+> (price above the 50 and 200 SMA, higher highs/lows), enter on pullback or
+> breakout, stop below the last swing low, risk max 1–2% per trade, trail
+> the stop, exit on trend break. What I changed: I wrote them as code so
+> that every day there's exactly one mechanical answer, and I've followed
+> that answer on a paper account for [N] weeks. From the actual logs:
 >
-> **1. Most days the correct action is nothing.** The rules found far fewer
-> valid entries than I "found" by eye. Most of my discretionary trades would
-> have been rule violations — chasing extended moves, or trading unconfirmed
-> trends.
+> **1. Most days the correct action is nothing.** Out of [N×5] trading
+> days, the rules produced [X] valid entries across a [Y]-ticker watchlist.
+> Backtesting the same rules over [period] shows the same pattern. Eyeballing
+> charts, I would have "found" far more trades — every extra one would have
+> been a rule violation (chasing extension, or trading an unconfirmed
+> trend).
 >
-> **2. The stop distance decides the position size, not my conviction.**
-> Risking 1% with a stop 5% away means a position of 20% of the account. No
-> "I really like this one" multiplier. My old sizing was pure mood.
+> **2. The stop distance decides the position size — conviction doesn't get
+> a knob.** Risking 1% with a stop 5% away forces a position of 20% of the
+> account, mechanically. [Real example from your log: ticker, entry, stop,
+> computed size.]
 >
-> **3. A 100% win rate is a red flag, not a flex.** Backtesting my rules
-> honestly showed the edge comes from the *average win being multiples of
-> the average loss* (R-multiples), not from being right often. Once I
-> understood that, losing small stopped hurting.
+> **3. Honest backtests of these rules win by asymmetry, not accuracy.**
+> The edge, when it shows up, is the average win being a multiple of the
+> average loss (R-multiples), not a high win rate. Once the scorecard is R
+> instead of win %, losing small stops feeling like failing.
 >
-> **4. The stop has to go in with the entry order.** Every time "I'll watch
-> it" was the plan, the plan failed. Now the broker holds the stop from
-> second one; my nerves are not part of the system.
+> **4. The stop goes in with the entry order.** The ruleset sends entries as
+> entry+stop pairs so the broker holds the exit from second one. Willpower
+> isn't part of the system, which — [N] weeks in — I've concluded is the
+> entire point.
 >
-> Not selling anything — the ruleset is the boring 50/200 stuff you all know.
-> The change was making it mechanical so I couldn't improvise. Happy to share
-> the write-up/code if anyone wants it.
+> The ruleset and the code that enforces it are open source (I built it —
+> happy to share in comments). Curious what the discretionary traders here
+> think: what do you do when the mechanical answer is "nothing" for a week?
 
 ## Follow-up
 
-Same as the algotrading post: give the repo link in comments when asked.
-When someone shares a discipline failure story, reply with empathy first —
-those threads are where subscribers come from.
+Give the repo link when asked, with the disclosure line. When someone shares
+a discipline failure story, reply with empathy first — those threads are
+where newsletter subscribers come from. Answer every "does it make money?"
+with the honest frame: it's a discipline tool and an honest backtester, not
+a promise of returns — and your paper results to date, stated plainly,
+whatever they are.

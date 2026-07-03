@@ -2,8 +2,12 @@
 
 **When:** Tuesday–Thursday, around 14:00–15:00 UTC (peak HN traffic).
 **Where:** https://news.ycombinator.com/submit
-**Golden rule:** clear your day. The submission is 10% of the work; being
+**Golden rule:** clear your day — launch days are 8+ hours of comments, and
+launch weeks run 25+ hours total. The submission is 10% of the work; being
 present, humble, and technical in the comments is the other 90%.
+**Honesty rule:** every claim in the draft below is about the software's
+design, which is why it's safe to post as-is. Don't add personal trading
+history that isn't literally yours on the day.
 
 ---
 
@@ -19,9 +23,10 @@ Your GitHub repo link.
 
 ## Text (paste as the submission text)
 
-> I built Trendrail because I kept breaking my own trading rules — and because
-> every backtesting result I saw online looked too good to be true (it usually
-> was: look-ahead bias).
+> I built Trendrail because almost every retail backtesting result I saw
+> looked too good to be true — and usually was, through look-ahead bias —
+> and because the standard advice ("write your rules down and follow them")
+> has no tooling that actually enforces it.
 >
 > Trendrail is a small toolkit that turns a written trend-following ruleset —
 > confirmed uptrend only, stop below the last swing low, risk 1–2% per trade,

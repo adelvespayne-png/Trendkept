@@ -95,7 +95,10 @@ python -m trendrail.cli scan examples/aapl_2015_2017.csv --account 1000 --risk 0
 ```
 
 ### Real data, straight from a ticker
-With a network connection you can skip the CSV entirely. Free, no API key:
+With a network connection you can skip the CSV entirely. Free, no API key.
+(These are convenience fetchers for **personal use** — you're responsible
+for the data sources' terms. If you have a broker account, prefer its data
+feed, e.g. `--provider alpaca`, where you have your own entitlement.)
 
 ```bash
 # Stooq (default) or Yahoo — auto tries both
@@ -214,7 +217,7 @@ Profit factor    : inf
 | `trendrail/alpaca.py` | Alpaca data, account/positions/orders, trade & manage logic |
 | `trendrail/cli.py` | `backtest`, `scan`, `fetch`, `account`, `trade`, `manage` |
 | `examples/` | Synthetic + real (AAPL) sample data and the generator |
-| `tests/` | 47 unit tests (`python -m unittest discover -s tests`) |
+| `tests/` | The unit-test suite (`python -m unittest discover -s tests`) |
 
 **A note on honesty:** every signal is *causal* — a value at bar *i* is computed
 only from bars at or before *i*. Swing pivots need confirmation bars, so a pivot

@@ -1,22 +1,27 @@
 # Trendrail Pro — first-90-days launch checklist
 
-Work top to bottom. Nothing here needs anyone's permission, and nothing costs
-more than ~£150 until money is already coming in. Time budget: ~10 focused
-hours/week.
+Work top to bottom. **The order is deliberate: validate with ~£10 before
+spending the ~£100 on company paperwork** — the plan's gate philosophy,
+applied from day one. Time budget: ~10 focused hours/week steady-state;
+**launch weeks (Show HN, Product Hunt) run 25+ hours — schedule them like
+sprints.**
 
-## Week 1 — foundations (one sitting each)
+## Week 1 — validate first (~£10 total)
 
-- [ ] Name search: Companies House + UK IPO trademark search + domain
-      availability for "Trendrail" / fallback name. Decide once, move on.
-- [ ] Buy the domain (~£10). Suggested: `trendrail.com` (checked: no DNS records as of 2026-07) or
-      `trendrail.io` / `.co.uk` — whatever survives the registrar check.
-- [ ] Incorporate the Ltd at Companies House (~£50, online, same day).
-      Registered-office service, you as sole director/shareholder.
-- [ ] Open a free business bank account (Starling/Tide).
-- [ ] Deploy `site/index.html` (GitHub Pages / Cloudflare Pages — free).
-- [ ] Create the newsletter list ("The Trend Check") on Buttondown or
-      ConvertKit free tier; wire the landing-page form to it.
-- [ ] Set up a support email (hello@…) on the domain.
+- [ ] Name search: UK IPO trademark search + Companies House name check for
+      "Trendrail" / fallback. Decide once, move on.
+- [ ] **Check domain availability properly** — a registrar search or
+      WHOIS/RDAP lookup, not a DNS check (registered domains often have no
+      DNS records). Buy `trendrail.com` (~£10) or the fallback that
+      survives.
+- [ ] Deploy `site/index.html` (Cloudflare Pages — free) with the waitlist.
+- [ ] Create the newsletter list ("The Trend Check") on Buttondown free
+      tier; wire the landing-page form to it.
+- [ ] Set up the domain email (hello@ / you@ / news@ — see START_HERE
+      Step 2; iCloud+ custom domain or Zoho free tier).
+- [ ] Dogfood from day one: open an Alpaca paper account, run the daily
+      cadence. **The r/swingtrading post is blocked until you have 4+ weeks
+      of real logs** — start the clock now.
 
 ## Week 2 — make the free tier shine (it's the top of the funnel)
 
@@ -25,17 +30,31 @@ hours/week.
 - [ ] Add GitHub topics: `trading`, `trend-following`, `backtesting`,
       `python`, `zero-dependencies`.
 - [ ] Write CONTRIBUTING.md (two paragraphs) and enable Discussions.
-- [ ] Dogfood: open an Alpaca paper account, run the daily `manage` cadence
-      yourself from today onward. Your own journal becomes launch content.
 
-## Weeks 3–4 — first public swings
+## Weeks 3–4 — first public swings (the validation data arrives)
 
 - [ ] Publish content pieces 1 & 2 (calendar in GO_TO_MARKET.md §4).
-- [ ] **Show HN** — draft ready to paste in `business/launch/show_hn.md` (Tue–Thu ~14:00 UTC; stay in the comments all day).
-- [ ] Reddit value-posts — drafts ready in `business/launch/reddit_algotrading.md` and `business/launch/reddit_swingtrading.md`.
+- [ ] **Show HN** — draft ready to paste in `business/launch/show_hn.md`
+      (Tue–Thu ~14:00 UTC; clear the whole day for comments).
+- [ ] r/algotrading value-post — `business/launch/reddit_algotrading.md`
+      (all claims about the code; postable as-is).
 - [ ] Send "The Trend Check" #1 — template + table generator ready in
       `business/launch/trend_check_001.md` and `business/launch/trend_check.py`. Weekly from
       now on, no matter what — the streak is the asset.
+- [ ] **Day-30 validation read:** waitlist + stars vs the curves
+      (GO_TO_MARKET.md §6). A pulse → proceed to incorporation below. Dead
+      silence after a messaging retry → stop here, ~£10 spent, lesson cheap.
+
+## Month 2 — incorporate, then build the retention hooks
+
+- [ ] Incorporate the Ltd at Companies House (~£50, online, same day).
+      Registered-office service (~£40/yr), you as sole director/shareholder.
+      SIC code 62012.
+- [ ] Open a free business bank account (Starling/Tide) with the company
+      number.
+- [ ] r/swingtrading post — **only once the 4-week logs exist**; fill the
+      bracketed numbers in `business/launch/reddit_swingtrading.md` from
+      your real journal.
 
 ## Month 2 — build the retention hooks (ship weekly)
 
@@ -46,25 +65,38 @@ hours/week.
 - [ ] Collect a waiting list for Pro on the landing page ("founding
       subscriber" £79/yr, locked forever).
 
-## Month 3 — turn on the money
+## Month 3 — turn on the money (nothing gets charged before ALL of these)
 
-- [ ] Paddle account (merchant of record — handles VAT for you) or Stripe.
+- [ ] **License a market-data feed** (~£25-80/mo — EOD Historical Data,
+      Polygon, Databento; check redistribution terms cover the app and the
+      newsletter table). The paid product must not run on scraped
+      Stooq/Yahoo data — LEGAL.md §5.
+- [ ] Paddle account (merchant of record — handles VAT/sales tax for you).
 - [ ] Licence-key gate for Pro features; 14-day trial, card required.
 - [ ] ToS, privacy policy, refund policy live (checklist in LEGAL.md §3);
-      ICO registration (~£40); the one-hour solicitor review.
+      ICO registration (~£40); professional indemnity + cyber insurance
+      (~£25/mo); the professional review — UK solicitor **plus the US
+      perimeter check** (LEGAL.md §2), ~£300-500 total.
 - [ ] Lifetime deal (£299, cap 200) to the newsletter, T-14 before launch.
-- [ ] **Launch:** Product Hunt + Show HN + Reddit, same week.
+- [ ] **Launch:** Product Hunt + Show HN + Reddit, same week (this is a
+      25+ hour week — plan for it).
 - [ ] T+7: publish the "open startup" launch-numbers post.
 
-## The gates (from PLAN.md §9 — check, don't negotiate)
+## The gates (from PLAN.md §9 — trajectory vs the modelled curves)
 
-- [ ] **Day 90:** 1,000 newsletter subs OR 500 GitHub stars? If neither,
-      change the *message* (positioning), not the product, and re-run 8 weeks.
-- [ ] **Month 6:** 50 paying subscribers? If not: freeze features, 8 weeks of
-      distribution only.
-- [ ] **Month 12:** £2k MRR → let it run. Under → keep as side asset or sell
-      the codebase + audience (Acquire.com, Tiny Acquisitions). Exiting a
-      non-winner at a small profit is winning.
+- [ ] **Day 90:** which curve is the newsletter list on? (conservative ≈
+      340, base ≈ 800). At/above base → full pace. On conservative →
+      proceed, expectations set. Below and flat after a messaging retry →
+      stop before sinking more time.
+- [ ] **Month 6:** paying subs vs curves (conservative ≈ 65, base ≈ 230).
+      Above base → double down. On conservative → freeze features, 8 weeks
+      distribution only. Below → prepare the exit.
+- [ ] **Month 12:** MRR vs curves. ≥£2k → winner, let it run (full-time at
+      £5k). On the conservative curve (£500-1k, growing) → *choose*
+      deliberately: continue (the year-3-5 payoff requires it) or side-asset
+      mode (~2 h/week). Below and shrinking → sell the codebase + audience
+      (Acquire.com, Tiny Acquisitions). Exiting a non-winner at a small
+      profit is winning.
 
 ## Standing weekly rhythm (from day 1, ~10 h/week)
 

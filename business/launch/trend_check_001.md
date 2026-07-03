@@ -25,15 +25,17 @@ source.
 
 [PASTE THE GENERATED TABLE HERE]
 
-A quick reminder of what the states mean:
+A quick reminder of what the states mean (they describe the data — what you
+do with your own account is always your decision):
 
 - **Uptrend confirmed** — price above the 50- and 200-day averages, averages
-  aligned, structure making higher highs and lows. The rules allow an entry
-  only here, and only on a pullback or breakout that isn't over-extended.
-- **No confirmed uptrend / stay out** — the rules say do nothing. Doing
-  nothing is a position.
-- **Trend broken** — closed below the 50-day average or printed a lower low.
-  If the rules had you in, they'd have you out.
+  aligned, structure making higher highs and lows. The ruleset only defines
+  entries here, and only on a pullback or breakout that isn't over-extended.
+- **No confirmed uptrend** — the ruleset's conditions aren't met, so it
+  defines no action. In a mechanical system, "no action" is the most common
+  state — that's a feature, not a gap.
+- **Trend filter no longer met** — a close below the 50-day average or a
+  lower low. This is the condition the ruleset treats as a trend break.
 
 ## One honest lesson: [THIS WEEK: R-multiples]
 
@@ -62,6 +64,6 @@ results. Unsubscribe below — no hard feelings.*
 - **#3 — Position sizing has no conviction knob.** Lesson: shares =
   (account × risk%) ÷ (entry − stop), with two worked examples (tight vs
   wide stop).
-- **#4 — Doing nothing is a position.** Lesson: count the board's "stay out"
-  rows over four weeks; show how few valid entries a disciplined ruleset
-  actually produces.
+- **#4 — Doing nothing is a position.** Lesson: count the board's
+  "no confirmed uptrend" rows over four weeks; show how few valid entries a
+  disciplined ruleset actually produces.

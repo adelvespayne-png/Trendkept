@@ -38,17 +38,21 @@ def verdict(symbol: str, strat: TrendFollowingStrategy) -> str:
     if len(bars) < strat.config.slow_ma + 1:
         return f"| {symbol} | – | not enough history |"
 
+    # Descriptive states only — the newsletter reports what the ruleset's
+    # conditions show on public data; it never tells anyone to act
+    # (LEGAL.md §2: descriptive, never imperative, in broadcast copy).
     i = len(bars) - 1
     close = bars[i].close
     if strat.entry_signal(bars, i) in (Signal.ENTER_PULLBACK,
                                        Signal.ENTER_BREAKOUT):
-        state = "**uptrend confirmed — entry conditions met**"
+        state = "**uptrend confirmed — the ruleset's entry conditions are met**"
     elif strat.is_uptrend(bars, i):
-        state = "uptrend confirmed — no entry today"
+        state = "uptrend confirmed — no entry condition met today"
     elif strat.exit_on_trend_break(bars, i):
-        state = "trend broken — the rules say out"
+        state = ("trend filter no longer met — close below the 50-day "
+                 "average or a lower low")
     else:
-        state = "no confirmed uptrend — stay out"
+        state = "no confirmed uptrend"
     return f"| {symbol} | {close:,.2f} | {state} |"
 
 

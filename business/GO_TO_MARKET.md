@@ -21,9 +21,27 @@ Supporting messages (rotate; never dilute):
   (the discipline pitch)
 
 **Anti-positioning** (what we never say): no return promises, no "signals",
-no "beat the market", no screenshots of gains as marketing. This is both the
-compliance line (LEGAL.md) and the trust wedge — every competitor screaming
-"300% returns" makes the calm brand more visible.
+no "beat the market", no screenshots of gains as marketing, **and no invented
+first-person war stories** — every personal claim in any post must be
+literally true of you on the day you post it (see the notes in
+`business/launch/`). This is the compliance line (LEGAL.md), the platform-ban
+line, and the trust wedge all at once — every competitor screaming "300%
+returns" makes the calm brand more visible.
+
+**The two objections, answered the same way everywhere:**
+
+- *"My broker's bracket/OCO orders already enforce stops for free."* True —
+  and a bracket is one rule out of five. It enforces a static stop on a
+  trade you already picked; it doesn't tell you whether the trend qualifies,
+  size the position from your risk budget, trail the stop under market
+  structure day by day, or keep score of whether you followed your own
+  rules. Brackets are a seatbelt; Trendrail is the driving test, the
+  seatbelt, and the logbook.
+- *"Journal apps (Edgewonk, TraderSync) already score discipline."* They do
+  — after the trade. Trendrail structures the trade *before* it happens and
+  is the only tool in the niche whose engine is open source and provably
+  free of look-ahead bias. Respect them by name; they validate that people
+  pay for discipline.
 
 ## 2. Channels, in priority order
 
@@ -108,16 +126,25 @@ material.
 4. T+7: publish real launch numbers ("open startup" post — transparency is
    on-brand and is itself content).
 
-## 6. Metrics — the four numbers (check weekly, no more often)
+## 6. Metrics — which curve are you on? (check weekly, act monthly)
 
-| Number | Healthy at month 3 | Healthy at month 12 |
-|---|---|---|
-| Unique visitors /mo | 3,000+ | 15,000+ |
-| Newsletter subs (total) | 1,000+ | 8,000+ |
-| Paying subscribers | 50+ (post-launch) | 500+ |
-| Monthly churn | <7% | <5% |
+There is no single "healthy" number — there are three modelled curves
+(FINANCIALS.md), and the only question that matters is which one your
+actuals track. Reference points from the model:
 
-These map directly onto the scenario knobs in `business/model.py` — replace
-the assumptions with your actuals monthly and regenerate FINANCIALS.md to see
-which scenario you're actually living in. That's the review-gate input
-(PLAN.md §9).
+| Number | Conservative m3 / m12 | Base m3 / m12 | Ambitious m3 / m12 |
+|---|---|---|---|
+| Visitors /mo | ~4,900 / ~4,000 | ~12,200 / ~9,900 | ~29,200 / ~23,700 |
+| Newsletter list | ~340 / ~670 | ~800 / ~1,600 | ~1,900 / ~3,600 |
+| Paying subscribers | ~55 / ~85 | ~170 / ~310 | ~500 / ~1,050 |
+| MRR (net) | ~£210 / ~£580 | ~£680 / ~£2,200 | ~£2,200 / ~£7,800 |
+| Monthly churn | ≤10% | ≤7% | ≤5% |
+
+(Visitors *fall* after month 3 in every scenario — launch spikes decay.
+That's modelled, not failure; the newsletter list and subscriber count are
+the compounding numbers.)
+
+Replace the model's assumptions with your actuals monthly and regenerate
+FINANCIALS.md; the curve you're on feeds the trajectory gates in PLAN.md §9.
+One time-budget honesty note: steady-state is ~10 h/week, but **launch weeks
+(Show HN, Product Hunt) are 25+ hours** — schedule them like sprints.
