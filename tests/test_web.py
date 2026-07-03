@@ -119,6 +119,57 @@ class TestWatchlist(unittest.TestCase):
         self.assertNotIn(evil, body)
 
 
+class TestAppearance(unittest.TestCase):
+    """The customization layer: every page carries the panel, the boot
+    script, and the CSS hooks the panel's settings switch on."""
+
+    def test_every_page_has_the_appearance_panel(self):
+        for path, params in (
+            ("/", {}),
+            ("/run", {"csv": [UPTREND_CSV], "action": ["scan"]}),
+            ("/watchlist", {"symbols": [UPTREND_CSV]}),
+        ):
+            status, body = route(path, params)
+            self.assertEqual(status, 200)
+            self.assertIn('class="appearance"', body)
+            self.assertIn("trendrail-appearance", body)   # localStorage key
+
+    def test_theme_override_hooks_exist(self):
+        _, body = route("/", {})
+        # Explicit choice must beat the OS preference in both directions.
+        self.assertIn(':root[data-theme="dark"]', body)
+        self.assertIn(':not([data-theme="light"])', body)
+        # The dark-vars template must expand into a *braced* CSS block —
+        # an unsubstituted or brace-less expansion is malformed CSS that
+        # silently kills dark mode (regression).
+        self.assertNotIn("{DARK_VARS}", body)
+        self.assertRegex(body, r':root\[data-theme="dark"\]\s*\{\s*\n?\s*--surface')
+
+    def test_accent_font_density_corner_hooks_exist(self):
+        _, body = route("/", {})
+        for hook in ('[data-accent="aqua"]', '[data-accent="violet"]',
+                     '[data-accent="orange"]', '[data-accent="magenta"]',
+                     '[data-font="large"]', '[data-density="compact"]',
+                     '[data-corners="square"]'):
+            self.assertIn(hook, body)
+
+    def test_all_panel_options_have_css_or_default(self):
+        # Every <option value="X"> in the panel is either a default/auto (no
+        # attribute set) or has a matching :root[data-*="X"] rule.
+        import re as _re
+        _, body = route("/", {})
+        panel = body[body.index('class="appearance"'):]
+        panel = panel[:panel.index("</details>")]
+        for select in _re.findall(r'<select data-ap="(\w+)">(.*?)</select>',
+                                  panel, _re.S):
+            key, options_html = select
+            for value in _re.findall(r'option value="([\w-]+)"', options_html):
+                if value in ("auto", "default"):
+                    continue
+                self.assertIn(f'[data-{key}="{value}"]', body,
+                              f"panel offers {key}={value} but no CSS hook")
+
+
 class TestEquityCurveSvg(unittest.TestCase):
     def test_renders_polyline_and_labels(self):
         dates = ["2023-01-0%d" % d for d in range(1, 6)]

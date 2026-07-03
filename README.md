@@ -77,6 +77,10 @@ python -m trendrail.web
 # then open http://127.0.0.1:8181
 ```
 
+The dashboard is yours to shape: the **Appearance** panel (bottom of every
+page) sets theme (light/dark/auto), accent & chart colour, text size, density,
+and corner style — saved in your browser only, like everything else here.
+
 Or from the command line:
 
 ```bash

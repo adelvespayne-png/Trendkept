@@ -8,22 +8,51 @@
       content="Trendrail doesn't predict markets. It makes you follow your own
 trend-following rules — backtested honestly, with the stop enforced by your
 broker instead of your nerves.">
+<script>
+  /* Apply the visitor's saved look before first paint (no theme flash). */
+  (function () {
+    try {
+      var s = JSON.parse(localStorage.getItem('trendrail-appearance')) || {};
+      ['theme', 'accent', 'font'].forEach(function (k) {
+        var v = s[k];
+        if (v && v !== 'auto' && v !== 'default') {
+          document.documentElement.setAttribute('data-' + k, v);
+        }
+      });
+    } catch (e) {}
+  })();
+</script>
 <style>
+  :root {
+    --accent-l: #2a78d6; --accent-d: #3987e5;   /* blue (default) */
+    --fs: 16px;
+  }
+  :root[data-accent="aqua"]    { --accent-l: #1baf7a; --accent-d: #199e70; }
+  :root[data-accent="violet"]  { --accent-l: #4a3aa7; --accent-d: #9085e9; }
+  :root[data-accent="orange"]  { --accent-l: #eb6834; --accent-d: #d95926; }
+  :root[data-accent="magenta"] { --accent-l: #e87ba4; --accent-d: #d55181; }
+  :root[data-font="small"] { --fs: 14px; }
+  :root[data-font="large"] { --fs: 18px; }
   :root {
     --surface: #fcfcfb; --page: #f9f9f7;
     --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
-    --ring: rgba(11,11,11,0.10); --accent: #2a78d6;
+    --ring: rgba(11,11,11,0.10); --accent: var(--accent-l);
   }
   @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme="light"]) {
       --surface: #1a1a19; --page: #0d0d0d;
       --ink: #ffffff; --ink-2: #c3c2b7;
-      --ring: rgba(255,255,255,0.10); --accent: #3987e5;
+      --ring: rgba(255,255,255,0.10); --accent: var(--accent-d);
     }
+  }
+  :root[data-theme="dark"] {
+    --surface: #1a1a19; --page: #0d0d0d;
+    --ink: #ffffff; --ink-2: #c3c2b7;
+    --ring: rgba(255,255,255,0.10); --accent: var(--accent-d);
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--page); color: var(--ink);
-    font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    font: var(--fs)/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
   main { max-width: 780px; margin: 0 auto; padding: 48px 20px 80px; }
   h1 { font-size: 40px; line-height: 1.15; margin: 24px 0 8px;
     letter-spacing: -0.02em; }
@@ -70,6 +99,16 @@ broker instead of your nerves.">
   footer { margin-top: 72px; padding-top: 24px;
     border-top: 1px solid var(--ring); color: var(--muted); font-size: 13px; }
   a { color: var(--accent); }
+  .appearance { display: flex; flex-wrap: wrap; gap: 12px; align-items: end;
+    margin: 40px 0 0; padding: 14px 16px; background: var(--surface);
+    border: 1px solid var(--ring); border-radius: 12px; }
+  .appearance label { display: flex; flex-direction: column; gap: 4px;
+    font-size: 12px; color: var(--ink-2); }
+  .appearance select { background: var(--page); color: var(--ink);
+    border: 1px solid var(--ring); border-radius: 8px; padding: 7px 9px;
+    font: inherit; font-size: 14px; }
+  .appearance .hint { flex-basis: 100%; margin: 0; color: var(--muted);
+    font-size: 12px; }
 </style>
 </head>
 <body>
@@ -164,6 +203,31 @@ Expectancy       : +7.13R per trade</code></pre>
     <button class="cta" type="submit">Subscribe free</button>
   </form>
 
+  <div class="appearance" aria-label="Appearance settings">
+    <label>Theme
+      <select data-ap="theme">
+        <option value="auto">Match my system</option>
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+      </select></label>
+    <label>Accent
+      <select data-ap="accent">
+        <option value="default">Blue</option>
+        <option value="aqua">Aqua</option>
+        <option value="violet">Violet</option>
+        <option value="orange">Orange</option>
+        <option value="magenta">Magenta</option>
+      </select></label>
+    <label>Text size
+      <select data-ap="font">
+        <option value="default">Default</option>
+        <option value="small">Small</option>
+        <option value="large">Large</option>
+      </select></label>
+    <p class="hint">Make it yours — saved in your browser only. The same
+    personalisation runs through the whole Trendrail dashboard.</p>
+  </div>
+
   <footer>
     Trendrail is analysis software and education, <b>not investment advice</b>.
     It makes no personal recommendations and never touches your money — you
@@ -172,5 +236,37 @@ Expectancy       : +7.13R per trade</code></pre>
     fills. &copy; Trendrail Ltd.
   </footer>
 </main>
+<script>
+  /* Appearance controls: persist per visitor in localStorage. */
+  (function () {
+    var KEY = 'trendrail-appearance';
+    var root = document.documentElement;
+    function load() {
+      try { return JSON.parse(localStorage.getItem(KEY)) || {}; }
+      catch (e) { return {}; }
+    }
+    function apply(s) {
+      ['theme', 'accent', 'font'].forEach(function (k) {
+        var v = s[k];
+        if (v && v !== 'auto' && v !== 'default') {
+          root.setAttribute('data-' + k, v);
+        } else {
+          root.removeAttribute('data-' + k);
+        }
+      });
+    }
+    var settings = load();
+    document.querySelectorAll('[data-ap]').forEach(function (sel) {
+      var k = sel.getAttribute('data-ap');
+      if (settings[k]) sel.value = settings[k];
+      sel.addEventListener('change', function () {
+        settings[k] = sel.value;
+        try { localStorage.setItem(KEY, JSON.stringify(settings)); }
+        catch (e) {}
+        apply(settings);
+      });
+    });
+  })();
+</script>
 </body>
 </html>

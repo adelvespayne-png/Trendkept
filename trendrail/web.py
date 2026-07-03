@@ -43,27 +43,49 @@ DEFAULTS = {
     "breakout_lookback": 20,
 }
 
-# Palette: validated light/dark tokens (single blue series; status greens/reds
-# reserved for P/L deltas only, never decoration).
+# Palette: validated light/dark tokens (single accent-coloured series; status
+# greens/reds reserved for P/L deltas only, never decoration).
+#
+# Everything personal about the look flows through CSS custom properties, and
+# the properties are switched by data-* attributes on <html>. The Appearance
+# panel (bottom of every page) writes the choices to localStorage, so each
+# individual's browser keeps their own look — local-first, like the tool.
+_DARK_VARS = """
+    --surface: #1a1a19; --page: #0d0d0d;
+    --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --ring: rgba(255,255,255,0.10);
+    --series: var(--accent-d); --up: #0ca30c; --down: #d03b3b;
+"""
+
 _STYLE = """
+:root {
+  /* customization knobs (Appearance panel) */
+  --accent-l: #2a78d6; --accent-d: #3987e5;      /* blue (default) */
+  --fs: 15px; --pad-card: 16px; --pad-cell: 6px 8px; --radius: 10px;
+}
+:root[data-accent="aqua"]    { --accent-l: #1baf7a; --accent-d: #199e70; }
+:root[data-accent="violet"]  { --accent-l: #4a3aa7; --accent-d: #9085e9; }
+:root[data-accent="orange"]  { --accent-l: #eb6834; --accent-d: #d95926; }
+:root[data-accent="magenta"] { --accent-l: #e87ba4; --accent-d: #d55181; }
+:root[data-font="small"]   { --fs: 13px; }
+:root[data-font="large"]   { --fs: 17px; }
+:root[data-density="compact"] { --pad-card: 9px; --pad-cell: 3px 6px; }
+:root[data-corners="square"]  { --radius: 2px; }
+
 :root {
   --surface: #fcfcfb; --page: #f9f9f7;
   --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
   --grid: #e1e0d9; --axis: #c3c2b7; --ring: rgba(11,11,11,0.10);
-  --series: #2a78d6; --up: #006300; --down: #d03b3b;
+  --series: var(--accent-l); --up: #006300; --down: #d03b3b;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
-    --surface: #1a1a19; --page: #0d0d0d;
-    --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
-    --grid: #2c2c2a; --axis: #383835; --ring: rgba(255,255,255,0.10);
-    --series: #3987e5; --up: #0ca30c; --down: #d03b3b;
-  }
+  :root:not([data-theme="light"]) {DARK_VARS}
 }
+:root[data-theme="dark"] {DARK_VARS}
 * { box-sizing: border-box; }
 body {
   margin: 0; background: var(--page); color: var(--ink);
-  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  font: var(--fs)/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 main { max-width: 880px; margin: 0 auto; padding: 24px 16px 64px; }
 h1 { font-size: 22px; margin: 8px 0 2px; }
@@ -71,7 +93,7 @@ h1 small { color: var(--muted); font-weight: 400; font-size: 13px; }
 h2 { font-size: 16px; margin: 24px 0 8px; }
 .card {
   background: var(--surface); border: 1px solid var(--ring);
-  border-radius: 10px; padding: 16px; margin: 12px 0;
+  border-radius: var(--radius); padding: var(--pad-card); margin: 12px 0;
 }
 form.controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
 form.controls label { display: flex; flex-direction: column; gap: 4px;
@@ -92,13 +114,14 @@ form.controls button.ghost {
 .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 12px; }
 .tile { background: var(--surface); border: 1px solid var(--ring);
-  border-radius: 10px; padding: 12px 14px; }
+  border-radius: var(--radius); padding: 12px 14px; }
 .tile .k { font-size: 12px; color: var(--muted); }
 .tile .v { font-size: 20px; font-weight: 650; margin-top: 2px; }
 .tile .v.up { color: var(--up); } .tile .v.down { color: var(--down); }
 table.trades { border-collapse: collapse; width: 100%; font-size: 13px; }
 table.trades th, table.trades td {
-  text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--grid);
+  text-align: right; padding: var(--pad-cell);
+  border-bottom: 1px solid var(--grid);
   font-variant-numeric: tabular-nums;
 }
 table.trades th { color: var(--muted); font-weight: 500; }
@@ -123,6 +146,124 @@ figure.eq svg text { fill: var(--muted); font-size: 11px;
   box-shadow: 0 2px 8px rgba(0,0,0,.15); white-space: nowrap; }
 a { color: var(--series); }
 footer { margin-top: 32px; font-size: 12px; color: var(--muted); }
+details.appearance { margin-top: 28px; }
+details.appearance summary { cursor: pointer; color: var(--muted);
+  font-size: 13px; user-select: none; }
+details.appearance summary:hover { color: var(--ink-2); }
+.appearance-grid { display: flex; flex-wrap: wrap; gap: 12px;
+  align-items: end; background: var(--surface); border: 1px solid var(--ring);
+  border-radius: var(--radius); padding: var(--pad-card); margin-top: 8px; }
+.appearance-grid label { display: flex; flex-direction: column; gap: 4px;
+  font-size: 12px; color: var(--ink-2); }
+.appearance-grid select {
+  background: var(--page); color: var(--ink); border: 1px solid var(--axis);
+  border-radius: var(--radius); padding: 6px 8px; font: inherit;
+}
+.appearance-grid button { background: transparent; color: var(--muted);
+  border: 1px solid var(--axis); border-radius: var(--radius);
+  padding: 6px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+.swatch { display: inline-block; width: 10px; height: 10px;
+  border-radius: 50%; background: var(--series); margin-right: 5px; }
+""".replace("{DARK_VARS}", "{" + _DARK_VARS + "}")
+
+# Applied in <head>, before first paint, so a saved dark theme never flashes
+# light. Kept tiny and defensive: a broken localStorage value must never break
+# the page.
+_APPEARANCE_BOOT_JS = """
+(function () {
+  try {
+    var s = JSON.parse(localStorage.getItem('trendrail-appearance')) || {};
+    ['theme', 'accent', 'font', 'density', 'corners'].forEach(function (k) {
+      var v = s[k];
+      if (v && v !== 'auto' && v !== 'default') {
+        document.documentElement.setAttribute('data-' + k, v);
+      }
+    });
+  } catch (e) { /* corrupted setting: fall back to defaults */ }
+})();
+"""
+
+_APPEARANCE_PANEL = """
+<details class="appearance"><summary><span class="swatch"></span>Appearance
+&mdash; make it yours</summary>
+<div class="appearance-grid">
+  <label>Theme
+    <select data-ap="theme">
+      <option value="auto">Match my system</option>
+      <option value="light">Light</option>
+      <option value="dark">Dark</option>
+    </select></label>
+  <label>Accent &amp; chart colour
+    <select data-ap="accent">
+      <option value="default">Blue</option>
+      <option value="aqua">Aqua</option>
+      <option value="violet">Violet</option>
+      <option value="orange">Orange</option>
+      <option value="magenta">Magenta</option>
+    </select></label>
+  <label>Text size
+    <select data-ap="font">
+      <option value="default">Default</option>
+      <option value="small">Small</option>
+      <option value="large">Large</option>
+    </select></label>
+  <label>Density
+    <select data-ap="density">
+      <option value="default">Comfortable</option>
+      <option value="compact">Compact</option>
+    </select></label>
+  <label>Corners
+    <select data-ap="corners">
+      <option value="default">Rounded</option>
+      <option value="square">Square</option>
+    </select></label>
+  <button type="button" id="ap-reset">Reset</button>
+</div>
+<p class="note">Saved in this browser only &mdash; your look, your machine.
+Nothing leaves your computer.</p>
+</details>
+"""
+
+_APPEARANCE_JS = """
+(function () {
+  var KEY = 'trendrail-appearance';
+  var root = document.documentElement;
+  function load() {
+    try { return JSON.parse(localStorage.getItem(KEY)) || {}; }
+    catch (e) { return {}; }
+  }
+  function save(s) {
+    try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {}
+  }
+  function apply(s) {
+    ['theme', 'accent', 'font', 'density', 'corners'].forEach(function (k) {
+      var v = s[k];
+      if (v && v !== 'auto' && v !== 'default') {
+        root.setAttribute('data-' + k, v);
+      } else {
+        root.removeAttribute('data-' + k);
+      }
+    });
+  }
+  var selects = document.querySelectorAll('[data-ap]');
+  var settings = load();
+  selects.forEach(function (sel) {
+    var k = sel.getAttribute('data-ap');
+    if (settings[k]) sel.value = settings[k];
+    sel.addEventListener('change', function () {
+      settings[k] = sel.value;
+      save(settings);
+      apply(settings);
+    });
+  });
+  var reset = document.getElementById('ap-reset');
+  if (reset) reset.addEventListener('click', function () {
+    settings = {};
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    apply(settings);
+    selects.forEach(function (sel) { sel.selectedIndex = 0; });
+  });
+})();
 """
 
 _HOVER_JS = """
@@ -167,12 +308,16 @@ def _page(title: str, body: str) -> str:
     return (
         "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\">"
         "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
-        f"<title>{_esc(title)}</title><style>{_STYLE}</style></head>"
+        f"<title>{_esc(title)}</title>"
+        f"<script>{_APPEARANCE_BOOT_JS}</script>"
+        f"<style>{_STYLE}</style></head>"
         f"<body><main>{body}"
+        f"{_APPEARANCE_PANEL}"
         "<footer>Trendrail is an educational backtesting/paper-trading tool, not "
         "financial advice. Backtests use idealized fills; real markets gap, "
         "slip, and surprise.</footer>"
-        f"</main><script>{_HOVER_JS}</script></body></html>"
+        f"</main><script>{_HOVER_JS}</script>"
+        f"<script>{_APPEARANCE_JS}</script></body></html>"
     )
 
 
