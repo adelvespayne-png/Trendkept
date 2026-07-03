@@ -1,8 +1,8 @@
 import unittest
 
-from archie.alpaca import AlpacaClient, plan_trade, TradePlan
-from archie.strategy import TrendFollowingStrategy, StrategyConfig
-from archie.data import Bar
+from trendrail.alpaca import AlpacaClient, plan_trade, TradePlan
+from trendrail.strategy import TrendFollowingStrategy, StrategyConfig
+from trendrail.data import Bar
 
 
 class TestBarPayloadParsing(unittest.TestCase):

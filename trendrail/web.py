@@ -1,6 +1,6 @@
-"""Archie's local dashboard — the rules in a browser, no dependencies.
+"""Trendrail's local dashboard — the rules in a browser, no dependencies.
 
-    python -m archie.web
+    python -m trendrail.web
     # then open http://127.0.0.1:8181
 
 The dashboard is a thin skin over the same engine the CLI uses: ``scan`` asks
@@ -12,7 +12,7 @@ Design constraints, in order:
 
 * **Local-first.** Binds to 127.0.0.1 by default. This is your tool on your
   machine; it never phones home and serves nobody but you.
-* **Standard library only**, like the rest of Archie. ``http.server`` is plenty
+* **Standard library only**, like the rest of Trendrail. ``http.server`` is plenty
   for one user on localhost.
 * **Honest rendering.** The equity curve is the backtester's actual curve —
   idealized fills and all — with the same caveat the CLI prints.
@@ -23,6 +23,8 @@ from __future__ import annotations
 import argparse
 import html
 import json
+import os
+import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Dict, List, Optional, Tuple
 from urllib.parse import parse_qs, urlparse
@@ -102,6 +104,13 @@ table.trades th, table.trades td {
 table.trades th { color: var(--muted); font-weight: 500; }
 table.trades td:first-child, table.trades th:first-child,
 table.trades td:last-child, table.trades th:last-child { text-align: left; }
+table.trades tr.hit td { font-weight: 650; }
+table.trades td.ok { color: var(--up); }
+form.controls textarea {
+  background: var(--page); color: var(--ink); border: 1px solid var(--axis);
+  border-radius: 6px; padding: 7px 9px; font: inherit; width: 340px;
+  height: 56px; resize: vertical;
+}
 .note { color: var(--ink-2); font-size: 13px; }
 .warn { color: var(--down); }
 .signal { font-size: 18px; font-weight: 650; }
@@ -160,7 +169,7 @@ def _page(title: str, body: str) -> str:
         "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
         f"<title>{_esc(title)}</title><style>{_STYLE}</style></head>"
         f"<body><main>{body}"
-        "<footer>Archie is an educational backtesting/paper-trading tool, not "
+        "<footer>Trendrail is an educational backtesting/paper-trading tool, not "
         "financial advice. Backtests use idealized fills; real markets gap, "
         "slip, and surprise.</footer>"
         f"</main><script>{_HOVER_JS}</script></body></html>"
@@ -191,6 +200,26 @@ def _form(values: Dict[str, str]) -> str:
 </form>
 <p class="note">Scan asks the rules what to do <em>today</em>. Backtest replays
 them over the whole history. Same engine as the CLI.</p></div>"""
+
+
+def _watchlist_form(values: Dict[str, str]) -> str:
+    def val(key: str) -> str:
+        return _esc(values.get(key) or str(DEFAULTS.get(key, "")))
+
+    return f"""
+<div class="card"><form class="controls" method="get" action="/watchlist">
+  <label>Watchlist &mdash; tickers or CSV paths, separated by spaces or commas
+    <textarea name="symbols"
+      placeholder="AAPL MSFT NVDA examples/aapl_2015_2017.csv">{val('symbols')}</textarea>
+  </label>
+  <label>Account
+    <input name="account" value="{val('account')}"></label>
+  <label>Risk / trade
+    <input name="risk" value="{val('risk')}"></label>
+  <button>Scan the watchlist</button>
+</form>
+<p class="note">One row per symbol: is the uptrend confirmed, is there an
+entry today, and the exact stop and position size if there is.</p></div>"""
 
 
 def equity_curve_svg(
@@ -380,16 +409,114 @@ def _load_bars(symbol: str, csv_path: str) -> Tuple[List[Bar], str]:
     raise ValueError("provide a symbol or a CSV path")
 
 
+def _load_watchlist_item(item: str) -> Tuple[List[Bar], str]:
+    """One watchlist entry: a CSV path if it looks/behaves like one, else a
+    ticker fetched live."""
+    if os.path.exists(item) or "/" in item or item.lower().endswith(".csv"):
+        return load_csv(item), item
+    return _load_bars(item, "")
+
+
+def _watchlist_view(items: List[str], account: float, risk: float,
+                    cfg: StrategyConfig) -> str:
+    strat = TrendFollowingStrategy(cfg)
+    rows = []
+    signals = 0
+    for item in items:
+        try:
+            bars, label = _load_watchlist_item(item)
+        except FileNotFoundError as exc:
+            rows.append(f'<tr><td>{_esc(item)}</td><td colspan="6" '
+                        f'class="warn">file not found: '
+                        f"{_esc(str(exc.filename))}</td></tr>")
+            continue
+        except Exception as exc:
+            if isinstance(exc, (ValueError, OSError)) or \
+                    exc.__class__.__name__ == "FetchError":
+                rows.append(f'<tr><td>{_esc(item)}</td><td colspan="6" '
+                            f'class="warn">{_esc(str(exc))}</td></tr>')
+                continue
+            raise
+
+        if len(bars) < cfg.slow_ma + 1:
+            rows.append(f"<tr><td>{_esc(label)}</td><td colspan=\"6\" "
+                        f"class=\"warn\">only {len(bars)} bars — need "
+                        f"{cfg.slow_ma + 1} to confirm the trend</td></tr>")
+            continue
+
+        i = len(bars) - 1
+        bar = bars[i]
+        uptrend = strat.is_uptrend(bars, i)
+        signal = strat.entry_signal(bars, i)
+        stop = strat.initial_stop(bars, i)
+        entry = signal in (Signal.ENTER_PULLBACK, Signal.ENTER_BREAKOUT)
+
+        if entry and stop:
+            signals += 1
+            per_share = bar.close - stop
+            shares = (int(account * risk // per_share)
+                      if per_share > 0 else 0)
+            rows.append(
+                f'<tr class="hit"><td>{_esc(label)}</td>'
+                f"<td>{_esc(bar.date)}</td><td>{bar.close:,.2f}</td>"
+                f'<td class="ok">YES</td>'
+                f'<td class="ok">{_esc(signal.value.replace("enter_", "").upper())}</td>'
+                f"<td>{stop:,.2f}</td><td>{shares} sh</td></tr>")
+        else:
+            note = ("no entry today" if uptrend
+                    else "trend not confirmed — stay out")
+            rows.append(
+                f"<tr><td>{_esc(label)}</td>"
+                f"<td>{_esc(bar.date)}</td><td>{bar.close:,.2f}</td>"
+                f"<td>{'YES' if uptrend else 'no'}</td>"
+                f"<td>&ndash;</td><td>&ndash;</td>"
+                f"<td>{note}</td></tr>")
+
+    summary = (f"{signals} entry signal{'s' if signals != 1 else ''} today"
+               if signals else
+               "No entries today across the list — staying out is the "
+               "system working.")
+    return (
+        f"<h2>Watchlist <small>({len(items)} symbols)</small></h2>"
+        f'<p class="note">{summary}</p>'
+        '<div class="card"><table class="trades">'
+        "<tr><th>Symbol</th><th>As of</th><th>Close</th><th>Uptrend</th>"
+        "<th>Signal</th><th>Stop</th><th>Size / note</th></tr>"
+        + "".join(rows) + "</table></div>"
+        f'<p class="note">Sizing risks {risk * 100:.1f}% of '
+        f"{account:,.2f} per trade. Stops go in with the order — rule #3.</p>"
+    )
+
+
 def route(path: str, params: Dict[str, List[str]]) -> Tuple[int, str]:
     """Pure request router: (path, query params) -> (status, html page).
 
     Kept free of any HTTP machinery so tests exercise exactly what the
     browser sees.
     """
+    title = "<h1>Trendrail <small>disciplined trend-following</small></h1>"
     if path == "/":
-        body = ("<h1>Archie <small>disciplined trend-following</small></h1>"
-                + _form({}))
-        return 200, _page("Archie", body)
+        return 200, _page("Trendrail", title + _form({}) + _watchlist_form({}))
+
+    if path == "/watchlist":
+        values = {k: _first(params, k) for k in ("symbols", "account", "risk")}
+        header = title + _watchlist_form(values)
+        try:
+            account = float(values["account"] or DEFAULTS["account"])
+            risk = float(values["risk"] or DEFAULTS["risk"])
+        except ValueError:
+            return 200, _page("Trendrail", header + '<div class="card warn">'
+                              "Account and risk must be numbers.</div>")
+        if not 0 < risk <= 0.1:
+            return 200, _page("Trendrail", header + '<div class="card warn">'
+                              "Risk per trade should be a small fraction, "
+                              "e.g. 0.01-0.02.</div>")
+        items = [s for s in re.split(r"[,\s]+", values["symbols"]) if s]
+        if not items:
+            return 200, _page("Trendrail", header + '<div class="card warn">'
+                              "Add at least one ticker or CSV path.</div>")
+        view = _watchlist_view(items, account, risk, StrategyConfig())
+        return 200, _page("Trendrail", header + view)
 
     if path != "/run":
         return 404, _page("Not found", "<h1>404</h1><p>Nothing here.</p>")
@@ -397,12 +524,12 @@ def route(path: str, params: Dict[str, List[str]]) -> Tuple[int, str]:
     values = {k: _first(params, k) for k in
               ("symbol", "csv", "account", "risk", "fast_ma", "slow_ma",
                "breakout_lookback", "action")}
-    header = ("<h1>Archie <small>disciplined trend-following</small></h1>"
+    header = ("<h1>Trendrail <small>disciplined trend-following</small></h1>"
               + _form(values))
 
     def fail(msg: str) -> Tuple[int, str]:
         return 200, _page(
-            "Archie", header + f'<div class="card warn">{_esc(msg)}</div>')
+            "Trendrail", header + f'<div class="card warn">{_esc(msg)}</div>')
 
     try:
         account = float(values["account"] or DEFAULTS["account"])
@@ -437,7 +564,7 @@ def route(path: str, params: Dict[str, List[str]]) -> Tuple[int, str]:
         view = _backtest_view(bars, label, account, risk, cfg)
     else:
         view = _scan_view(bars, label, account, risk, cfg)
-    return 200, _page("Archie", header + view)
+    return 200, _page("Trendrail", header + view)
 
 
 class DashboardHandler(BaseHTTPRequestHandler):
@@ -457,14 +584,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(
-        prog="archie-web", description="Archie's local web dashboard.")
+        prog="trendrail-web", description="Trendrail's local web dashboard.")
     parser.add_argument("--host", default="127.0.0.1",
                         help="bind address (default 127.0.0.1 — local only)")
     parser.add_argument("--port", type=int, default=8181)
     args = parser.parse_args(argv)
 
     server = ThreadingHTTPServer((args.host, args.port), DashboardHandler)
-    print(f"Archie dashboard: http://{args.host}:{args.port}  (Ctrl-C to stop)")
+    print(f"Trendrail dashboard: http://{args.host}:{args.port}  (Ctrl-C to stop)")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

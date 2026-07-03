@@ -1,4 +1,4 @@
-# Archie Pro — first-90-days launch checklist
+# Trendrail Pro — first-90-days launch checklist
 
 Work top to bottom. Nothing here needs anyone's permission, and nothing costs
 more than ~£150 until money is already coming in. Time budget: ~10 focused
@@ -7,9 +7,9 @@ hours/week.
 ## Week 1 — foundations (one sitting each)
 
 - [ ] Name search: Companies House + UK IPO trademark search + domain
-      availability for "Archie" / fallback name. Decide once, move on.
-- [ ] Buy the domain (~£10). Suggested: `archietrading.com` / `.co.uk` or
-      `usearchie.io` — whatever survives the name search.
+      availability for "Trendrail" / fallback name. Decide once, move on.
+- [ ] Buy the domain (~£10). Suggested: `trendrail.com` (checked: no DNS records as of 2026-07) or
+      `trendrail.io` / `.co.uk` — whatever survives the registrar check.
 - [ ] Incorporate the Ltd at Companies House (~£50, online, same day).
       Registered-office service, you as sole director/shareholder.
 - [ ] Open a free business bank account (Starling/Tide).
@@ -20,7 +20,7 @@ hours/week.
 
 ## Week 2 — make the free tier shine (it's the top of the funnel)
 
-- [ ] Record a 60-second GIF/video: `python -m archie.web`, scan, backtest,
+- [ ] Record a 60-second GIF/video: `python -m trendrail.web`, scan, backtest,
       equity curve. Put it at the top of the README and the landing page.
 - [ ] Add GitHub topics: `trading`, `trend-following`, `backtesting`,
       `python`, `zero-dependencies`.
@@ -31,14 +31,15 @@ hours/week.
 ## Weeks 3–4 — first public swings
 
 - [ ] Publish content pieces 1 & 2 (calendar in GO_TO_MARKET.md §4).
-- [ ] **Show HN** (Tue–Thu ~14:00 UTC; stay in the comments all day).
-- [ ] First Reddit value-post in r/algotrading (the causal-backtest angle).
-- [ ] Send "The Trend Check" #1 to however few subscribers exist. Weekly from
+- [ ] **Show HN** — draft ready to paste in `business/launch/show_hn.md` (Tue–Thu ~14:00 UTC; stay in the comments all day).
+- [ ] Reddit value-posts — drafts ready in `business/launch/reddit_algotrading.md` and `business/launch/reddit_swingtrading.md`.
+- [ ] Send "The Trend Check" #1 — template + table generator ready in
+      `business/launch/trend_check_001.md` and `business/launch/trend_check.py`. Weekly from
       now on, no matter what — the streak is the asset.
 
 ## Month 2 — build the retention hooks (ship weekly)
 
-- [ ] Watchlist page in the dashboard (scan N symbols at once).
+- [x] Watchlist page in the dashboard (scan N symbols at once) — **done, shipped in `trendrail/web.py`**.
 - [ ] Trade journal: log entries/exits, auto-computed R-multiples, discipline
       score ("did you follow all five rules?").
 - [ ] Content pieces 5–8; keep the newsletter streak.

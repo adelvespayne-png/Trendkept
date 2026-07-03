@@ -1,8 +1,8 @@
 import json
 import unittest
 
-from archie.fetch import yahoo_to_csv, _stooq_symbol, FetchError
-from archie.data import parse_csv_text
+from trendrail.fetch import yahoo_to_csv, _stooq_symbol, FetchError
+from trendrail.data import parse_csv_text
 
 
 class TestStooqSymbol(unittest.TestCase):

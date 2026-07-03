@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Archie — a disciplined trend-following trading bot, in a single file.
+"""Trendrail — a disciplined trend-following trading bot, in a single file.
 
 Pure Python standard library: no pip install, no dependencies. Drop this one
 file anywhere and run it with Python 3.9+.
@@ -17,19 +17,19 @@ The edge: cut losers fast and small, let winners run big.
 
 USAGE
   # Backtest / scan a CSV (date,open,high,low,close[,volume])
-  python3 archie_bot.py backtest mydata.csv --account 1000 --risk 0.02 -v
-  python3 archie_bot.py scan     mydata.csv
+  python3 trendrail_bot.py backtest mydata.csv --account 1000 --risk 0.02 -v
+  python3 trendrail_bot.py scan     mydata.csv
 
   # Live data, free, no API key (Stooq -> Yahoo)
-  python3 archie_bot.py backtest --symbol AAPL --account 1000 -v
-  python3 archie_bot.py fetch    AAPL --out aapl.csv
+  python3 trendrail_bot.py backtest --symbol AAPL --account 1000 -v
+  python3 trendrail_bot.py fetch    AAPL --out aapl.csv
 
   # Alpaca paper trading (free keys from alpaca.markets):
   export APCA_API_KEY_ID=...        # Windows PowerShell: $env:APCA_API_KEY_ID="..."
   export APCA_API_SECRET_KEY=...
-  python3 archie_bot.py account
-  python3 archie_bot.py trade  AAPL --risk 0.01 --confirm   # paper, with attached stop
-  python3 archie_bot.py manage --confirm                    # run daily: trail / exit
+  python3 trendrail_bot.py account
+  python3 trendrail_bot.py trade  AAPL --risk 0.01 --confirm   # paper, with attached stop
+  python3 trendrail_bot.py manage --confirm                    # run daily: trail / exit
 
 Educational tool, not financial advice. Backtests use idealized fills. Paper
 trade until you can follow the rules without flinching before risking real money.
@@ -1120,7 +1120,7 @@ def _cmd_manage(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="archie_bot", description="Disciplined trend-following trading bot.")
+        prog="trendrail_bot", description="Disciplined trend-following trading bot.")
     sub = parser.add_subparsers(dest="command", required=True)
 
     def add_source(p):

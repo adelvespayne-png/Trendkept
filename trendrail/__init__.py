@@ -1,6 +1,6 @@
-"""Archie — a disciplined trend-following toolkit.
+"""Trendrail — a disciplined trend-following toolkit.
 
-Archie encodes one strategy and nothing else: ride confirmed uptrends, cut
+Trendrail encodes one strategy and nothing else: ride confirmed uptrends, cut
 losers fast and small, let winners run. The whole package is pure standard
 library so it runs anywhere Python 3.9+ does, with no pip install.
 

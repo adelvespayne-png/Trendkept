@@ -1,4 +1,4 @@
-# Archie Pro — legal & structure guide
+# Trendrail Pro — legal & structure guide
 
 **This is orientation, not legal advice.** Before taking money, spend one hour
 with a UK solicitor/accountant to confirm the specifics (~£150–£300 — the best
@@ -6,7 +6,7 @@ money the business will spend). This file exists so that hour is efficient.
 
 ## 1. Company structure
 
-- **Form a UK private limited company** (e.g. "Archie Trading Tools Ltd").
+- **Form a UK private limited company** (e.g. "Trendrail Ltd").
   ~£50 online at Companies House, done in a day. Why a Ltd and not sole
   trader: liability protection (you sell to traders; someone will lose money
   and be angry), credibility with payment processors, clean asset to sell
@@ -23,17 +23,17 @@ money the business will spend). This file exists so that hour is efficient.
 
 Selling **software and education** is unregulated. Giving **investment
 advice** or making **personal recommendations** requires FCA authorisation in
-the UK (and equivalents elsewhere). Archie is designed to stay on the safe
+the UK (and equivalents elsewhere). Trendrail is designed to stay on the safe
 side of the line — keep it there:
 
-**Archie may (all fine):**
+**Trendrail may (all fine):**
 - Execute *the user's* mechanical ruleset on market data and show the result.
 - Compute position sizes from a formula the user configures.
 - Say "the 50/200 ruleset's conditions are met for AAPL today" — that's a
   factual statement about data, like a calculator or a chart.
 - Teach risk-management concepts generally.
 
-**Archie (and you, in all marketing) must NEVER:**
+**Trendrail (and you, in all marketing) must NEVER:**
 1. Make a **personal recommendation** — "given your situation, you should buy
    X". No "buy/sell" language directed at a person. The tool reports rule
    states; the user decides.
@@ -65,7 +65,7 @@ hour:
 - **Refund policy** — 14-day no-questions refund. UK consumer law requires
   cooling-off for digital services anyway, and generous refunds kill disputes.
 - **The disclaimer**, on the site, in the app, in the newsletter footer:
-  *"Archie is analysis software, not investment advice. Trading involves risk
+  *"Trendrail is analysis software, not investment advice. Trading involves risk
   of loss. Past or backtested performance does not predict future results.
   Backtests use idealized fills."*
 
@@ -77,7 +77,7 @@ hour:
 - **Pro features live in a separate private repository** owned by the Ltd,
   under a commercial licence (licence key per subscription). The dashboard in
   this repo is the free seed; watchlist/journal/email/hosted are Pro.
-- Register the trademark ("Archie" word mark, class 9/42, UK IPO ~£170) once
+- Register the trademark ("Trendrail" word mark, class 9/42, UK IPO ~£170) once
   revenue exists — do a name search *before* buying the domain in case a
   clash forces a rename while it's still cheap.
 - Contributor licence: keep it simple — small PRs to the open core under MIT

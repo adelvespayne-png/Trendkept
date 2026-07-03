@@ -1,7 +1,7 @@
 import unittest
 
-from archie.data import Bar
-from archie.strategy import Signal, StrategyConfig, TrendFollowingStrategy
+from trendrail.data import Bar
+from trendrail.strategy import Signal, StrategyConfig, TrendFollowingStrategy
 
 
 def make_uptrend(n=260, start=100.0, step=0.5):

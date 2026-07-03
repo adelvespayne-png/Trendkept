@@ -1,8 +1,8 @@
 import unittest
 
-from archie.alpaca import decide_management, ManagementAction
-from archie.strategy import TrendFollowingStrategy, StrategyConfig
-from archie.data import Bar
+from trendrail.alpaca import decide_management, ManagementAction
+from trendrail.strategy import TrendFollowingStrategy, StrategyConfig
+from trendrail.data import Bar
 
 
 def uptrend_bars():
@@ -77,7 +77,7 @@ class TestActionDescribe(unittest.TestCase):
 class TestFindStopOrderParsing(unittest.TestCase):
     def test_finds_nested_leg_stop(self):
         # Reproduce the order-search logic against a canned OTO order shape.
-        from archie.alpaca import AlpacaClient
+        from trendrail.alpaca import AlpacaClient
 
         orders = [{
             "symbol": "AAPL", "side": "buy", "type": "limit", "status": "new",
@@ -96,7 +96,7 @@ class TestFindStopOrderParsing(unittest.TestCase):
         self.assertEqual(found["stop_price"], "90.00")
 
     def test_returns_none_when_absent(self):
-        from archie.alpaca import AlpacaClient
+        from trendrail.alpaca import AlpacaClient
 
         client = AlpacaClient.__new__(AlpacaClient)
         client.list_orders = lambda status="open": []  # type: ignore

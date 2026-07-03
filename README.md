@@ -1,7 +1,7 @@
-# Archie
+# Trendrail
 
 A small, dependency-free toolkit for one thing: trading a **confirmed uptrend
-with disciplined risk**. Archie turns a mechanical trend-following ruleset into
+with disciplined risk**. Trendrail turns a mechanical trend-following ruleset into
 code you can *write down, backtest, and paper-trade* before a single pound is at
 risk.
 
@@ -27,7 +27,7 @@ Once the trend is confirmed, enter on **either**:
 - a **small pullback** toward the 50-day average that closes back up, or
 - a **breakout** above a recent (20-day) high.
 
-Never chase a move that has already run far: Archie refuses any entry more than
+Never chase a move that has already run far: Trendrail refuses any entry more than
 ~12% extended above the 50-day average.
 
 ### 3. Set the stop the moment you enter
@@ -73,7 +73,7 @@ Nothing to install. Clone and run:
 
 ```bash
 # The dashboard: the whole toolkit in a browser (local only, no dependencies)
-python -m archie.web
+python -m trendrail.web
 # then open http://127.0.0.1:8181
 ```
 
@@ -81,13 +81,13 @@ Or from the command line:
 
 ```bash
 # Backtest the rules over a price history
-python -m archie.cli backtest examples/sample_uptrend.csv --account 1000 --risk 0.02 -v
+python -m trendrail.cli backtest examples/sample_uptrend.csv --account 1000 --risk 0.02 -v
 
 # The same on real AAPL data (bundled)
-python -m archie.cli backtest examples/aapl_2015_2017.csv --account 1000 --risk 0.02 -v
+python -m trendrail.cli backtest examples/aapl_2015_2017.csv --account 1000 --risk 0.02 -v
 
 # Ask the rules what to do *today* (the paper-trading helper)
-python -m archie.cli scan examples/aapl_2015_2017.csv --account 1000 --risk 0.02
+python -m trendrail.cli scan examples/aapl_2015_2017.csv --account 1000 --risk 0.02
 ```
 
 ### Real data, straight from a ticker
@@ -95,12 +95,12 @@ With a network connection you can skip the CSV entirely. Free, no API key:
 
 ```bash
 # Stooq (default) or Yahoo — auto tries both
-python -m archie.cli backtest --symbol AAPL --account 1000 --risk 0.02 -v
-python -m archie.cli scan     --symbol MSFT --provider yahoo
+python -m trendrail.cli backtest --symbol AAPL --account 1000 --risk 0.02 -v
+python -m trendrail.cli scan     --symbol MSFT --provider yahoo
 
 # Save history to a CSV for offline/repeatable runs
-python -m archie.cli fetch AAPL --out data/aapl.csv
-python -m archie.cli backtest data/aapl.csv --account 1000
+python -m trendrail.cli fetch AAPL --out data/aapl.csv
+python -m trendrail.cli backtest data/aapl.csv --account 1000
 ```
 
 ### Your own data
@@ -120,7 +120,7 @@ Disable with `load_csv(path, adjust=False)` if your source is already raw.
 
 ## Alpaca Markets (live data + paper trading)
 
-Archie talks to [Alpaca](https://alpaca.markets) for real-time-ish data and
+Trendrail talks to [Alpaca](https://alpaca.markets) for real-time-ish data and
 order placement — standard library only, no SDK. **Start with a free paper
 account.** Put your keys in the environment (never in code or shell history):
 
@@ -131,17 +131,17 @@ export APCA_API_SECRET_KEY=your_paper_secret
 
 ```bash
 # Account & open positions (paper)
-python -m archie.cli account
+python -m trendrail.cli account
 
 # Data from Alpaca (split/dividend adjusted)
-python -m archie.cli backtest --symbol AAPL --provider alpaca --account 1000 -v
+python -m trendrail.cli backtest --symbol AAPL --provider alpaca --account 1000 -v
 
 # Scan a symbol and size a stop-protected order against your live equity.
 # DRY RUN by default — prints the order, sends nothing:
-python -m archie.cli trade AAPL --risk 0.01
+python -m trendrail.cli trade AAPL --risk 0.01
 
 # Actually submit it to your PAPER account:
-python -m archie.cli trade AAPL --risk 0.01 --confirm
+python -m trendrail.cli trade AAPL --risk 0.01 --confirm
 ```
 
 The entry is sent as an **OTO order** — a buy with a protective stop-loss
@@ -161,17 +161,17 @@ Rules #5 and #6 — trail the stop up, exit when the trend breaks — run with
 
 ```bash
 # Review what would happen to every open position (DRY RUN — acts on nothing)
-python -m archie.cli manage
+python -m trendrail.cli manage
 
 # Just one symbol, and actually amend/close orders on the paper account
-python -m archie.cli manage AAPL --confirm
+python -m trendrail.cli manage AAPL --confirm
 ```
 
 Because the rules act on **daily** bars, run `manage` once per day after the
 close — e.g. a cron entry:
 
 ```cron
-30 21 * * 1-5  cd /path/to/Archie && /usr/bin/python3 -m archie.cli manage --confirm >> manage.log 2>&1
+30 21 * * 1-5  cd /path/to/Trendrail && /usr/bin/python3 -m trendrail.cli manage --confirm >> manage.log 2>&1
 ```
 
 The same safety rails apply: paper by default, dry run unless `--confirm`, and
@@ -201,21 +201,21 @@ Profit factor    : inf
 
 | Module | Responsibility |
 | --- | --- |
-| `archie/web.py` | Local browser dashboard (`python -m archie.web`) |
-| `archie/data.py` | `Bar` type + robust CSV loader (column matching, adjustment) |
-| `archie/indicators.py` | SMAs and **causal** swing-point detection |
-| `archie/strategy.py` | The rules above, as signals (trend filter, entries, stop, exit) |
-| `archie/backtest.py` | Bar-by-bar simulator: risk-based sizing, trailing stops, stats |
-| `archie/fetch.py` | Free no-key data: Stooq + Yahoo |
-| `archie/alpaca.py` | Alpaca data, account/positions/orders, trade & manage logic |
-| `archie/cli.py` | `backtest`, `scan`, `fetch`, `account`, `trade`, `manage` |
+| `trendrail/web.py` | Local browser dashboard (`python -m trendrail.web`) |
+| `trendrail/data.py` | `Bar` type + robust CSV loader (column matching, adjustment) |
+| `trendrail/indicators.py` | SMAs and **causal** swing-point detection |
+| `trendrail/strategy.py` | The rules above, as signals (trend filter, entries, stop, exit) |
+| `trendrail/backtest.py` | Bar-by-bar simulator: risk-based sizing, trailing stops, stats |
+| `trendrail/fetch.py` | Free no-key data: Stooq + Yahoo |
+| `trendrail/alpaca.py` | Alpaca data, account/positions/orders, trade & manage logic |
+| `trendrail/cli.py` | `backtest`, `scan`, `fetch`, `account`, `trade`, `manage` |
 | `examples/` | Synthetic + real (AAPL) sample data and the generator |
 | `tests/` | 47 unit tests (`python -m unittest discover -s tests`) |
 
 **A note on honesty:** every signal is *causal* — a value at bar *i* is computed
 only from bars at or before *i*. Swing pivots need confirmation bars, so a pivot
 is only acted on once the market has actually revealed it. A backtest that peeks
-at the future looks brilliant and trades terribly; Archie refuses to peek.
+at the future looks brilliant and trades terribly; Trendrail refuses to peek.
 
 ## Tuning
 Defaults match the written rules (50/200 MA, 20-day breakout, 1–2% risk). The
@@ -228,10 +228,10 @@ re-backtest — don't tweak mid-trade.
 python -m unittest discover -s tests -v
 ```
 
-## The business around Archie
+## The business around Trendrail
 
-This repo also contains a complete plan for turning Archie into an
-owner-operated product business (**Archie Pro** — sell the discipline, not
+This repo also contains a complete plan for turning Trendrail into an
+owner-operated product business (**Trendrail Pro** — sell the discipline, not
 predictions). Start at [`business/PLAN.md`](business/PLAN.md); the financial
 projections in [`business/FINANCIALS.md`](business/FINANCIALS.md) are
 generated by `python business/model.py --md`, and a deployable landing page

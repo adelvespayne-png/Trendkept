@@ -3,7 +3,7 @@
 import os
 import unittest
 
-from archie.web import equity_curve_svg, route
+from trendrail.web import equity_curve_svg, route
 
 EXAMPLES = os.path.join(os.path.dirname(__file__), "..", "examples")
 UPTREND_CSV = os.path.join(EXAMPLES, "sample_uptrend.csv")
@@ -80,6 +80,43 @@ class TestRoutes(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertNotIn(evil, body)
         self.assertIn("&lt;script&gt;", body)
+
+
+class TestWatchlist(unittest.TestCase):
+    def test_index_includes_watchlist_form(self):
+        status, body = route("/", {})
+        self.assertEqual(status, 200)
+        self.assertIn('action="/watchlist"', body)
+
+    def test_watchlist_scans_multiple_csvs(self):
+        status, body = route("/watchlist", {
+            "symbols": [f"{UPTREND_CSV}, {AAPL_CSV}"],
+            "account": ["1000"], "risk": ["0.02"],
+        })
+        self.assertEqual(status, 200)
+        self.assertIn("Watchlist", body)
+        self.assertIn("sample_uptrend.csv", body)
+        self.assertIn("aapl_2015_2017.csv", body)
+        self.assertIn("Uptrend", body)
+
+    def test_watchlist_bad_item_fails_row_not_page(self):
+        status, body = route("/watchlist", {
+            "symbols": [f"{UPTREND_CSV} missing/nope.csv"],
+        })
+        self.assertEqual(status, 200)
+        self.assertIn("file not found", body)          # the broken row
+        self.assertIn("sample_uptrend.csv", body)      # the good row survives
+
+    def test_watchlist_empty_prompts(self):
+        status, body = route("/watchlist", {"symbols": ["   "]})
+        self.assertEqual(status, 200)
+        self.assertIn("Add at least one", body)
+
+    def test_watchlist_escapes_input(self):
+        evil = "<script>alert(1)</script>"
+        status, body = route("/watchlist", {"symbols": [evil]})
+        self.assertEqual(status, 200)
+        self.assertNotIn(evil, body)
 
 
 class TestEquityCurveSvg(unittest.TestCase):

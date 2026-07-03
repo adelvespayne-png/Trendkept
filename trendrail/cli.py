@@ -1,13 +1,13 @@
-"""Command line interface for Archie.
+"""Command line interface for Trendrail.
 
     # From a CSV you already have
-    python -m archie.cli backtest examples/sample_uptrend.csv --account 1000
-    python -m archie.cli scan  examples/aapl_2015_2017.csv --account 1000
+    python -m trendrail.cli backtest examples/sample_uptrend.csv --account 1000
+    python -m trendrail.cli scan  examples/aapl_2015_2017.csv --account 1000
 
     # Straight from a ticker (fetches live data; needs network)
-    python -m archie.cli backtest --symbol AAPL --account 1000 --risk 0.02 -v
-    python -m archie.cli scan     --symbol MSFT --account 1000
-    python -m archie.cli fetch    AAPL --out data/aapl.csv
+    python -m trendrail.cli backtest --symbol AAPL --account 1000 --risk 0.02 -v
+    python -m trendrail.cli scan     --symbol MSFT --account 1000
+    python -m trendrail.cli fetch    AAPL --out data/aapl.csv
 
 ``backtest`` simulates the full ruleset over a price history and reports the
 stats that matter for a trend-follower. ``scan`` looks only at the most recent
@@ -335,7 +335,7 @@ def _cmd_manage(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="archie",
+        prog="trendrail",
         description="Disciplined trend-following: fetch, backtest, and scan.",
     )
     sub = parser.add_subparsers(dest="command", required=True)
