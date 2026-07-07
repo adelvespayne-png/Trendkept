@@ -77,6 +77,10 @@ python -m trendrail.web
 # then open http://127.0.0.1:8181
 ```
 
+On Windows you can skip the terminal entirely: double-click
+**`Start_Dashboard.bat`** (opens the dashboard in your browser) or
+**`Daily_Check.bat`** (the daily account/positions check).
+
 The dashboard is yours to shape: the **Appearance** panel (bottom of every
 page) sets theme (light/dark/auto), accent & chart colour, text size, density,
 and corner style — saved in your browser only, like everything else here.
