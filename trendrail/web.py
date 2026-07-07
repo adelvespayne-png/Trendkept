@@ -436,6 +436,35 @@ entry today, and the exact stop and position size if there is. Runs
 <a href="/ruleset">your saved ruleset</a>.</p></div>"""
 
 
+def _chart_form(values: Dict[str, str]) -> str:
+    def val(key: str) -> str:
+        return _esc(values.get(key) or str(DEFAULTS.get(key, "")))
+
+    hidden = "".join(
+        f'<input type="hidden" name="{k}" value="{val(k)}">'
+        for k in RULESET_KEYS)
+    return f"""
+<div class="card"><form class="controls" method="get" action="/chart">
+  <label>Chart a symbol
+    <input name="symbol" value="{val('symbol')}" placeholder="NVDA"></label>
+  <label>&hellip;or CSV path
+    <input name="csv" class="wide" value="{val('csv')}"
+           placeholder="examples/aapl_2015_2017.csv"></label>
+  <label>Timeframe
+    <select name="window">
+      <option value="6m">6 months (candles)</option>
+      <option value="1y">1 year</option>
+      <option value="2y">2 years</option>
+      <option value="all">Everything</option>
+    </select></label>
+  {hidden}
+  <button>View chart</button>
+</form>
+<p class="note">Daily candles with your averages and the current stop drawn
+on &mdash; watch a trade working (or breaking) at a glance. Uses
+<a href="/ruleset">your saved ruleset</a>.</p></div>"""
+
+
 _RULESET_PAGE = """
 <h2>How do you trade?</h2>
 <p class="note">Answer once; every scan, backtest, and watchlist run then
@@ -917,14 +946,54 @@ def _first(params: Dict[str, List[str]], key: str, default: str = "") -> str:
     return vals[0].strip() if vals else default
 
 
+# Fetched symbols are cached briefly so a watchlist reload doesn't re-hit
+# the providers 20 times. Daily bars barely change intraday; ten minutes is
+# conservative freshness, and it's the difference between "instant page"
+# and "rate-limited by the free endpoints".
+_BARS_CACHE: Dict[str, Tuple[float, List[Bar], str]] = {}
+_BARS_CACHE_TTL = 600.0
+
+
+def _fetch_symbol(symbol: str) -> Tuple[List[Bar], str]:
+    """Daily bars for a ticker: Alpaca first when keys are configured (the
+    user's own entitlement — reliable and not rate-limited like the free
+    scrape endpoints), else Stooq/Yahoo with a short timeout."""
+    import time
+
+    key = symbol.upper()
+    hit = _BARS_CACHE.get(key)
+    now = time.time()
+    if hit and now - hit[0] < _BARS_CACHE_TTL:
+        return hit[1], hit[2]
+
+    bars: Optional[List[Bar]] = None
+    label = key
+    if os.environ.get("APCA_API_KEY_ID") and \
+            os.environ.get("APCA_API_SECRET_KEY"):
+        try:
+            from .alpaca import AlpacaClient
+
+            client = AlpacaClient(paper=True, feed="iex")
+            bars = client.daily_bars(key)
+            label = f"{key} (alpaca)"
+        except Exception:
+            bars = None  # fall through to the free providers
+
+    if bars is None:
+        from .fetch import fetch_csv  # lazy: offline use needs no network
+
+        # Fail fast: a browser won't wait minutes for a page.
+        bars = parse_csv_text(fetch_csv(symbol, timeout=8.0))
+
+    _BARS_CACHE[key] = (now, bars, label)
+    return bars, label
+
+
 def _load_bars(symbol: str, csv_path: str) -> Tuple[List[Bar], str]:
     if csv_path:
         return load_csv(csv_path), csv_path
     if symbol:
-        from .fetch import fetch_csv  # lazy: offline use needs no network
-
-        text = fetch_csv(symbol)
-        return parse_csv_text(text), symbol.upper()
+        return _fetch_symbol(symbol)
     raise ValueError("provide a symbol or a CSV path")
 
 
@@ -950,12 +1019,13 @@ def _watchlist_view(items: List[str], account: float, risk: float,
                         f"{_esc(str(exc.filename))}</td></tr>")
             continue
         except Exception as exc:
-            if isinstance(exc, (ValueError, OSError)) or \
-                    exc.__class__.__name__ == "FetchError":
-                rows.append(f'<tr><td>{_esc(item)}</td><td colspan="6" '
-                            f'class="warn">{_esc(str(exc))}</td></tr>')
-                continue
-            raise
+            # One bad symbol (rate-limited provider, typo, network blip)
+            # must never take down the whole board — report it in its row
+            # and keep scanning the rest.
+            rows.append(f'<tr><td>{_esc(item)}</td><td colspan="6" '
+                        f'class="warn">{_esc(str(exc) or exc.__class__.__name__)}'
+                        "</td></tr>")
+            continue
 
         if len(bars) < cfg.slow_ma + 1:
             rows.append(f"<tr><td>{_esc(label)}</td><td colspan=\"6\" "
@@ -1021,7 +1091,8 @@ def route(path: str, params: Dict[str, List[str]]) -> Tuple[int, str]:
                 'defaults until you <a href="/ruleset">set how you trade'
                 "</a>.</p>")
         return 200, _page("Trendrail",
-                          title + note + _form({}) + _watchlist_form({}))
+                          title + note + _form({}) + _watchlist_form({})
+                          + _chart_form({}))
 
     if path == "/ruleset":
         return 200, _page("Trendrail", title + _RULESET_PAGE)
@@ -1133,7 +1204,16 @@ def route(path: str, params: Dict[str, List[str]]) -> Tuple[int, str]:
 class DashboardHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802 (http.server API)
         parsed = urlparse(self.path)
-        status, body = route(parsed.path, parse_qs(parsed.query))
+        try:
+            status, body = route(parsed.path, parse_qs(parsed.query))
+        except Exception as exc:  # always answer; a silent close helps nobody
+            status = 500
+            body = _page("Trendrail", (
+                "<h1>Something went wrong</h1>"
+                f'<div class="card warn">{_esc(exc.__class__.__name__)}: '
+                f"{_esc(str(exc))}</div>"
+                '<p class="note">This is a bug worth reporting — copy the '
+                "message above. <a href=\"/\">Back to the dashboard</a>.</p>"))
         payload = body.encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "text/html; charset=utf-8")

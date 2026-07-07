@@ -253,6 +253,26 @@ class TestChart(unittest.TestCase):
         self.assertIn('polyline class="price-line"', body)
         self.assertNotIn('rect class="candle-up"', body)
 
+    def test_index_has_chart_section(self):
+        status, body = route("/", {})
+        self.assertEqual(status, 200)
+        self.assertIn('action="/chart"', body)
+        self.assertIn("View chart", body)
+
+    def test_watchlist_survives_any_row_exception(self):
+        # A provider blowing up with an unexpected error type must produce
+        # an error row, never a dead page.
+        import trendrail.web as web
+        original = web._load_watchlist_item
+        web._load_watchlist_item = lambda item: (_ for _ in ()).throw(
+            RuntimeError("provider exploded"))
+        try:
+            status, body = route("/watchlist", {"symbols": ["AAPL"]})
+        finally:
+            web._load_watchlist_item = original
+        self.assertEqual(status, 200)
+        self.assertIn("provider exploded", body)
+
     def test_watchlist_rows_link_to_chart(self):
         status, body = route("/watchlist", {"symbols": [AAPL_CSV]})
         self.assertEqual(status, 200)
