@@ -35,6 +35,7 @@ SECTIONS = [
     ("GO_TO_MARKET.md", None),
     ("LEGAL.md", None),
     ("LAUNCH_CHECKLIST.md", None),
+    ("PAPER_TRADING_GUIDE.md", None),
     ("launch/show_hn.md", "Launch pack — Show HN"),
     ("launch/reddit_algotrading.md", "Launch pack — r/algotrading"),
     ("launch/reddit_swingtrading.md", "Launch pack — r/swingtrading"),

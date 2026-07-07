@@ -47,10 +47,10 @@ pre, blockquote { page-break-inside: avoid; }
   plan, the financial projections, the go-to-market playbook, the legal
   guide, the 90-day checklist, and the ready-to-paste launch content.</p>
   <p><b>Start with section 1 and work top to bottom.</b></p>
-  <p style="color:#888">Compiled 03 July 2026 · regenerate with
+  <p style="color:#888">Compiled 07 July 2026 · regenerate with
   <code>python business/build_manual.py --pdf</code></p>
 </div>
-<div class="toc"><h1>Contents</h1><ol><li>START HERE — your steps, in order</li><li>The business plan</li><li>Trendrail Pro — financial projections</li><li>Trendrail Pro — go-to-market playbook</li><li>Trendrail Pro — legal &amp; structure guide</li><li>Trendrail Pro — first-90-days launch checklist</li><li>Launch pack — Show HN</li><li>Launch pack — r/algotrading</li><li>Launch pack — r/swingtrading</li><li>Launch pack — The Trend Check #1</li></ol>
+<div class="toc"><h1>Contents</h1><ol><li>START HERE — your steps, in order</li><li>The business plan</li><li>Trendrail Pro — financial projections</li><li>Trendrail Pro — go-to-market playbook</li><li>Trendrail Pro — legal &amp; structure guide</li><li>Trendrail Pro — first-90-days launch checklist</li><li>The 4-week paper-trading test — step by step</li><li>Launch pack — Show HN</li><li>Launch pack — r/algotrading</li><li>Launch pack — r/swingtrading</li><li>Launch pack — The Trend Check #1</li></ol>
 <p class="footer-note">Trendrail is analysis software and education, not
 investment advice. Trading involves risk of loss; past and backtested
 performance do not predict future results. This document contains business
@@ -536,7 +536,73 @@ Journal history + daily email        (retention — the moat)</code></pre>
 <tr><td>One evening</td><td>Write the week's content piece</td></tr>
 <tr><td>Sunday, 1 h</td><td>Send "The Trend Check"; log the four numbers (GO_TO_MARKET.md §6)</td></tr>
 <tr><td>Month-end, 1 h</td><td>Put actuals into <code>business/model.py</code>, regenerate FINANCIALS.md, compare scenario</td></tr>
-</table></section><section class="doc"><h1>Launch pack — Show HN</h1><p><b>When:</b> Tuesday–Thursday, around 14:00–15:00 UTC (peak HN traffic). <b>Where:</b> https://news.ycombinator.com/submit <b>Golden rule:</b> clear your day — launch days are 8+ hours of comments, and launch weeks run 25+ hours total. The submission is 10% of the work; being present, humble, and technical in the comments is the other 90%. <b>Honesty rule:</b> every claim in the draft below is about the software's design, which is why it's safe to post as-is. Don't add personal trading history that isn't literally yours on the day.</p>
+</table></section><section class="doc"><h1>The 4-week paper-trading test — step by step</h1><p>This is START_HERE Step 1.4 in full detail: running Trendrail against an Alpaca <b>paper</b> (fake-money) account every trading day for four weeks. It is quality control, it makes you user #1, and it unlocks the r/swingtrading launch post — which quotes <i>your real logs</i> and is blocked until they exist.</p>
+<p><b>Paper only.</b> Never use <code>--live</code> during this test. Paper trading uses Alpaca's fake $100,000 account; no real money exists anywhere in this process.</p>
+<h2>One-time setup (~45 minutes)</h2>
+<h3>1. Get the tools onto your computer</h3>
+<ol>
+<li><b>Check Python is installed.</b> Open Terminal (Mac: press Cmd+Space, type "Terminal"; Windows: use PowerShell) and type: <code>python3 --version</code> If it prints "Python 3.9" or higher, you're done. If not, install it from python.org (big yellow Download button, default options).</li>
+<li><b>Download the code.</b> On the GitHub repo page: green <b>Code</b> button →</li>
+</ol>
+<p><b>Download ZIP</b> → unzip it somewhere permanent (e.g. Documents). Or, if you have git: <code>git clone &lt;repo URL&gt;</code>.</p>
+<ol>
+<li><b>Open Terminal in that folder</b> (Mac: type <code>cd </code>, drag the folder onto the Terminal window, press enter) and test the engine offline:</li>
+</ol>
+<p>``<code>bash python3 -m trendrail.cli backtest examples/aapl_2015_2017.csv --account 1000 -v </code>``</p>
+<p>Backtest results printing = everything works.</p>
+<h3>2. Create the Alpaca paper account (~15 min)</h3>
+<ol>
+<li>Go to <b>alpaca.markets</b> → Sign Up (free; email + password).</li>
+<li>In the dashboard, make sure you're in <b>Paper</b> mode — the account switcher (top-left) should say "Paper". It comes pre-loaded with $100,000 of fake money.</li>
+<li>Find <b>API Keys</b> on the paper dashboard (right-hand panel) →</li>
+</ol>
+<p><b>Generate</b>. You get two strings: a <b>Key ID</b> and a <b>Secret Key</b>. Copy both immediately — the secret is shown only once. Keys for the paper account can't touch real money (there is none).</p>
+<h3>3. Connect Trendrail to Alpaca</h3>
+<p>In Terminal, replacing the placeholders with your two keys:</p>
+<pre><code>echo 'export APCA_API_KEY_ID=YOUR_KEY_ID' &gt;&gt; ~/.zshrc
+echo 'export APCA_API_SECRET_KEY=YOUR_SECRET' &gt;&gt; ~/.zshrc</code></pre>
+<p>Close and reopen Terminal (that file loads on startup), <code>cd</code> back to the folder, then verify the connection:</p>
+<pre><code>python3 -m trendrail.cli account</code></pre>
+<p>You should see: <code>Alpaca account (paper)</code>, equity ~100,000. That's it — set up forever. (Windows/PowerShell: use <code>[Environment]::SetEnvironmentVariable('APCA_API_KEY_ID','...','User')</code> for each key instead, then reopen the window.)</p>
+<h3>4. Pick the test parameters (write them down, then don't touch them)</h3>
+<ul>
+<li><b>Watchlist:</b> 15–20 liquid US names. Reasonable default: AAPL MSFT NVDA GOOGL AMZN META TSLA AVGO JPM V UNH XOM COST PG HD NFLX AMD SPY QQQ IWM.</li>
+<li><b>Risk per trade:</b> <code>--risk 0.01</code> (1% of the account).</li>
+<li>Changing rules mid-test invalidates the test — that's the whole lesson.</li>
+</ul>
+<h2>The daily routine (15 minutes, Mon–Fri)</h2>
+<p>Do it after the US market close — <b>from ~9pm UK time</b> — or first thing the next morning (same daily bars either way). Markets are closed weekends and US holidays; those days, no routine.</p>
+<p><b>1. Scan the watchlist (5 min).</b> Either in the dashboard — <code>python3 -m trendrail.web</code>, open http://127.0.0.1:8181, paste your tickers into the watchlist box — or per-symbol in the CLI: <code>python3 -m trendrail.cli scan --symbol AAPL --provider alpaca --account 100000 --risk 0.01</code></p>
+<p><b>2. If (and only if) a symbol shows an entry SIGNAL (2 min each):</b></p>
+<pre><code># Dry run first — prints the exact order, sends nothing:
+python3 -m trendrail.cli trade AAPL --risk 0.01
+# Looks right? Send it to the PAPER account:
+python3 -m trendrail.cli trade AAPL --risk 0.01 --confirm</code></pre>
+<p>The order goes in as entry + protective stop together — rule #3, enforced by the broker. Most days there is no signal. <b>Do nothing on those days.</b></p>
+<p><b>3. Manage whatever is open (2 min):</b></p>
+<pre><code>python3 -m trendrail.cli manage            # dry run: shows what it would do
+python3 -m trendrail.cli manage --confirm  # do it (raise stops / exit breaks)</code></pre>
+<p><b>4. Log the day (2 min).</b> One row, even (especially) for "nothing" days — the no-action count is the launch post's headline finding. Keep it in a file called <code>paper_log.md</code>:</p>
+<pre><code>| Date | Action | Symbol | Signal | Entry | Stop | Shares | Exit/R | Followed rules? | Note |
+|---|---|---|---|---|---|---|---|---|---|
+| 2026-07-13 | none | — | no signals on 19 tickers | | | | | Y | |
+| 2026-07-14 | enter | NVDA | breakout | 182.40 | 171.10 | 88 | | Y | stop = swing low −0.5% |
+| 2026-07-21 | stop hit | NVDA | | | | | −1.0R | Y | gap through stop, filled lower |</code></pre>
+<h2>The weekly close-out (Sunday, 10 min — same sitting as the newsletter)</h2>
+<ul>
+<li>Run <code>python3 -m trendrail.cli account</code> and note equity + open positions.</li>
+<li>Count the week's log rows: trading days, signals, entries, exits.</li>
+<li>Screenshot the dashboard once a week — future launch material.</li>
+</ul>
+<h2>What four weeks buys you</h2>
+<p>After ~20 trading days you can fill every bracket in <code>business/launch/reddit_swingtrading.md</code> with literal truth: [N] weeks, [X] valid entries across [Y] tickers in [N×5] days, a real entry/stop/size example from the log, and what following the rules actually felt like. You will also have found any rough edges in the product before a paying customer does — report them to your Claude session as you hit them.</p>
+<p><b>The rules of the test itself</b> (the meta-discipline):</p>
+<ol>
+<li>The rules decide; you execute. No overrides, no "just this once".</li>
+<li>A missed day is logged as a missed day — honesty includes the log.</li>
+<li>Paper only. <code>--live</code> does not exist for you this month.</li>
+<li>If you <i>disagree</i> with a rule by week 4, that's a finding — write it down and raise it; don't silently change the config mid-test.</li>
+</ol></section><section class="doc"><h1>Launch pack — Show HN</h1><p><b>When:</b> Tuesday–Thursday, around 14:00–15:00 UTC (peak HN traffic). <b>Where:</b> https://news.ycombinator.com/submit <b>Golden rule:</b> clear your day — launch days are 8+ hours of comments, and launch weeks run 25+ hours total. The submission is 10% of the work; being present, humble, and technical in the comments is the other 90%. <b>Honesty rule:</b> every claim in the draft below is about the software's design, which is why it's safe to post as-is. Don't add personal trading history that isn't literally yours on the day.</p>
 <hr>
 <h2>Title (pick one — A is recommended)</h2>
 <p>A) <code>Show HN: Trendrail – a dependency-free backtester that refuses to peek at the future</code></p>
