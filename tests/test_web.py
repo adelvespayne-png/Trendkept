@@ -240,6 +240,19 @@ class TestChart(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertIn("Need at least", body)
 
+    def test_chart_timeframe_selector_and_line_mode(self):
+        # Default window shows candles and the timeframe links.
+        status, body = route("/chart", {"csv": [AAPL_CSV]})
+        self.assertEqual(status, 200)
+        self.assertIn("Timeframe:", body)
+        self.assertIn('rect class="candle-up"', body)
+        # "everything" on a 2-year file switches to the close-price line.
+        status, body = route("/chart", {"csv": [AAPL_CSV],
+                                        "window": ["all"]})
+        self.assertEqual(status, 200)
+        self.assertIn('polyline class="price-line"', body)
+        self.assertNotIn('rect class="candle-up"', body)
+
     def test_watchlist_rows_link_to_chart(self):
         status, body = route("/watchlist", {"symbols": [AAPL_CSV]})
         self.assertEqual(status, 200)

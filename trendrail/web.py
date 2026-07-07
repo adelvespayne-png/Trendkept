@@ -183,7 +183,11 @@ svg .ma-fast { stroke: var(--series); stroke-width: 2; fill: none; }
 svg .ma-slow { stroke: var(--muted); stroke-width: 2; fill: none; }
 svg .stop-line { stroke: var(--down); stroke-width: 1.5;
   stroke-dasharray: 6 4; }
+svg .price-line { stroke: var(--ink); stroke-width: 1.5; fill: none;
+  opacity: 0.85; }
 svg text.lbl { font-size: 11px; font-family: inherit; }
+.windows a { margin-right: 10px; font-size: 13px; }
+.windows strong { margin-right: 10px; font-size: 13px; }
 .note { color: var(--ink-2); font-size: 13px; }
 .warn { color: var(--down); }
 .signal { font-size: 18px; font-weight: 650; }
@@ -624,12 +628,21 @@ ceiling, not a promise).</figcaption>
 </figure>"""
 
 
+# Chart timeframe choices: label -> trading days (~21/month).
+CHART_WINDOWS = {"6m": 130, "1y": 260, "2y": 520, "all": 10**9}
+
+
 def candle_chart_svg(bars: List[Bar], cfg: StrategyConfig,
                      width: int = 820, height: int = 340,
                      window: int = 130) -> str:
     """Daily candles with the ruleset drawn on top: both moving averages and
     the current stop level. Hovering any candle shows its OHLC (native
-    tooltips — this is a reading chart, not a drawing tool)."""
+    tooltips — this is a reading chart, not a drawing tool).
+
+    Long windows (over ~a year) switch from candles to a close-price line —
+    hundreds of overlapping candle bodies read as mud, and at that zoom the
+    question is the trend, not any single day.
+    """
     from .indicators import sma
 
     if len(bars) < 2:
@@ -681,20 +694,26 @@ def candle_chart_svg(bars: List[Bar], cfg: StrategyConfig,
             f'<text class="lbl" x="{x0 - 8}" y="{gy + 4:.1f}" '
             f'text-anchor="end" fill="var(--muted)">{gv:,.0f}</text>')
 
-    candles = []
-    for i, b in enumerate(view):
-        cx = x(i)
-        top, bot = max(b.open, b.close), min(b.open, b.close)
-        cls = "candle-up" if b.close >= b.open else "candle-down"
-        body_h = max(y(bot) - y(top), 1.0)
-        candles.append(
-            f'<g><title>{_esc(b.date)}  O {b.open:,.2f}  H {b.high:,.2f}  '
-            f'L {b.low:,.2f}  C {b.close:,.2f}</title>'
-            f'<line class="wick" x1="{cx:.1f}" y1="{y(b.high):.1f}" '
-            f'x2="{cx:.1f}" y2="{y(b.low):.1f}"/>'
-            f'<rect class="{cls}" x="{cx - body_w / 2:.1f}" '
-            f'y="{y(top):.1f}" width="{body_w:.1f}" '
-            f'height="{body_h:.1f}"/></g>')
+    if n > 260:
+        # Line mode for long windows: the close as a single readable path.
+        pts = " ".join(f"{x(i):.1f},{y(b.close):.1f}"
+                       for i, b in enumerate(view))
+        candles = [f'<polyline class="price-line" points="{pts}"/>']
+    else:
+        candles = []
+        for i, b in enumerate(view):
+            cx = x(i)
+            top, bot = max(b.open, b.close), min(b.open, b.close)
+            cls = "candle-up" if b.close >= b.open else "candle-down"
+            body_h = max(y(bot) - y(top), 1.0)
+            candles.append(
+                f'<g><title>{_esc(b.date)}  O {b.open:,.2f}  H {b.high:,.2f}  '
+                f'L {b.low:,.2f}  C {b.close:,.2f}</title>'
+                f'<line class="wick" x1="{cx:.1f}" y1="{y(b.high):.1f}" '
+                f'x2="{cx:.1f}" y2="{y(b.low):.1f}"/>'
+                f'<rect class="{cls}" x="{cx - body_w / 2:.1f}" '
+                f'y="{y(top):.1f}" width="{body_w:.1f}" '
+                f'height="{body_h:.1f}"/></g>')
 
     def ma_line(series, css: str, label: str) -> str:
         pts = [f"{x(i):.1f},{y(v):.1f}"
@@ -732,7 +751,10 @@ def candle_chart_svg(bars: List[Bar], cfg: StrategyConfig,
 </svg>"""
 
 
-def _chart_view(bars: List[Bar], label: str, cfg: StrategyConfig) -> str:
+def _chart_view(bars: List[Bar], label: str, cfg: StrategyConfig,
+                values: Dict[str, str], window_key: str) -> str:
+    from urllib.parse import urlencode
+
     strat = TrendFollowingStrategy(cfg)
     i = len(bars) - 1
     bar = bars[i]
@@ -743,17 +765,31 @@ def _chart_view(bars: List[Bar], label: str, cfg: StrategyConfig) -> str:
     state = ("uptrend confirmed — entry conditions met today" if entry_today
              else "uptrend confirmed — no entry today" if uptrend
              else "no confirmed uptrend")
+
+    links = []
+    labels = {"6m": "6 months", "1y": "1 year", "2y": "2 years",
+              "all": "everything"}
+    for key, text in labels.items():
+        if key == window_key:
+            links.append(f"<strong>{text}</strong>")
+        else:
+            q = {k: v for k, v in values.items() if v}
+            q["window"] = key
+            links.append(f'<a href="/chart?{_esc(urlencode(q))}">{text}</a>')
+    selector = '<p class="windows">Timeframe: ' + "".join(links) + "</p>"
+
+    window = CHART_WINDOWS.get(window_key, 130)
     return (
         f"<h2>Chart &mdash; {_esc(label)} <small>as of {_esc(bar.date)}, "
         f"close {bar.close:,.2f} &middot; {_esc(state)}</small></h2>"
-        f'<div class="card">{candle_chart_svg(bars, cfg)}'
-        '<p class="note">Reading it: candles are daily bars (hover any '
-        "candle for its numbers). The coloured line is your fast average, "
-        "the grey one your slow average — the trend is only confirmed with "
-        "price above both and fast above slow. The dashed line is where the "
-        "ruleset would put the stop right now; it only ever moves up. "
-        "Reload for the latest daily bar — daily by design, no tick "
-        "noise.</p></div>"
+        f'<div class="card">{selector}{candle_chart_svg(bars, cfg, window=window)}'
+        '<p class="note">Reading it: daily bars (hover a candle for its '
+        "numbers; long timeframes draw the closing price as a line). The "
+        "coloured line is your fast average, the grey one your slow average "
+        "— the trend is only confirmed with price above both and fast above "
+        "slow. The dashed line is where the ruleset would put the stop "
+        "right now; it only ever moves up. Reload for the latest daily bar "
+        "— daily by design, no tick noise.</p></div>"
         '<p class="note"><a href="/">&larr; back to scan &amp; watchlist</a></p>'
     )
 
@@ -992,7 +1028,10 @@ def route(path: str, params: Dict[str, List[str]]) -> Tuple[int, str]:
 
     if path == "/chart":
         values = {k: _first(params, k) for k in
-                  ("symbol", "csv") + RULESET_KEYS}
+                  ("symbol", "csv", "window") + RULESET_KEYS}
+        window_key = values.get("window") or "6m"
+        if window_key not in CHART_WINDOWS:
+            window_key = "6m"
 
         def chart_fail(msg: str) -> Tuple[int, str]:
             return 200, _page("Trendrail", title + '<div class="card warn">'
@@ -1018,7 +1057,9 @@ def route(path: str, params: Dict[str, List[str]]) -> Tuple[int, str]:
             return chart_fail(
                 f"Need at least {cfg.slow_ma + 1} bars to draw the "
                 f"{cfg.slow_ma}-day average; got {len(bars)}.")
-        return 200, _page("Trendrail", title + _chart_view(bars, label, cfg))
+        return 200, _page("Trendrail",
+                          title + _chart_view(bars, label, cfg, values,
+                                              window_key))
 
     if path == "/watchlist":
         values = {k: _first(params, k) for k in
