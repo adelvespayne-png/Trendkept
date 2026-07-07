@@ -727,6 +727,23 @@ class DashboardHandler(BaseHTTPRequestHandler):
         pass  # keep the terminal quiet; this is a local tool
 
 
+class QuietServer(ThreadingHTTPServer):
+    """Browsers abandon connections constantly (tab closed, page refreshed
+    mid-load). That's routine, not an error — don't print a scary traceback
+    at the person running their own local tool."""
+
+    daemon_threads = True
+
+    def handle_error(self, request, client_address) -> None:
+        import sys
+
+        exc = sys.exc_info()[1]
+        if isinstance(exc, (ConnectionResetError, ConnectionAbortedError,
+                            BrokenPipeError)):
+            return
+        super().handle_error(request, client_address)
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(
         prog="trendrail-web", description="Trendrail's local web dashboard.")
@@ -735,7 +752,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--port", type=int, default=8181)
     args = parser.parse_args(argv)
 
-    server = ThreadingHTTPServer((args.host, args.port), DashboardHandler)
+    server = QuietServer((args.host, args.port), DashboardHandler)
     print(f"Trendrail dashboard: http://{args.host}:{args.port}  (Ctrl-C to stop)")
     try:
         server.serve_forever()
