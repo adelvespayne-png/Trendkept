@@ -170,6 +170,92 @@ class TestAppearance(unittest.TestCase):
                               f"panel offers {key}={value} but no CSS hook")
 
 
+class TestRuleset(unittest.TestCase):
+    def test_ruleset_page_serves(self):
+        status, body = route("/ruleset", {})
+        self.assertEqual(status, 200)
+        self.assertIn("How do you trade?", body)
+        self.assertIn("rs-preset", body)          # the style presets
+        self.assertIn("trendrail-ruleset", body)  # localStorage key
+
+    def test_index_links_to_ruleset(self):
+        _, body = route("/", {})
+        self.assertIn('href="/ruleset"', body)
+
+    def test_run_honours_custom_knobs(self):
+        # An absurdly tight "never chase" limit must be accepted and applied.
+        status, body = route("/run", {
+            "csv": [AAPL_CSV], "action": ["scan"],
+            "max_extension_pct": ["0.02"], "fast_ma": ["20"],
+            "slow_ma": ["100"], "breakout_lookback": ["10"],
+        })
+        self.assertEqual(status, 200)
+        self.assertIn("SIGNAL", body)
+
+    def test_fast_must_be_below_slow(self):
+        status, body = route("/run", {
+            "csv": [AAPL_CSV], "action": ["scan"],
+            "fast_ma": ["200"], "slow_ma": ["50"],
+        })
+        self.assertEqual(status, 200)
+        self.assertIn("fast average must be shorter", body)
+
+    def test_watchlist_honours_ruleset_knobs(self):
+        # A huge slow MA -> every row reports not enough history.
+        # (sample_uptrend.csv has 488 bars, under the 501 needed.)
+        status, body = route("/watchlist", {
+            "symbols": [UPTREND_CSV], "slow_ma": ["500"],
+        })
+        self.assertEqual(status, 200)
+        self.assertIn("need 501", body)
+
+    def test_build_cfg_clamps_nonsense(self):
+        from trendrail.web import _build_cfg
+        cfg = _build_cfg({"pullback_pct": "9", "swing_window": "999",
+                          "fast_ma": "1", "slow_ma": "50000"})
+        self.assertLessEqual(cfg.pullback_pct, 0.2)
+        self.assertLessEqual(cfg.swing_window, 10)
+        self.assertGreaterEqual(cfg.fast_ma, 5)
+        self.assertLessEqual(cfg.slow_ma, 500)
+
+
+class TestChart(unittest.TestCase):
+    def test_chart_page_renders_candles_mas_and_stop(self):
+        status, body = route("/chart", {"csv": [AAPL_CSV]})
+        self.assertEqual(status, 200)
+        self.assertIn("candle-", body)     # candle bodies
+        self.assertIn("50d", body)         # fast MA label
+        self.assertIn("200d", body)        # slow MA label
+        self.assertIn("stop", body)        # the stop line
+        self.assertIn("Chart", body)
+
+    def test_chart_missing_source(self):
+        status, body = route("/chart", {})
+        self.assertEqual(status, 200)
+        self.assertIn("provide a symbol or a CSV path", body)
+
+    def test_chart_too_few_bars(self):
+        status, body = route("/chart", {"csv": [UPTREND_CSV],
+                                        "slow_ma": ["500"]})
+        self.assertEqual(status, 200)
+        self.assertIn("Need at least", body)
+
+    def test_watchlist_rows_link_to_chart(self):
+        status, body = route("/watchlist", {"symbols": [AAPL_CSV]})
+        self.assertEqual(status, 200)
+        self.assertIn('href="/chart?', body)
+
+    def test_candle_svg_direct(self):
+        from trendrail.data import load_csv
+        from trendrail.strategy import StrategyConfig
+        from trendrail.web import candle_chart_svg
+        bars = load_csv(AAPL_CSV)
+        svg = candle_chart_svg(bars, StrategyConfig())
+        self.assertIn("<svg", svg)
+        self.assertIn("candle-up", svg)
+        self.assertIn("candle-down", svg)
+
+
 class TestEquityCurveSvg(unittest.TestCase):
     def test_renders_polyline_and_labels(self):
         dates = ["2023-01-0%d" % d for d in range(1, 6)]

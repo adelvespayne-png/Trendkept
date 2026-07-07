@@ -41,7 +41,45 @@ DEFAULTS = {
     "fast_ma": 50,
     "slow_ma": 200,
     "breakout_lookback": 20,
+    "pullback_pct": 0.03,
+    "max_extension_pct": 0.12,
+    "stop_buffer_pct": 0.005,
+    "swing_window": 3,
 }
+
+# Every strategy knob a personal ruleset can set, in one place. The ruleset
+# page edits them, localStorage remembers them per person (local-first, like
+# the appearance settings), and the scan/watchlist forms carry them through
+# as (mostly hidden) inputs.
+RULESET_KEYS = ("fast_ma", "slow_ma", "breakout_lookback", "pullback_pct",
+                "max_extension_pct", "stop_buffer_pct", "swing_window")
+
+
+def _build_cfg(values: Dict[str, str]) -> StrategyConfig:
+    """Strategy settings from request params, defaulting each blank knob.
+
+    Raises ValueError on non-numeric input (callers turn that into a clean
+    message) and clamps into sane bounds so a typo can't produce a config
+    that silently never trades or chases anything.
+    """
+    def num(key: str, cast, lo, hi):
+        raw = values.get(key) or ""
+        value = cast(raw) if raw else DEFAULTS[key]
+        return min(max(value, lo), hi)
+
+    fast = num("fast_ma", int, 5, 400)
+    slow = num("slow_ma", int, 10, 500)
+    if fast >= slow:
+        raise ValueError("the fast average must be shorter than the slow one")
+    return StrategyConfig(
+        fast_ma=fast,
+        slow_ma=slow,
+        breakout_lookback=num("breakout_lookback", int, 5, 200),
+        pullback_pct=num("pullback_pct", float, 0.005, 0.2),
+        max_extension_pct=num("max_extension_pct", float, 0.02, 0.5),
+        stop_buffer_pct=num("stop_buffer_pct", float, 0.0, 0.05),
+        swing_window=num("swing_window", int, 2, 10),
+    )
 
 # Palette: validated light/dark tokens (single accent-coloured series; status
 # greens/reds reserved for P/L deltas only, never decoration).
@@ -134,6 +172,18 @@ form.controls textarea {
   border-radius: 6px; padding: 7px 9px; font: inherit; width: 340px;
   height: 56px; resize: vertical;
 }
+form.controls select {
+  background: var(--page); color: var(--ink); border: 1px solid var(--axis);
+  border-radius: 6px; padding: 7px 9px; font: inherit;
+}
+svg .candle-up { fill: var(--up); }
+svg .candle-down { fill: var(--down); }
+svg .wick { stroke: var(--muted); stroke-width: 1; }
+svg .ma-fast { stroke: var(--series); stroke-width: 2; fill: none; }
+svg .ma-slow { stroke: var(--muted); stroke-width: 2; fill: none; }
+svg .stop-line { stroke: var(--down); stroke-width: 1.5;
+  stroke-dasharray: 6 4; }
+svg text.lbl { font-size: 11px; font-family: inherit; }
 .note { color: var(--ink-2); font-size: 13px; }
 .warn { color: var(--down); }
 .signal { font-size: 18px; font-weight: 650; }
@@ -317,7 +367,8 @@ def _page(title: str, body: str) -> str:
         "financial advice. Backtests use idealized fills; real markets gap, "
         "slip, and surprise.</footer>"
         f"</main><script>{_HOVER_JS}</script>"
-        f"<script>{_APPEARANCE_JS}</script></body></html>"
+        f"<script>{_APPEARANCE_JS}</script>"
+        f"<script>{_RULESET_JS}</script></body></html>"
     )
 
 
@@ -340,11 +391,17 @@ def _form(values: Dict[str, str]) -> str:
     <input name="fast_ma" value="{val('fast_ma')}"></label>
   <label>Slow MA
     <input name="slow_ma" value="{val('slow_ma')}"></label>
+  <input type="hidden" name="breakout_lookback" value="{val('breakout_lookback')}">
+  <input type="hidden" name="pullback_pct" value="{val('pullback_pct')}">
+  <input type="hidden" name="max_extension_pct" value="{val('max_extension_pct')}">
+  <input type="hidden" name="stop_buffer_pct" value="{val('stop_buffer_pct')}">
+  <input type="hidden" name="swing_window" value="{val('swing_window')}">
   <button name="action" value="scan">Scan today</button>
   <button name="action" value="backtest" class="ghost">Backtest</button>
 </form>
 <p class="note">Scan asks the rules what to do <em>today</em>. Backtest replays
-them over the whole history. Same engine as the CLI.</p></div>"""
+them over the whole history. Same engine as the CLI &mdash; and both run
+<a href="/ruleset">your saved ruleset</a>.</p></div>"""
 
 
 def _watchlist_form(values: Dict[str, str]) -> str:
@@ -361,10 +418,142 @@ def _watchlist_form(values: Dict[str, str]) -> str:
     <input name="account" value="{val('account')}"></label>
   <label>Risk / trade
     <input name="risk" value="{val('risk')}"></label>
+  <input type="hidden" name="fast_ma" value="{val('fast_ma')}">
+  <input type="hidden" name="slow_ma" value="{val('slow_ma')}">
+  <input type="hidden" name="breakout_lookback" value="{val('breakout_lookback')}">
+  <input type="hidden" name="pullback_pct" value="{val('pullback_pct')}">
+  <input type="hidden" name="max_extension_pct" value="{val('max_extension_pct')}">
+  <input type="hidden" name="stop_buffer_pct" value="{val('stop_buffer_pct')}">
+  <input type="hidden" name="swing_window" value="{val('swing_window')}">
   <button>Scan the watchlist</button>
 </form>
 <p class="note">One row per symbol: is the uptrend confirmed, is there an
-entry today, and the exact stop and position size if there is.</p></div>"""
+entry today, and the exact stop and position size if there is. Runs
+<a href="/ruleset">your saved ruleset</a>.</p></div>"""
+
+
+_RULESET_PAGE = """
+<h2>How do you trade?</h2>
+<p class="note">Answer once; every scan, backtest, and watchlist run then
+uses <em>your</em> rules. Saved in this browser only &mdash; your rules,
+your machine. The one thing you can't switch off is the discipline: every
+ruleset here is trend-following with a stop and risk-based sizing.</p>
+
+<div class="card"><form class="controls" id="ruleset-form" method="get"
+     action="/run">
+  <label style="flex-basis:100%">Name your ruleset
+    <input name="ruleset_name" class="wide" placeholder="My rules"></label>
+
+  <label style="flex-basis:100%">Trading tempo
+    <select id="rs-preset">
+      <option value="">&mdash; pick a starting style &mdash;</option>
+      <option value="classic">Classic trend (50/200 averages, 20-day
+        breakout) &mdash; the written rules</option>
+      <option value="faster">Faster swing (20/100 averages, 10-day breakout)
+        &mdash; more signals, more noise</option>
+      <option value="longterm">Long-term (100/250 averages, 40-day breakout)
+        &mdash; fewer, bigger trends</option>
+    </select></label>
+
+  <label>Account
+    <input name="account" value="100000"></label>
+  <label>Risk per trade (fraction)
+    <input name="risk" value="0.01"></label>
+  <label>Fast average (days)
+    <input name="fast_ma" value="50"></label>
+  <label>Slow average (days)
+    <input name="slow_ma" value="200"></label>
+  <label>Breakout window (days)
+    <input name="breakout_lookback" value="20"></label>
+
+  <details style="flex-basis:100%"><summary class="note">Fine-tuning
+  (sensible defaults &mdash; open only if you know why)</summary>
+  <div class="controls" style="display:flex;flex-wrap:wrap;gap:12px;
+       margin-top:8px">
+  <label>Pullback tolerance (fraction of the fast average)
+    <input name="pullback_pct" value="0.03"></label>
+  <label>"Never chase" limit (fraction above fast average)
+    <input name="max_extension_pct" value="0.12"></label>
+  <label>Stop buffer below swing low (fraction)
+    <input name="stop_buffer_pct" value="0.005"></label>
+  <label>Swing confirmation (bars)
+    <input name="swing_window" value="3"></label>
+  </div></details>
+
+  <input type="hidden" name="csv" value="examples/aapl_2015_2017.csv">
+  <input type="hidden" name="action" value="backtest">
+  <button type="button" id="rs-save">Save my ruleset</button>
+  <button class="ghost" type="submit">Save &amp; backtest it (AAPL sample)</button>
+  <span class="note" id="rs-status"></span>
+</form>
+<p class="note"><strong>The discipline part:</strong> changing a rule after
+you've started trading it is how systems die. Set it, backtest it, write it
+down &mdash; then judge yourself by whether you followed it, not by whether
+you liked today's answer.</p></div>
+"""
+
+_RULESET_JS = """
+(function () {
+  var KEY = 'trendrail-ruleset';
+  function load() {
+    try { return JSON.parse(localStorage.getItem(KEY)) || null; }
+    catch (e) { return null; }
+  }
+  var saved = load();
+
+  // On the home page: quietly fill every form with the saved ruleset.
+  if (location.pathname === '/' && saved) {
+    document.querySelectorAll('form.controls').forEach(function (form) {
+      Object.keys(saved).forEach(function (k) {
+        var el = form.querySelector('[name="' + k + '"]');
+        if (el) el.value = saved[k];
+      });
+    });
+    var note = document.getElementById('ruleset-note');
+    if (note && saved.ruleset_name) {
+      note.textContent = 'Using your ruleset: ' + saved.ruleset_name;
+    }
+  }
+
+  // On the ruleset page: presets, restore, save.
+  var form = document.getElementById('ruleset-form');
+  if (!form) return;
+  var PRESETS = {
+    classic:  { fast_ma: 50,  slow_ma: 200, breakout_lookback: 20 },
+    faster:   { fast_ma: 20,  slow_ma: 100, breakout_lookback: 10 },
+    longterm: { fast_ma: 100, slow_ma: 250, breakout_lookback: 40 }
+  };
+  if (saved) {
+    Object.keys(saved).forEach(function (k) {
+      var el = form.querySelector('[name="' + k + '"]');
+      if (el) el.value = saved[k];
+    });
+  }
+  var preset = document.getElementById('rs-preset');
+  preset.addEventListener('change', function () {
+    var p = PRESETS[preset.value];
+    if (!p) return;
+    Object.keys(p).forEach(function (k) {
+      form.querySelector('[name="' + k + '"]').value = p[k];
+    });
+  });
+  function saveNow() {
+    var out = {};
+    form.querySelectorAll('input[name]').forEach(function (el) {
+      if (el.type !== 'hidden' || el.name === 'ruleset_name') {
+        out[el.name] = el.value;
+      }
+    });
+    delete out.csv; delete out.action;
+    try { localStorage.setItem(KEY, JSON.stringify(out)); } catch (e) {}
+    var status = document.getElementById('rs-status');
+    if (status) status.textContent =
+      'Saved. Scans and the watchlist now use these rules.';
+  }
+  document.getElementById('rs-save').addEventListener('click', saveNow);
+  form.addEventListener('submit', saveNow);  // save-and-backtest path
+})();
+"""
 
 
 def equity_curve_svg(
@@ -433,6 +622,155 @@ def equity_curve_svg(
 <figcaption class="note">Equity curve (idealized fills — an optimistic
 ceiling, not a promise).</figcaption>
 </figure>"""
+
+
+def candle_chart_svg(bars: List[Bar], cfg: StrategyConfig,
+                     width: int = 820, height: int = 340,
+                     window: int = 130) -> str:
+    """Daily candles with the ruleset drawn on top: both moving averages and
+    the current stop level. Hovering any candle shows its OHLC (native
+    tooltips — this is a reading chart, not a drawing tool)."""
+    from .indicators import sma
+
+    if len(bars) < 2:
+        return "<p class=\"note\">Not enough data to chart.</p>"
+
+    closes = [b.close for b in bars]
+    fast_all = sma(closes, cfg.fast_ma)
+    slow_all = sma(closes, cfg.slow_ma)
+
+    view = bars[-window:]
+    start = len(bars) - len(view)
+    fast = fast_all[start:]
+    slow = slow_all[start:]
+
+    strat = TrendFollowingStrategy(cfg)
+    stop = strat.initial_stop(bars, len(bars) - 1)
+
+    pad_l, pad_r, pad_t, pad_b = 64, 56, 12, 24
+    x0, x1 = pad_l, width - pad_r
+    y0, y1 = height - pad_b, pad_t
+    lo = min(b.low for b in view)
+    hi = max(b.high for b in view)
+    for series in (fast, slow):
+        vals = [v for v in series if v is not None]
+        if vals:
+            lo, hi = min(lo, min(vals)), max(hi, max(vals))
+    if stop is not None:
+        lo = min(lo, stop)
+    if hi == lo:
+        hi = lo + 1.0
+
+    def y(v: float) -> float:
+        return y0 + (y1 - y0) * (v - lo) / (hi - lo)
+
+    n = len(view)
+    step = (x1 - x0) / n
+    body_w = max(step * 0.6, 1.5)
+
+    def x(i: int) -> float:
+        return x0 + (i + 0.5) * step
+
+    grid = []
+    for k in range(5):
+        gv = lo + (hi - lo) * k / 4
+        gy = y(gv)
+        grid.append(
+            f'<line x1="{x0}" y1="{gy:.1f}" x2="{x1}" y2="{gy:.1f}" '
+            'stroke="var(--grid)" stroke-width="1"/>'
+            f'<text class="lbl" x="{x0 - 8}" y="{gy + 4:.1f}" '
+            f'text-anchor="end" fill="var(--muted)">{gv:,.0f}</text>')
+
+    candles = []
+    for i, b in enumerate(view):
+        cx = x(i)
+        top, bot = max(b.open, b.close), min(b.open, b.close)
+        cls = "candle-up" if b.close >= b.open else "candle-down"
+        body_h = max(y(bot) - y(top), 1.0)
+        candles.append(
+            f'<g><title>{_esc(b.date)}  O {b.open:,.2f}  H {b.high:,.2f}  '
+            f'L {b.low:,.2f}  C {b.close:,.2f}</title>'
+            f'<line class="wick" x1="{cx:.1f}" y1="{y(b.high):.1f}" '
+            f'x2="{cx:.1f}" y2="{y(b.low):.1f}"/>'
+            f'<rect class="{cls}" x="{cx - body_w / 2:.1f}" '
+            f'y="{y(top):.1f}" width="{body_w:.1f}" '
+            f'height="{body_h:.1f}"/></g>')
+
+    def ma_line(series, css: str, label: str) -> str:
+        pts = [f"{x(i):.1f},{y(v):.1f}"
+               for i, v in enumerate(series) if v is not None]
+        if len(pts) < 2:
+            return ""
+        last = [v for v in series if v is not None][-1]
+        color = "var(--series)" if css == "ma-fast" else "var(--muted)"
+        return (f'<polyline class="{css}" points="{" ".join(pts)}"/>'
+                f'<text class="lbl" x="{x1 + 4}" y="{y(last) + 4:.1f}" '
+                f'fill="{color}">{label}</text>')
+
+    stop_layer = ""
+    if stop is not None and lo <= stop <= hi:
+        stop_layer = (
+            f'<line class="stop-line" x1="{x0}" y1="{y(stop):.1f}" '
+            f'x2="{x1}" y2="{y(stop):.1f}"/>'
+            f'<text class="lbl" x="{x1 + 4}" y="{y(stop) + 4:.1f}" '
+            f'fill="var(--down)">stop {stop:,.2f}</text>')
+
+    return f"""
+<svg viewBox="0 0 {width} {height}" width="100%" role="img"
+     aria-label="Daily candles with moving averages and stop level">
+  {''.join(grid)}
+  <line x1="{x0}" y1="{y0}" x2="{x1}" y2="{y0}"
+        stroke="var(--axis)" stroke-width="1"/>
+  {''.join(candles)}
+  {ma_line(fast, 'ma-fast', f'{cfg.fast_ma}d')}
+  {ma_line(slow, 'ma-slow', f'{cfg.slow_ma}d')}
+  {stop_layer}
+  <text class="lbl" x="{x0}" y="{height - 6}"
+        fill="var(--muted)">{_esc(view[0].date)}</text>
+  <text class="lbl" x="{x1}" y="{height - 6}" text-anchor="end"
+        fill="var(--muted)">{_esc(view[-1].date)}</text>
+</svg>"""
+
+
+def _chart_view(bars: List[Bar], label: str, cfg: StrategyConfig) -> str:
+    strat = TrendFollowingStrategy(cfg)
+    i = len(bars) - 1
+    bar = bars[i]
+    uptrend = strat.is_uptrend(bars, i)
+    signal = strat.entry_signal(bars, i)
+    entry_today = signal in (Signal.ENTER_PULLBACK, Signal.ENTER_BREAKOUT)
+
+    state = ("uptrend confirmed — entry conditions met today" if entry_today
+             else "uptrend confirmed — no entry today" if uptrend
+             else "no confirmed uptrend")
+    return (
+        f"<h2>Chart &mdash; {_esc(label)} <small>as of {_esc(bar.date)}, "
+        f"close {bar.close:,.2f} &middot; {_esc(state)}</small></h2>"
+        f'<div class="card">{candle_chart_svg(bars, cfg)}'
+        '<p class="note">Reading it: candles are daily bars (hover any '
+        "candle for its numbers). The coloured line is your fast average, "
+        "the grey one your slow average — the trend is only confirmed with "
+        "price above both and fast above slow. The dashed line is where the "
+        "ruleset would put the stop right now; it only ever moves up. "
+        "Reload for the latest daily bar — daily by design, no tick "
+        "noise.</p></div>"
+        '<p class="note"><a href="/">&larr; back to scan &amp; watchlist</a></p>'
+    )
+
+
+def _chart_href(item: str, cfg: StrategyConfig) -> str:
+    from urllib.parse import urlencode
+
+    is_csv = (os.path.exists(item) or "/" in item
+              or item.lower().endswith(".csv"))
+    q = {("csv" if is_csv else "symbol"): item,
+         "fast_ma": cfg.fast_ma, "slow_ma": cfg.slow_ma,
+         "breakout_lookback": cfg.breakout_lookback,
+         "pullback_pct": cfg.pullback_pct,
+         "max_extension_pct": cfg.max_extension_pct,
+         "stop_buffer_pct": cfg.stop_buffer_pct,
+         "swing_window": cfg.swing_window}
+    return "/chart?" + urlencode(q)
 
 
 def _tile(label: str, value: str, cls: str = "") -> str:
@@ -596,13 +934,15 @@ def _watchlist_view(items: List[str], account: float, risk: float,
         stop = strat.initial_stop(bars, i)
         entry = signal in (Signal.ENTER_PULLBACK, Signal.ENTER_BREAKOUT)
 
+        chart = _esc(_chart_href(item, cfg))
+        name_cell = f'<td><a href="{chart}">{_esc(label)}</a></td>'
         if entry and stop:
             signals += 1
             per_share = bar.close - stop
             shares = (int(account * risk // per_share)
                       if per_share > 0 else 0)
             rows.append(
-                f'<tr class="hit"><td>{_esc(label)}</td>'
+                f'<tr class="hit">{name_cell}'
                 f"<td>{_esc(bar.date)}</td><td>{bar.close:,.2f}</td>"
                 f'<td class="ok">YES</td>'
                 f'<td class="ok">{_esc(signal.value.replace("enter_", "").upper())}</td>'
@@ -611,7 +951,7 @@ def _watchlist_view(items: List[str], account: float, risk: float,
             note = ("no entry today" if uptrend
                     else "trend not confirmed — stay out")
             rows.append(
-                f"<tr><td>{_esc(label)}</td>"
+                f"<tr>{name_cell}"
                 f"<td>{_esc(bar.date)}</td><td>{bar.close:,.2f}</td>"
                 f"<td>{'YES' if uptrend else 'no'}</td>"
                 f"<td>&ndash;</td><td>&ndash;</td>"
@@ -641,17 +981,58 @@ def route(path: str, params: Dict[str, List[str]]) -> Tuple[int, str]:
     """
     title = "<h1>Trendrail <small>disciplined trend-following</small></h1>"
     if path == "/":
-        return 200, _page("Trendrail", title + _form({}) + _watchlist_form({}))
+        note = ('<p class="note" id="ruleset-note">Rules run with the '
+                'defaults until you <a href="/ruleset">set how you trade'
+                "</a>.</p>")
+        return 200, _page("Trendrail",
+                          title + note + _form({}) + _watchlist_form({}))
+
+    if path == "/ruleset":
+        return 200, _page("Trendrail", title + _RULESET_PAGE)
+
+    if path == "/chart":
+        values = {k: _first(params, k) for k in
+                  ("symbol", "csv") + RULESET_KEYS}
+
+        def chart_fail(msg: str) -> Tuple[int, str]:
+            return 200, _page("Trendrail", title + '<div class="card warn">'
+                              f"{_esc(msg)}</div>"
+                              '<p class="note"><a href="/">&larr; back</a></p>')
+
+        try:
+            cfg = _build_cfg(values)
+        except ValueError as exc:
+            return chart_fail(str(exc) if "average" in str(exc)
+                              else "Rule settings must be numbers.")
+        try:
+            bars, label = _load_bars(values["symbol"], values["csv"])
+        except FileNotFoundError as exc:
+            return chart_fail(f"File not found: {exc.filename}")
+        except (ValueError, OSError) as exc:
+            return chart_fail(str(exc))
+        except Exception as exc:
+            if exc.__class__.__name__ == "FetchError":
+                return chart_fail(str(exc))
+            raise
+        if len(bars) < cfg.slow_ma + 1:
+            return chart_fail(
+                f"Need at least {cfg.slow_ma + 1} bars to draw the "
+                f"{cfg.slow_ma}-day average; got {len(bars)}.")
+        return 200, _page("Trendrail", title + _chart_view(bars, label, cfg))
 
     if path == "/watchlist":
-        values = {k: _first(params, k) for k in ("symbols", "account", "risk")}
+        values = {k: _first(params, k) for k in
+                  ("symbols", "account", "risk") + RULESET_KEYS}
         header = title + _watchlist_form(values)
         try:
             account = float(values["account"] or DEFAULTS["account"])
             risk = float(values["risk"] or DEFAULTS["risk"])
-        except ValueError:
+            cfg = _build_cfg(values)
+        except ValueError as exc:
+            msg = (str(exc) if "average" in str(exc)
+                   else "Account, risk, and rule settings must be numbers.")
             return 200, _page("Trendrail", header + '<div class="card warn">'
-                              "Account and risk must be numbers.</div>")
+                              f"{_esc(msg)}</div>")
         if not 0 < risk <= 0.1:
             return 200, _page("Trendrail", header + '<div class="card warn">'
                               "Risk per trade should be a small fraction, "
@@ -660,15 +1041,14 @@ def route(path: str, params: Dict[str, List[str]]) -> Tuple[int, str]:
         if not items:
             return 200, _page("Trendrail", header + '<div class="card warn">'
                               "Add at least one ticker or CSV path.</div>")
-        view = _watchlist_view(items, account, risk, StrategyConfig())
+        view = _watchlist_view(items, account, risk, cfg)
         return 200, _page("Trendrail", header + view)
 
     if path != "/run":
         return 404, _page("Not found", "<h1>404</h1><p>Nothing here.</p>")
 
     values = {k: _first(params, k) for k in
-              ("symbol", "csv", "account", "risk", "fast_ma", "slow_ma",
-               "breakout_lookback", "action")}
+              ("symbol", "csv", "account", "risk", "action") + RULESET_KEYS}
     header = ("<h1>Trendrail <small>disciplined trend-following</small></h1>"
               + _form(values))
 
@@ -679,14 +1059,11 @@ def route(path: str, params: Dict[str, List[str]]) -> Tuple[int, str]:
     try:
         account = float(values["account"] or DEFAULTS["account"])
         risk = float(values["risk"] or DEFAULTS["risk"])
-        cfg = StrategyConfig(
-            fast_ma=int(values["fast_ma"] or DEFAULTS["fast_ma"]),
-            slow_ma=int(values["slow_ma"] or DEFAULTS["slow_ma"]),
-            breakout_lookback=int(values["breakout_lookback"]
-                                  or DEFAULTS["breakout_lookback"]),
-        )
-    except ValueError:
-        return fail("Account, risk, and MA settings must be numbers.")
+        cfg = _build_cfg(values)
+    except ValueError as exc:
+        if "average" in str(exc):
+            return fail(str(exc))
+        return fail("Account, risk, and rule settings must be numbers.")
     if not 0 < risk <= 0.1:
         return fail("Risk per trade should be a small fraction, e.g. 0.01-0.02.")
 
