@@ -118,14 +118,19 @@ class AlpacaClient:
     # --- market data ------------------------------------------------------
 
     @staticmethod
-    def _bars_from_payload(payload: dict) -> List[Bar]:
+    def _bars_from_payload(payload: dict, intraday: bool = False) -> List[Bar]:
         """Convert an Alpaca bars payload into :class:`Bar` objects.
 
-        Pure/static so it can be unit-tested without a network call.
+        Pure/static so it can be unit-tested without a network call. Intraday
+        bars keep their time-of-day in the date string so multiple bars per
+        day stay distinct (and ordered — the strategy only needs ordering).
         """
         out: List[Bar] = []
         for b in payload.get("bars") or []:
-            date = b["t"].split("T")[0]  # RFC3339 -> YYYY-MM-DD
+            if intraday:  # "2023-01-03T14:30:00Z" -> "2023-01-03 14:30"
+                date = b["t"].replace("T", " ")[:16]
+            else:
+                date = b["t"].split("T")[0]  # RFC3339 -> YYYY-MM-DD
             o, h, l, c = float(b["o"]), float(b["h"]), float(b["l"]), float(b["c"])
             hi, lo = max(h, o, c), min(l, o, c)  # guard feed rounding
             out.append(Bar(date, o, hi, lo, c, volume=float(b.get("v", 0)) or None))
@@ -138,22 +143,28 @@ class AlpacaClient:
         end: Optional[str] = None,
         adjustment: str = "all",
         max_bars: int = 5000,
+        timeframe: str = "1Day",
     ) -> List[Bar]:
-        """Adjusted daily bars for ``symbol``, oldest-first.
+        """Adjusted bars for ``symbol``, oldest-first (daily by default).
 
-        ``start``/``end`` are ``YYYY-MM-DD``; default is ~5 years through today,
-        enough to warm up a 200-day average with room to trade. ``adjustment``
-        ``"all"`` applies splits and dividends.
+        ``start``/``end`` are ``YYYY-MM-DD``; the default start scales with
+        the bar size — ~5 years of daily bars, ~30 days of minute bars —
+        enough history to warm up the averages without pulling a firehose.
+        ``timeframe`` is Alpaca's notation: 1Min, 5Min, 30Min, 1Hour, 4Hour,
+        1Day. ``adjustment`` ``"all"`` applies splits and dividends.
         """
+        intraday = timeframe != "1Day"
         if start is None:
-            start = (datetime.now(timezone.utc) - timedelta(days=5 * 365)).strftime(
+            days = {"1Min": 30, "5Min": 90, "30Min": 365,
+                    "1Hour": 730, "4Hour": 730}.get(timeframe, 5 * 365)
+            start = (datetime.now(timezone.utc) - timedelta(days=days)).strftime(
                 "%Y-%m-%d"
             )
         bars: List[Bar] = []
         page_token: Optional[str] = None
         while True:
             params = {
-                "timeframe": "1Day",
+                "timeframe": timeframe,
                 "start": start,
                 "adjustment": adjustment,
                 "feed": self.feed,
@@ -168,7 +179,7 @@ class AlpacaClient:
                 + urllib.parse.urlencode(params)
             )
             payload = self._request("GET", url)
-            bars.extend(self._bars_from_payload(payload))
+            bars.extend(self._bars_from_payload(payload, intraday=intraday))
             page_token = payload.get("next_page_token")
             if not page_token or len(bars) >= max_bars:
                 break

@@ -68,10 +68,12 @@ def stooq_csv(symbol: str, timeout: float = 30.0) -> str:
     return text
 
 
-def yahoo_to_csv(payload: str, symbol: str = "") -> str:
+def yahoo_to_csv(payload: str, symbol: str = "", intraday: bool = False) -> str:
     """Convert a Yahoo v8 chart JSON payload to OHLC CSV text.
 
-    Split out from the HTTP call so it can be unit-tested with a canned payload.
+    Split out from the HTTP call so it can be unit-tested with a canned
+    payload. Intraday bars keep time-of-day in the date column so several
+    bars per day stay distinct and ordered.
     """
     data = json.loads(payload)
     chart = data.get("chart") or {}
@@ -104,7 +106,8 @@ def yahoo_to_csv(payload: str, symbol: str = "") -> str:
             continue
         adj = adjclose[i] if adjclose and adjclose[i] is not None else c
         vol = volumes[i] if i < len(volumes) and volumes[i] is not None else ""
-        date = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d")
+        fmt = "%Y-%m-%d %H:%M" if intraday else "%Y-%m-%d"
+        date = datetime.fromtimestamp(ts, tz=timezone.utc).strftime(fmt)
         lines.append(f"{date},{o},{h},{l},{c},{adj},{vol}")
 
     if len(lines) == 1:
@@ -112,23 +115,38 @@ def yahoo_to_csv(payload: str, symbol: str = "") -> str:
     return "\n".join(lines) + "\n"
 
 
+# Yahoo's history depth per intraday interval (their hard limits, roughly).
+_YAHOO_INTRADAY_RANGE = {"1m": "5d", "5m": "1mo", "30m": "1mo", "60m": "6mo"}
+
+
 def yahoo_csv(symbol: str, range_: str = "5y", interval: str = "1d",
               timeout: float = 30.0) -> str:
-    """Raw daily CSV text from Yahoo's chart API."""
+    """Raw CSV text from Yahoo's chart API (daily or intraday bars)."""
+    intraday = interval != "1d"
+    if intraday:
+        range_ = _YAHOO_INTRADAY_RANGE.get(interval, "1mo")
     url = (
         f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
         f"?range={range_}&interval={interval}&events=div%2Csplit"
     )
-    return yahoo_to_csv(_http_get(url, timeout), symbol)
+    return yahoo_to_csv(_http_get(url, timeout), symbol, intraday=intraday)
 
 
 def fetch_csv(symbol: str, provider: str = "auto", *, range_: str = "5y",
-              timeout: float = 30.0) -> str:
+              timeout: float = 30.0, interval: str = "1d") -> str:
     """Return raw CSV text for ``symbol`` from the chosen provider.
 
     ``provider`` is ``"auto"`` (Stooq then Yahoo), ``"stooq"``, or ``"yahoo"``.
+    ``interval`` supports Yahoo's intraday bar sizes (``1m``/``5m``/``30m``/
+    ``60m``); Stooq is daily-only, so intraday requests go straight to Yahoo.
     """
     provider = provider.lower()
+    if interval != "1d" and provider in ("auto", "yahoo"):
+        return yahoo_csv(symbol, range_=range_, interval=interval,
+                         timeout=timeout)
+    if interval != "1d":
+        raise ValueError("intraday bars are only available from yahoo/auto "
+                         "(or Alpaca via the dashboard)")
     if provider == "stooq":
         return stooq_csv(symbol, timeout)
     if provider == "yahoo":

@@ -54,6 +54,19 @@ DEFAULTS = {
 RULESET_KEYS = ("fast_ma", "slow_ma", "breakout_lookback", "pullback_pct",
                 "max_extension_pct", "stop_buffer_pct", "swing_window")
 
+# Bar sizes: ui key -> (label, Alpaca timeframe, Yahoo interval or None).
+# The rules count BARS, not days — 50 bars of 1-hour data is ~50 trading
+# hours. Intraday history is limited by the providers (1-min ≈ days, not
+# years); 4-hour bars need the Alpaca feed (Yahoo doesn't serve them).
+INTERVALS = {
+    "1min": ("1 minute", "1Min", "1m"),
+    "5min": ("5 minutes", "5Min", "5m"),
+    "30min": ("30 minutes", "30Min", "30m"),
+    "1hour": ("1 hour", "1Hour", "60m"),
+    "4hour": ("4 hours", "4Hour", None),
+    "1day": ("1 day", "1Day", "1d"),
+}
+
 
 def _build_cfg(values: Dict[str, str]) -> StrategyConfig:
     """Strategy settings from request params, defaulting each blank knob.
@@ -185,6 +198,18 @@ svg .stop-line { stroke: var(--down); stroke-width: 1.5;
   stroke-dasharray: 6 4; }
 svg .price-line { stroke: var(--ink); stroke-width: 1.5; fill: none;
   opacity: 0.85; }
+svg .marker-entry { fill: var(--up); }
+svg .marker-exit { fill: var(--down); }
+nav.top { display: flex; gap: 10px; align-items: center; margin: 0 0 14px; }
+nav.top a.home { font-weight: 750; font-size: 19px; color: var(--ink);
+  text-decoration: none; margin-right: auto; }
+nav.top a.home small { color: var(--muted); font-weight: 400;
+  font-size: 12px; }
+nav.top a.btn { background: var(--series); color: #fff; text-decoration:
+  none; font-weight: 600; font-size: 13px; padding: 8px 14px;
+  border-radius: var(--radius); }
+nav.top a.btn.ghost { background: transparent; color: var(--series);
+  border: 1px solid var(--series); }
 svg text.lbl { font-size: 11px; font-family: inherit; }
 .windows a { margin-right: 10px; font-size: 13px; }
 .windows strong { margin-right: 10px; font-size: 13px; }
@@ -358,6 +383,15 @@ _HOVER_JS = """
 """
 
 
+_NAV = """
+<nav class="top">
+  <a class="home" href="/">Trendrail <small>disciplined
+  trend-following</small></a>
+  <a class="btn ghost" href="/">Home</a>
+  <a class="btn" href="/ruleset">My Trading Diagram</a>
+</nav>"""
+
+
 def _page(title: str, body: str) -> str:
     return (
         "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\">"
@@ -365,7 +399,7 @@ def _page(title: str, body: str) -> str:
         f"<title>{_esc(title)}</title>"
         f"<script>{_APPEARANCE_BOOT_JS}</script>"
         f"<style>{_STYLE}</style></head>"
-        f"<body><main>{body}"
+        f"<body><main>{_NAV}{body}"
         f"{_APPEARANCE_PANEL}"
         "<footer>Trendrail is an educational backtesting/paper-trading tool, not "
         "financial advice. Backtests use idealized fills; real markets gap, "
@@ -376,10 +410,19 @@ def _page(title: str, body: str) -> str:
     )
 
 
+def _interval_select(current: str) -> str:
+    options = "".join(
+        f'<option value="{k}"{" selected" if k == current else ""}>'
+        f"{label}</option>"
+        for k, (label, _, _) in INTERVALS.items())
+    return f'<select name="interval">{options}</select>'
+
+
 def _form(values: Dict[str, str]) -> str:
     def val(key: str) -> str:
         return _esc(values.get(key) or str(DEFAULTS.get(key, "")))
 
+    interval = values.get("interval") or "1day"
     return f"""
 <div class="card"><form class="controls" method="get" action="/run">
   <label>Symbol (fetched live)
@@ -395,6 +438,8 @@ def _form(values: Dict[str, str]) -> str:
     <input name="fast_ma" value="{val('fast_ma')}"></label>
   <label>Slow MA
     <input name="slow_ma" value="{val('slow_ma')}"></label>
+  <label>Bar size
+    {_interval_select(interval)}</label>
   <input type="hidden" name="breakout_lookback" value="{val('breakout_lookback')}">
   <input type="hidden" name="pullback_pct" value="{val('pullback_pct')}">
   <input type="hidden" name="max_extension_pct" value="{val('max_extension_pct')}">
@@ -403,9 +448,11 @@ def _form(values: Dict[str, str]) -> str:
   <button name="action" value="scan">Scan today</button>
   <button name="action" value="backtest" class="ghost">Backtest</button>
 </form>
-<p class="note">Scan asks the rules what to do <em>today</em>. Backtest replays
-them over the whole history. Same engine as the CLI &mdash; and both run
-<a href="/ruleset">your saved ruleset</a>.</p></div>"""
+<p class="note">Scan asks the rules what to do on the latest bar. Backtest
+replays them over the whole history &mdash; trades are drawn on the price
+chart. Both run <a href="/ruleset">your Trading Diagram</a>. The averages
+count <em>bars</em>: on 1-hour bars, 50 means 50 trading hours. Intraday
+history is limited (1-minute &asymp; the last week).</p></div>"""
 
 
 def _watchlist_form(values: Dict[str, str]) -> str:
@@ -433,7 +480,8 @@ def _watchlist_form(values: Dict[str, str]) -> str:
 </form>
 <p class="note">One row per symbol: is the uptrend confirmed, is there an
 entry today, and the exact stop and position size if there is. Runs
-<a href="/ruleset">your saved ruleset</a>.</p></div>"""
+<a href="/ruleset">your Trading Diagram</a> (daily bars &mdash; the
+watchlist is the once-a-day discipline habit).</p></div>"""
 
 
 def _chart_form(values: Dict[str, str]) -> str:
@@ -443,6 +491,7 @@ def _chart_form(values: Dict[str, str]) -> str:
     hidden = "".join(
         f'<input type="hidden" name="{k}" value="{val(k)}">'
         for k in RULESET_KEYS)
+    interval = values.get("interval") or "1day"
     return f"""
 <div class="card"><form class="controls" method="get" action="/chart">
   <label>Chart a symbol
@@ -450,6 +499,8 @@ def _chart_form(values: Dict[str, str]) -> str:
   <label>&hellip;or CSV path
     <input name="csv" class="wide" value="{val('csv')}"
            placeholder="examples/aapl_2015_2017.csv"></label>
+  <label>Bar size
+    {_interval_select(interval)}</label>
   <label>Timeframe
     <select name="window">
       <option value="6m">6 months (candles)</option>
@@ -460,13 +511,14 @@ def _chart_form(values: Dict[str, str]) -> str:
   {hidden}
   <button>View chart</button>
 </form>
-<p class="note">Daily candles with your averages and the current stop drawn
-on &mdash; watch a trade working (or breaking) at a glance. Uses
-<a href="/ruleset">your saved ruleset</a>.</p></div>"""
+<p class="note">Candles with your averages and the current stop drawn on
+&mdash; watch a trade working (or breaking) at a glance. Uses
+<a href="/ruleset">your Trading Diagram</a>. On intraday bar sizes the
+timeframe shows everything the provider serves.</p></div>"""
 
 
 _RULESET_PAGE = """
-<h2>How do you trade?</h2>
+<h2>My Trading Diagram &mdash; how do you trade?</h2>
 <p class="note">Answer once; every scan, backtest, and watchlist run then
 uses <em>your</em> rules. Saved in this browser only &mdash; your rules,
 your machine. The one thing you can't switch off is the discipline: every
@@ -544,7 +596,7 @@ _RULESET_JS = """
     });
     var note = document.getElementById('ruleset-note');
     if (note && saved.ruleset_name) {
-      note.textContent = 'Using your ruleset: ' + saved.ruleset_name;
+      note.textContent = 'Using your Trading Diagram: ' + saved.ruleset_name;
     }
   }
 
@@ -663,7 +715,7 @@ CHART_WINDOWS = {"6m": 130, "1y": 260, "2y": 520, "all": 10**9}
 
 def candle_chart_svg(bars: List[Bar], cfg: StrategyConfig,
                      width: int = 820, height: int = 340,
-                     window: int = 130) -> str:
+                     window: int = 130, trades=None) -> str:
     """Daily candles with the ruleset drawn on top: both moving averages and
     the current stop level. Hovering any candle shows its OHLC (native
     tooltips — this is a reading chart, not a drawing tool).
@@ -702,6 +754,8 @@ def candle_chart_svg(bars: List[Bar], cfg: StrategyConfig,
         lo = min(lo, stop)
     if hi == lo:
         hi = lo + 1.0
+    pad = (hi - lo) * 0.04  # headroom so trade markers never clip
+    lo, hi = lo - pad, hi + pad
 
     def y(v: float) -> float:
         return y0 + (y1 - y0) * (v - lo) / (hi - lo)
@@ -763,6 +817,31 @@ def candle_chart_svg(bars: List[Bar], cfg: StrategyConfig,
             f'<text class="lbl" x="{x1 + 4}" y="{y(stop) + 4:.1f}" '
             f'fill="var(--down)">stop {stop:,.2f}</text>')
 
+    # Trade markers (backtest view): entry triangles under the bar, exit
+    # triangles above it — the trades drawn where they happened.
+    markers = []
+    if trades:
+        idx = {b.date: i for i, b in enumerate(view)}
+        for t in trades:
+            i = idx.get(t.entry_date)
+            if i is not None:
+                my = y(view[i].low) + 6
+                markers.append(
+                    f'<path class="marker-entry" d="M {x(i):.1f} {my:.1f} '
+                    'l -5 9 l 10 0 z">'
+                    f"<title>entry {_esc(t.entry_date)} @ "
+                    f"{t.entry_price:,.2f}</title></path>")
+            if t.exit_date:
+                j = idx.get(t.exit_date)
+                if j is not None:
+                    my = y(view[j].high) - 6
+                    markers.append(
+                        f'<path class="marker-exit" d="M {x(j):.1f} {my:.1f} '
+                        'l -5 -9 l 10 0 z">'
+                        f"<title>exit {_esc(t.exit_date)} @ "
+                        f"{(t.exit_price or 0):,.2f} ({_esc(t.exit_reason or '')})"
+                        "</title></path>")
+
     return f"""
 <svg viewBox="0 0 {width} {height}" width="100%" role="img"
      aria-label="Daily candles with moving averages and stop level">
@@ -773,6 +852,7 @@ def candle_chart_svg(bars: List[Bar], cfg: StrategyConfig,
   {ma_line(fast, 'ma-fast', f'{cfg.fast_ma}d')}
   {ma_line(slow, 'ma-slow', f'{cfg.slow_ma}d')}
   {stop_layer}
+  {''.join(markers)}
   <text class="lbl" x="{x0}" y="{height - 6}"
         fill="var(--muted)">{_esc(view[0].date)}</text>
   <text class="lbl" x="{x1}" y="{height - 6}" text-anchor="end"
@@ -887,12 +967,21 @@ def _backtest_view(bars: List[Bar], label: str, account: float, risk: float,
     )
 
     dates = [b.date for b in bars]
+    price_chart = (
+        '<h2>The trades, on the chart</h2><div class="card">'
+        + candle_chart_svg(bars, cfg, window=10**9, trades=result.trades)
+        + '<p class="note">&#9650; entry &middot; &#9660; exit (hover a '
+        "marker for the numbers). Long histories draw the closing price as "
+        "a line.</p></div>"
+    )
     return (
         f"<h2>Backtest &mdash; {_esc(label)} "
         f"<small>({len(bars)} bars, {_esc(bars[0].date)} &rarr; "
         f"{_esc(bars[-1].date)})</small></h2>"
         f'<div class="tiles">{tiles}</div>'
-        f'<div class="card">{equity_curve_svg(dates, result.equity_curve)}</div>'
+        f"{price_chart}"
+        f'<div class="card"><h2 style="margin-top:0">Equity curve</h2>'
+        f"{equity_curve_svg(dates, result.equity_curve)}</div>"
         f"{trades_table}"
     )
 
@@ -954,46 +1043,55 @@ _BARS_CACHE: Dict[str, Tuple[float, List[Bar], str]] = {}
 _BARS_CACHE_TTL = 600.0
 
 
-def _fetch_symbol(symbol: str) -> Tuple[List[Bar], str]:
-    """Daily bars for a ticker: Alpaca first when keys are configured (the
-    user's own entitlement — reliable and not rate-limited like the free
-    scrape endpoints), else Stooq/Yahoo with a short timeout."""
+def _fetch_symbol(symbol: str, interval: str = "1day") -> Tuple[List[Bar], str]:
+    """Bars for a ticker at the chosen bar size: Alpaca first when keys are
+    configured (the user's own entitlement — reliable and not rate-limited
+    like the free scrape endpoints), else Yahoo/Stooq with a short timeout."""
     import time
 
-    key = symbol.upper()
+    label_txt, alpaca_tf, yahoo_iv = INTERVALS.get(interval, INTERVALS["1day"])
+    key = f"{symbol.upper()}:{interval}"
     hit = _BARS_CACHE.get(key)
     now = time.time()
     if hit and now - hit[0] < _BARS_CACHE_TTL:
         return hit[1], hit[2]
 
     bars: Optional[List[Bar]] = None
-    label = key
+    label = symbol.upper()
+    if interval != "1day":
+        label += f" ({label_txt} bars)"
     if os.environ.get("APCA_API_KEY_ID") and \
             os.environ.get("APCA_API_SECRET_KEY"):
         try:
             from .alpaca import AlpacaClient
 
             client = AlpacaClient(paper=True, feed="iex")
-            bars = client.daily_bars(key)
-            label = f"{key} (alpaca)"
+            bars = client.daily_bars(symbol.upper(), timeframe=alpaca_tf)
         except Exception:
             bars = None  # fall through to the free providers
 
     if bars is None:
+        if yahoo_iv is None:
+            from .fetch import FetchError
+
+            raise FetchError(f"{label_txt} bars need your Alpaca keys set — "
+                             "the free providers don't serve that bar size")
         from .fetch import fetch_csv  # lazy: offline use needs no network
 
         # Fail fast: a browser won't wait minutes for a page.
-        bars = parse_csv_text(fetch_csv(symbol, timeout=8.0))
+        bars = parse_csv_text(fetch_csv(symbol, timeout=8.0,
+                                        interval=yahoo_iv))
 
     _BARS_CACHE[key] = (now, bars, label)
     return bars, label
 
 
-def _load_bars(symbol: str, csv_path: str) -> Tuple[List[Bar], str]:
+def _load_bars(symbol: str, csv_path: str,
+               interval: str = "1day") -> Tuple[List[Bar], str]:
     if csv_path:
         return load_csv(csv_path), csv_path
     if symbol:
-        return _fetch_symbol(symbol)
+        return _fetch_symbol(symbol, interval)
     raise ValueError("provide a symbol or a CSV path")
 
 
@@ -1085,11 +1183,12 @@ def route(path: str, params: Dict[str, List[str]]) -> Tuple[int, str]:
     Kept free of any HTTP machinery so tests exercise exactly what the
     browser sees.
     """
-    title = "<h1>Trendrail <small>disciplined trend-following</small></h1>"
+    title = ""  # branding lives in the nav bar (_NAV) on every page
     if path == "/":
         note = ('<p class="note" id="ruleset-note">Rules run with the '
-                'defaults until you <a href="/ruleset">set how you trade'
-                "</a>.</p>")
+                'defaults until you fill in <a href="/ruleset">My Trading '
+                "Diagram</a> &mdash; tell Trendrail how <em>you</em> trade "
+                "and every scan, chart, and backtest uses your rules.</p>")
         return 200, _page("Trendrail",
                           title + note + _form({}) + _watchlist_form({})
                           + _chart_form({}))
@@ -1099,7 +1198,10 @@ def route(path: str, params: Dict[str, List[str]]) -> Tuple[int, str]:
 
     if path == "/chart":
         values = {k: _first(params, k) for k in
-                  ("symbol", "csv", "window") + RULESET_KEYS}
+                  ("symbol", "csv", "window", "interval") + RULESET_KEYS}
+        chart_interval = values.get("interval") or "1day"
+        if chart_interval not in INTERVALS:
+            chart_interval = "1day"
         window_key = values.get("window") or "6m"
         if window_key not in CHART_WINDOWS:
             window_key = "6m"
@@ -1115,7 +1217,8 @@ def route(path: str, params: Dict[str, List[str]]) -> Tuple[int, str]:
             return chart_fail(str(exc) if "average" in str(exc)
                               else "Rule settings must be numbers.")
         try:
-            bars, label = _load_bars(values["symbol"], values["csv"])
+            bars, label = _load_bars(values["symbol"], values["csv"],
+                                     chart_interval)
         except FileNotFoundError as exc:
             return chart_fail(f"File not found: {exc.filename}")
         except (ValueError, OSError) as exc:
@@ -1127,7 +1230,11 @@ def route(path: str, params: Dict[str, List[str]]) -> Tuple[int, str]:
         if len(bars) < cfg.slow_ma + 1:
             return chart_fail(
                 f"Need at least {cfg.slow_ma + 1} bars to draw the "
-                f"{cfg.slow_ma}-day average; got {len(bars)}.")
+                f"{cfg.slow_ma}-bar average; got {len(bars)}. Intraday "
+                "history is limited — try a larger bar size or shorter "
+                "averages in My Trading Diagram.")
+        if chart_interval != "1day":
+            window_key = "all"  # intraday: show everything the feed serves
         return 200, _page("Trendrail",
                           title + _chart_view(bars, label, cfg, values,
                                               window_key))
@@ -1160,9 +1267,12 @@ def route(path: str, params: Dict[str, List[str]]) -> Tuple[int, str]:
         return 404, _page("Not found", "<h1>404</h1><p>Nothing here.</p>")
 
     values = {k: _first(params, k) for k in
-              ("symbol", "csv", "account", "risk", "action") + RULESET_KEYS}
-    header = ("<h1>Trendrail <small>disciplined trend-following</small></h1>"
-              + _form(values))
+              ("symbol", "csv", "account", "risk", "action", "interval")
+              + RULESET_KEYS}
+    interval = values.get("interval") or "1day"
+    if interval not in INTERVALS:
+        interval = "1day"
+    header = _form(values)
 
     def fail(msg: str) -> Tuple[int, str]:
         return 200, _page(
@@ -1180,7 +1290,7 @@ def route(path: str, params: Dict[str, List[str]]) -> Tuple[int, str]:
         return fail("Risk per trade should be a small fraction, e.g. 0.01-0.02.")
 
     try:
-        bars, label = _load_bars(values["symbol"], values["csv"])
+        bars, label = _load_bars(values["symbol"], values["csv"], interval)
     except FileNotFoundError as exc:
         return fail(f"File not found: {exc.filename}")
     except (ValueError, OSError) as exc:

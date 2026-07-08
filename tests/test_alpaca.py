@@ -22,6 +22,17 @@ class TestBarPayloadParsing(unittest.TestCase):
         self.assertAlmostEqual(bars[0].close, 129.4)
         self.assertEqual(bars[0].volume, 143301900)
 
+    def test_intraday_bars_keep_time_of_day(self):
+        payload = {"bars": [
+            {"t": "2021-01-04T14:30:00Z", "o": 10, "h": 11, "l": 9,
+             "c": 10.5, "v": 1},
+            {"t": "2021-01-04T15:30:00Z", "o": 10.5, "h": 11, "l": 10,
+             "c": 10.8, "v": 1},
+        ]}
+        bars = AlpacaClient._bars_from_payload(payload, intraday=True)
+        self.assertEqual(bars[0].date, "2021-01-04 14:30")
+        self.assertNotEqual(bars[0].date, bars[1].date)
+
     def test_clamps_inconsistent_bar(self):
         payload = {"bars": [
             {"t": "2021-01-04T05:00:00Z", "o": 10, "h": 9.99, "l": 8,

@@ -45,6 +45,13 @@ class TestYahooParsing(unittest.TestCase):
         # Adjustment applied: close becomes the adjusted close.
         self.assertAlmostEqual(bars[0].close, 127.0)
 
+    def test_intraday_keeps_time_of_day(self):
+        csv_text = yahoo_to_csv(self._payload(), "AAPL", intraday=True)
+        bars = parse_csv_text(csv_text)
+        self.assertEqual(bars[0].date, "2021-01-04 00:00")
+        # Two "bars in the same day" stay distinct and ordered.
+        self.assertNotEqual(bars[0].date, bars[1].date)
+
     def test_skips_null_bars(self):
         payload = json.loads(self._payload())
         payload["chart"]["result"][0]["indicators"]["quote"][0]["close"][1] = None

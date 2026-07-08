@@ -174,9 +174,19 @@ class TestRuleset(unittest.TestCase):
     def test_ruleset_page_serves(self):
         status, body = route("/ruleset", {})
         self.assertEqual(status, 200)
-        self.assertIn("How do you trade?", body)
+        self.assertIn("My Trading Diagram", body)
+        self.assertIn("how do you trade?", body)
         self.assertIn("rs-preset", body)          # the style presets
         self.assertIn("trendrail-ruleset", body)  # localStorage key
+
+    def test_nav_bar_on_every_page(self):
+        for path, params in (("/", {}), ("/ruleset", {}),
+                             ("/run", {"csv": [UPTREND_CSV],
+                                       "action": ["scan"]})):
+            _, body = route(path, params)
+            self.assertIn('nav class="top"', body)
+            self.assertIn("My Trading Diagram", body)
+            self.assertIn('href="/"', body)       # home link everywhere
 
     def test_index_links_to_ruleset(self):
         _, body = route("/", {})
@@ -258,6 +268,33 @@ class TestChart(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertIn('action="/chart"', body)
         self.assertIn("View chart", body)
+
+    def test_bar_size_selector_present(self):
+        _, body = route("/", {})
+        self.assertIn('name="interval"', body)
+        for key in ("1min", "5min", "30min", "1hour", "4hour", "1day"):
+            self.assertIn(f'value="{key}"', body)
+
+    def test_backtest_draws_trades_on_price_chart(self):
+        status, body = route("/run", {
+            "csv": [UPTREND_CSV], "account": ["1000"], "risk": ["0.02"],
+            "action": ["backtest"],
+        })
+        self.assertEqual(status, 200)
+        self.assertIn("The trades, on the chart", body)
+        self.assertIn("marker-entry", body)
+        self.assertIn("Equity curve", body)
+
+    def test_intraday_without_alpaca_keys_fails_cleanly(self):
+        import os
+        from unittest import mock
+        from trendrail.web import _fetch_symbol
+        from trendrail.fetch import FetchError
+        with mock.patch.dict(os.environ, {"APCA_API_KEY_ID": "",
+                                          "APCA_API_SECRET_KEY": ""}):
+            with self.assertRaises(FetchError) as ctx:
+                _fetch_symbol("XYZTEST", "4hour")
+        self.assertIn("Alpaca keys", str(ctx.exception))
 
     def test_watchlist_survives_any_row_exception(self):
         # A provider blowing up with an unexpected error type must produce
