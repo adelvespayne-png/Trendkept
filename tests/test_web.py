@@ -309,8 +309,52 @@ class TestChart(unittest.TestCase):
     def test_bar_size_selector_present(self):
         _, body = route("/", {})
         self.assertIn('name="interval"', body)
-        for key in ("1min", "5min", "30min", "1hour", "4hour", "1day"):
+        for key in ("1min", "5min", "30min", "1hour", "4hour", "1day",
+                    "1week", "1month"):
             self.assertIn(f'value="{key}"', body)
+
+    def test_weekly_monthly_resample(self):
+        from trendrail.data import load_csv
+        from trendrail.web import resample_bars
+        daily = load_csv(AAPL_CSV)
+        weekly = resample_bars(daily, "1week")
+        monthly = resample_bars(daily, "1month")
+        # ~5 daily bars per weekly bar, ~21 per monthly bar.
+        self.assertLess(len(weekly), len(daily) / 4)
+        self.assertLess(len(monthly), len(weekly) / 3)
+        # Aggregation is honest: month high is the max of its days.
+        self.assertAlmostEqual(
+            monthly[0].high,
+            max(b.high for b in daily if b.date[:7] == monthly[0].date[:7]))
+        self.assertEqual(monthly[-1].close, daily[-1].close)
+
+    def test_scan_on_weekly_bars_from_csv(self):
+        # Weekly bars shrink history below a 200-bar slow average, so use a
+        # weekly-scale ruleset — exactly what a user would do.
+        status, body = route("/run", {
+            "csv": [AAPL_CSV], "action": ["scan"], "interval": ["1week"],
+            "fast_ma": ["10"], "slow_ma": ["40"],
+        })
+        self.assertEqual(status, 200)
+        self.assertIn("1 week bars", body)
+        self.assertIn("SIGNAL", body)
+
+    def test_scan_shows_annotated_chart_and_explanations(self):
+        status, body = route("/run", {
+            "csv": [AAPL_CSV], "action": ["scan"],
+        })
+        self.assertEqual(status, 200)
+        self.assertIn("on the chart", body)
+        self.assertIn("<svg", body)
+        # Either recent events are explained, or the quiet state is named.
+        self.assertTrue("Recent signals, explained" in body
+                        or "quiet is the most common" in body)
+
+    def test_chart_one_month_window(self):
+        status, body = route("/chart", {"csv": [AAPL_CSV],
+                                        "window": ["1mo"]})
+        self.assertEqual(status, 200)
+        self.assertIn("<strong>1 month</strong>", body)
 
     def test_backtest_draws_trades_on_price_chart(self):
         status, body = route("/run", {

@@ -153,10 +153,13 @@ class AlpacaClient:
         ``timeframe`` is Alpaca's notation: 1Min, 5Min, 30Min, 1Hour, 4Hour,
         1Day. ``adjustment`` ``"all"`` applies splits and dividends.
         """
-        intraday = timeframe != "1Day"
+        intraday = timeframe in ("1Min", "5Min", "15Min", "30Min",
+                                 "1Hour", "4Hour")
         if start is None:
             days = {"1Min": 30, "5Min": 90, "30Min": 365,
-                    "1Hour": 730, "4Hour": 730}.get(timeframe, 5 * 365)
+                    "1Hour": 730, "4Hour": 730,
+                    "1Week": 8 * 365, "1Month": 15 * 365}.get(
+                        timeframe, 5 * 365)
             start = (datetime.now(timezone.utc) - timedelta(days=days)).strftime(
                 "%Y-%m-%d"
             )

@@ -65,7 +65,55 @@ INTERVALS = {
     "1hour": ("1 hour", "1Hour", "60m"),
     "4hour": ("4 hours", "4Hour", None),
     "1day": ("1 day", "1Day", "1d"),
+    # Weekly/monthly bars are aggregated from daily data ("resample"), so
+    # they work with every source — Alpaca, the free providers, and CSVs.
+    "1week": ("1 week", "1Week", "resample"),
+    "1month": ("1 month", "1Month", "resample"),
 }
+
+
+def resample_bars(bars: List[Bar], interval: str) -> List[Bar]:
+    """Aggregate daily bars into weekly or monthly ones (TradingView-style):
+    open = first open, high = max, low = min, close = last close. The bar is
+    labelled with its first day, and a partial current period is included —
+    it's the truth so far, same as any live chart."""
+    if interval not in ("1week", "1month"):
+        return bars
+
+    def bucket(date: str) -> str:
+        from datetime import datetime as _dt
+
+        day = _dt.strptime(date[:10], "%Y-%m-%d")
+        if interval == "1month":
+            return day.strftime("%Y-%m")
+        iso = day.isocalendar()
+        return f"{iso[0]}-W{iso[1]:02d}"
+
+    out: List[Bar] = []
+    current = None
+    for b in bars:
+        key = bucket(b.date)
+        if current and current[0] == key:
+            current[1].append(b)
+        else:
+            if current:
+                out.append(_merge_bars(current[1]))
+            current = (key, [b])
+    if current:
+        out.append(_merge_bars(current[1]))
+    return out
+
+
+def _merge_bars(group: List[Bar]) -> Bar:
+    vol = sum(b.volume or 0 for b in group) or None
+    return Bar(
+        date=group[0].date,
+        open=group[0].open,
+        high=max(b.high for b in group),
+        low=min(b.low for b in group),
+        close=group[-1].close,
+        volume=vol,
+    )
 
 
 def _build_cfg(values: Dict[str, str]) -> StrategyConfig:
@@ -200,6 +248,8 @@ svg .price-line { stroke: var(--ink); stroke-width: 1.5; fill: none;
   opacity: 0.85; }
 svg .marker-entry { fill: var(--up); }
 svg .marker-exit { fill: var(--down); }
+svg .marker-blocked { fill: #eda100; }
+:root[data-theme="dark"] svg .marker-blocked { fill: #c98500; }
 nav.top { display: flex; gap: 10px; align-items: center; margin: 0 0 14px; }
 nav.top a.home { font-weight: 750; font-size: 19px; color: var(--ink);
   text-decoration: none; margin-right: auto; }
@@ -503,7 +553,8 @@ def _chart_form(values: Dict[str, str]) -> str:
     {_interval_select(interval)}</label>
   <label>Timeframe
     <select name="window">
-      <option value="6m">6 months (candles)</option>
+      <option value="1mo">1 month</option>
+      <option value="6m" selected>6 months</option>
       <option value="1y">1 year</option>
       <option value="2y">2 years</option>
       <option value="all">Everything</option>
@@ -823,13 +874,65 @@ ceiling, not a promise).</figcaption>
 </figure>"""
 
 
-# Chart timeframe choices: label -> trading days (~21/month).
-CHART_WINDOWS = {"6m": 130, "1y": 260, "2y": 520, "all": 10**9}
+# Chart timeframe choices: label -> bars shown (~21 trading days/month for
+# daily bars; the window always counts bars, TradingView-style).
+CHART_WINDOWS = {"1mo": 21, "6m": 130, "1y": 260, "2y": 520, "all": 10**9}
+
+
+def _signal_annotations(bars: List[Bar], cfg: StrategyConfig,
+                        window: int) -> Tuple[list, List[str]]:
+    """Walk the recent bars and annotate the teaching moments:
+
+    * bars where the ruleset's entry conditions were fully met (a fresh
+      signal, assuming you were flat), and
+    * bars where price did something tempting — a breakout-shaped close or a
+      big up-move — but a rule said no, with the rule named.
+
+    Returns (chart markers, human explanations, newest last).
+    """
+    strat = TrendFollowingStrategy(cfg)
+    start = max(cfg.slow_ma, len(bars) - window)
+    markers = []
+    explained: List[str] = []
+    for i in range(start, len(bars)):
+        b = bars[i]
+        sig = strat.entry_signal(bars, i)
+        if sig in (Signal.ENTER_PULLBACK, Signal.ENTER_BREAKOUT):
+            kind = sig.value.replace("enter_", "")
+            markers.append((b.date, "ok",
+                            f"{b.date}: entry conditions met ({kind})"))
+            explained.append(
+                f"{b.date} — the rules ALLOWED an entry ({kind}): confirmed "
+                "uptrend, not over-extended, and the pattern completed.")
+            continue
+
+        # Tempting but blocked: a breakout-shaped bar or a strong up day.
+        breakout_shaped = strat._is_breakout_entry(bars, i)
+        pullback_shaped = strat._is_pullback_entry(bars, i)
+        if not (breakout_shaped or pullback_shaped):
+            continue
+        shape = "breakout" if breakout_shaped else "pullback"
+        if not strat.is_uptrend(bars, i):
+            reason = ("the trend wasn't confirmed — price/averages/structure "
+                      "not aligned. Momentum without a confirmed trend is "
+                      "how people buy tops")
+        elif strat._too_extended(bars, i):
+            reason = (f"price was too far above the {cfg.fast_ma}-bar "
+                      "average — that's chasing, and chasing buys other "
+                      "people's exits")
+        else:
+            continue
+        markers.append((b.date, "blocked",
+                        f"{b.date}: {shape} blocked — {reason.split('—')[0]}"))
+        explained.append(f"{b.date} — a {shape} LOOKED tempting, but the "
+                         f"rules said no: {reason}.")
+    return markers, explained
 
 
 def candle_chart_svg(bars: List[Bar], cfg: StrategyConfig,
                      width: int = 820, height: int = 340,
-                     window: int = 130, trades=None) -> str:
+                     window: int = 130, trades=None,
+                     signals=None) -> str:
     """Daily candles with the ruleset drawn on top: both moving averages and
     the current stop level. Hovering any candle shows its OHLC (native
     tooltips — this is a reading chart, not a drawing tool).
@@ -934,6 +1037,24 @@ def candle_chart_svg(bars: List[Bar], cfg: StrategyConfig,
     # Trade markers (backtest view): entry triangles under the bar, exit
     # triangles above it — the trades drawn where they happened.
     markers = []
+    if signals:
+        idx = {b.date: i for i, b in enumerate(view)}
+        for date, kind, text in signals:
+            i = idx.get(date)
+            if i is None:
+                continue
+            if kind == "ok":
+                my = y(view[i].low) + 6
+                markers.append(
+                    f'<path class="marker-entry" d="M {x(i):.1f} {my:.1f} '
+                    f'l -5 9 l 10 0 z"><title>{_esc(text)}</title></path>')
+            else:
+                my = y(view[i].high) - 10
+                markers.append(
+                    f'<rect class="marker-blocked" x="{x(i) - 4:.1f}" '
+                    f'y="{my:.1f}" width="8" height="8" '
+                    f'transform="rotate(45 {x(i):.1f} {my + 4:.1f})">'
+                    f"<title>{_esc(text)}</title></rect>")
     if trades:
         idx = {b.date: i for i, b in enumerate(view)}
         for t in trades:
@@ -990,8 +1111,8 @@ def _chart_view(bars: List[Bar], label: str, cfg: StrategyConfig,
              else "no confirmed uptrend")
 
     links = []
-    labels = {"6m": "6 months", "1y": "1 year", "2y": "2 years",
-              "all": "everything"}
+    labels = {"1mo": "1 month", "6m": "6 months", "1y": "1 year",
+              "2y": "2 years", "all": "everything"}
     for key, text in labels.items():
         if key == window_key:
             links.append(f"<strong>{text}</strong>")
@@ -1141,6 +1262,30 @@ def _scan_view(bars: List[Bar], label: str, account: float, risk: float,
             + "</p>"
         )
     lines.append("</div>")
+
+    # The chart, with the recent teaching moments drawn on: where the rules
+    # allowed an entry, and where a tempting move was blocked — and why.
+    signals, explained = _signal_annotations(bars, cfg, window=130)
+    lines.append(
+        '<h2>The last months, on the chart</h2><div class="card">'
+        + candle_chart_svg(bars, cfg, window=130, signals=signals)
+        + '<p class="note">&#9650; the rules allowed an entry &middot; '
+        "&#9670; a tempting move the rules blocked (hover any marker for "
+        "the why).</p></div>")
+
+    if explained:
+        recent = "".join(f"<li>{_esc(e)}</li>" for e in explained[-6:][::-1])
+        lines.append(
+            '<h2>Recent signals, explained</h2><div class="card">'
+            f"<ul>{recent}</ul>"
+            '<p class="note">This is the discipline, visible: entries are '
+            "rare on purpose, and every blocked marker is a mistake the "
+            "rules stopped you making.</p></div>")
+    else:
+        lines.append(
+            '<p class="note">No entry signals and no near-misses in the '
+            "recent window — nothing qualified. In a mechanical system, "
+            "quiet is the most common (and cheapest) state.</p>")
     return "".join(lines)
 
 
@@ -1192,9 +1337,12 @@ def _fetch_symbol(symbol: str, interval: str = "1day") -> Tuple[List[Bar], str]:
                              "the free providers don't serve that bar size")
         from .fetch import fetch_csv  # lazy: offline use needs no network
 
-        # Fail fast: a browser won't wait minutes for a page.
+        # Fail fast: a browser won't wait minutes for a page. Weekly and
+        # monthly bars come from daily data, aggregated locally.
+        fetch_iv = "1d" if yahoo_iv == "resample" else yahoo_iv
         bars = parse_csv_text(fetch_csv(symbol, timeout=8.0,
-                                        interval=yahoo_iv))
+                                        interval=fetch_iv))
+        bars = resample_bars(bars, interval)
 
     _BARS_CACHE[key] = (now, bars, label)
     return bars, label
@@ -1203,7 +1351,12 @@ def _fetch_symbol(symbol: str, interval: str = "1day") -> Tuple[List[Bar], str]:
 def _load_bars(symbol: str, csv_path: str,
                interval: str = "1day") -> Tuple[List[Bar], str]:
     if csv_path:
-        return load_csv(csv_path), csv_path
+        bars = load_csv(csv_path)
+        label = csv_path
+        if interval in ("1week", "1month"):
+            bars = resample_bars(bars, interval)
+            label += f" ({INTERVALS[interval][0]} bars)"
+        return bars, label
     if symbol:
         return _fetch_symbol(symbol, interval)
     raise ValueError("provide a symbol or a CSV path")
