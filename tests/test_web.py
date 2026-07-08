@@ -350,6 +350,30 @@ class TestChart(unittest.TestCase):
         self.assertTrue("Recent signals, explained" in body
                         or "quiet is the most common" in body)
 
+    def test_rules_panel_shows_the_active_numbers(self):
+        # Default diagram: the written rules with default numbers.
+        _, body = route("/run", {"csv": [AAPL_CSV], "action": ["scan"],
+                                 "risk": ["0.02"]})
+        self.assertIn("The rules in force", body)
+        self.assertIn("50-bar", body)
+        self.assertIn("200-bar", body)
+        self.assertIn("12%", body)             # never-chase limit
+        self.assertIn("2% of the account", body)
+        # A custom diagram: the panel reflects it, not the defaults.
+        _, body = route("/run", {"csv": [AAPL_CSV], "action": ["scan"],
+                                 "fast_ma": ["20"], "slow_ma": ["100"],
+                                 "max_extension_pct": ["0.08"]})
+        self.assertIn("20-bar", body)
+        self.assertIn("100-bar", body)
+        self.assertIn("8%", body)
+
+    def test_rules_panel_on_backtest_and_chart(self):
+        _, body = route("/run", {"csv": [UPTREND_CSV],
+                                 "action": ["backtest"]})
+        self.assertIn("The rules in force", body)
+        _, body = route("/chart", {"csv": [AAPL_CSV]})
+        self.assertIn("The rules in force", body)
+
     def test_chart_one_month_window(self):
         status, body = route("/chart", {"csv": [AAPL_CSV],
                                         "window": ["1mo"]})

@@ -250,6 +250,12 @@ svg .marker-entry { fill: var(--up); }
 svg .marker-exit { fill: var(--down); }
 svg .marker-blocked { fill: #eda100; }
 :root[data-theme="dark"] svg .marker-blocked { fill: #c98500; }
+details.rules-panel { margin: 14px 0; }
+details.rules-panel summary { cursor: pointer; font-weight: 650;
+  font-size: 14px; color: var(--ink-2); }
+ol.rules-list { padding-left: 4px; margin: 4px 0; list-style: none; }
+ol.rules-list li { margin: 8px 0; font-size: 13.5px; color: var(--ink-2); }
+ol.rules-list li b { color: var(--ink); }
 nav.top { display: flex; gap: 10px; align-items: center; margin: 0 0 14px; }
 nav.top a.home { font-weight: 750; font-size: 19px; color: var(--ink);
   text-decoration: none; margin-right: auto; }
@@ -1134,6 +1140,7 @@ def _chart_view(bars: List[Bar], label: str, cfg: StrategyConfig,
         "slow. The dashed line is where the ruleset would put the stop "
         "right now; it only ever moves up. Reload for the latest daily bar "
         "— daily by design, no tick noise.</p></div>"
+        f"{_rules_panel(cfg, open_=False)}"
         '<p class="note"><a href="/">&larr; back to scan &amp; watchlist</a></p>'
     )
 
@@ -1151,6 +1158,47 @@ def _chart_href(item: str, cfg: StrategyConfig) -> str:
          "stop_buffer_pct": cfg.stop_buffer_pct,
          "swing_window": cfg.swing_window}
     return "/chart?" + urlencode(q)
+
+
+def _rules_panel(cfg: StrategyConfig, risk: Optional[float] = None,
+                 open_: bool = True) -> str:
+    """The five rules, written out with THIS run's actual numbers plugged
+    in — so what the engine just did is never implicit. Shown with every
+    scan, backtest, and chart."""
+    risk_txt = (f"{risk * 100:g}% of the account"
+                if risk is not None else "your chosen % of the account")
+    rules = [
+        (f"<b>1. Trade only a confirmed uptrend.</b> The close must be above "
+         f"both the {cfg.fast_ma}-bar and {cfg.slow_ma}-bar averages, the "
+         f"{cfg.fast_ma}-bar must be above the {cfg.slow_ma}-bar, and the "
+         f"chart must be making higher highs and higher lows (a swing point "
+         f"only counts once {cfg.swing_window} bars confirm it). Fail any of "
+         "these: no trade."),
+        (f"<b>2. Enter without chasing.</b> Only two entries exist: a "
+         f"pullback that comes within {cfg.pullback_pct * 100:g}% of the "
+         f"{cfg.fast_ma}-bar average and closes back up, or a breakout above "
+         f"the highest high of the last {cfg.breakout_lookback} bars. And "
+         f"never when the close is more than "
+         f"{cfg.max_extension_pct * 100:g}% above the {cfg.fast_ma}-bar "
+         "average — that's chasing."),
+        (f"<b>3. The stop goes in with the entry.</b> "
+         f"{cfg.stop_buffer_pct * 100:g}% below the most recent confirmed "
+         "swing low — decided before the trade, held by the broker."),
+        (f"<b>4. Size by risk, not conviction.</b> Shares = ({risk_txt}) "
+         "&divide; (entry &minus; stop). A stopped-out trade always costs "
+         "the same small fraction."),
+        (f"<b>5. Trail the stop; exit on the break.</b> The stop rises under "
+         f"each new higher swing low (never falls). Exit entirely on a close "
+         f"below the {cfg.fast_ma}-bar average or a lower low."),
+    ]
+    items = "".join(f"<li>{r}</li>" for r in rules)
+    return (f'<details class="rules-panel"{" open" if open_ else ""}>'
+            "<summary>The rules in force &mdash; exactly what this run "
+            "applied</summary>"
+            f'<div class="card"><ol class="rules-list">{items}</ol>'
+            '<p class="note">These numbers are your <a href="/ruleset">'
+            "Trading Diagram</a>. \"Bar\" means one bar at the size you "
+            "picked &mdash; days, hours, or minutes.</p></div></details>")
 
 
 def _tile(label: str, value: str, cls: str = "") -> str:
@@ -1214,6 +1262,7 @@ def _backtest_view(bars: List[Bar], label: str, account: float, risk: float,
         f"<small>({len(bars)} bars, {_esc(bars[0].date)} &rarr; "
         f"{_esc(bars[-1].date)})</small></h2>"
         f'<div class="tiles">{tiles}</div>'
+        f"{_rules_panel(cfg, risk, open_=False)}"
         f"{price_chart}"
         f'<div class="card"><h2 style="margin-top:0">Equity curve</h2>'
         f"{equity_curve_svg(dates, result.equity_curve)}</div>"
@@ -1262,6 +1311,7 @@ def _scan_view(bars: List[Bar], label: str, account: float, risk: float,
             + "</p>"
         )
     lines.append("</div>")
+    lines.append(_rules_panel(cfg, risk))
 
     # The chart, with the recent teaching moments drawn on: where the rules
     # allowed an entry, and where a tempting move was blocked — and why.
