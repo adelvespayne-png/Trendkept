@@ -179,6 +179,43 @@ class TestRuleset(unittest.TestCase):
         self.assertIn("rs-preset", body)          # the style presets
         self.assertIn("trendrail-ruleset", body)  # localStorage key
 
+    def test_describe_box_present(self):
+        _, body = route("/ruleset", {})
+        self.assertIn('name="describe"', body)
+        self.assertIn("Describe how you trade", body)
+
+    def test_description_fills_the_diagram(self):
+        status, body = route("/ruleset", {"describe": [
+            "I'm a cautious beginner with a £5,000 account, I know I "
+            "have a habit of chasing"]})
+        self.assertEqual(status, 200)
+        self.assertIn("Here's how I read that", body)
+        self.assertIn('value="0.005"', body)   # cautious -> 0.5% risk
+        self.assertIn('value="5000"', body)    # the account size
+        self.assertIn('value="0.08"', body)    # chase-prone -> tight limit
+        self.assertIn("data-skip-restore", body)
+
+    def test_interpret_description_directly(self):
+        from trendrail.web import interpret_description
+        # Explicit risk % beats mood words; tempo words map to averages.
+        values, notes = interpret_description(
+            "long term investor, risk 2%, patient")
+        self.assertEqual(values["fast_ma"], "100")
+        self.assertEqual(values["slow_ma"], "250")
+        self.assertEqual(values["risk"], "0.02")
+        self.assertTrue(any("Risk per trade: 2%" in n for n in notes))
+        # Risk is capped at 2% no matter what is asked for.
+        values, _ = interpret_description("aggressive, risk 10%")
+        self.assertEqual(values["risk"], "0.02")
+        # Day-trading words pick the fast tempo and warn about it.
+        values, notes = interpret_description("I want to day trade quickly")
+        self.assertEqual(values["fast_ma"], "20")
+        self.assertTrue(any("chopped" in n for n in notes))
+        # Nothing recognised -> classic defaults, honestly labelled.
+        values, notes = interpret_description("hello there")
+        self.assertEqual(values["fast_ma"], "50")
+        self.assertTrue(any("classic" in n.lower() for n in notes))
+
     def test_nav_bar_on_every_page(self):
         for path, params in (("/", {}), ("/ruleset", {}),
                              ("/run", {"csv": [UPTREND_CSV],

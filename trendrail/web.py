@@ -517,17 +517,128 @@ def _chart_form(values: Dict[str, str]) -> str:
 timeframe shows everything the provider serves.</p></div>"""
 
 
-_RULESET_PAGE = """
-<h2>My Trading Diagram &mdash; how do you trade?</h2>
-<p class="note">Answer once; every scan, backtest, and watchlist run then
-uses <em>your</em> rules. Saved in this browser only &mdash; your rules,
-your machine. The one thing you can't switch off is the discipline: every
-ruleset here is trend-following with a stop and risk-based sizing.</p>
+def interpret_description(text: str) -> Tuple[Dict[str, str], List[str]]:
+    """Turn a plain-English trading description into Diagram settings.
 
+    Deliberately simple keyword matching — deterministic, inspectable, and
+    honest about what it did (the readback list). It is NOT mind-reading and
+    never invents: anything it doesn't recognise stays at the classic
+    defaults, and the person reviews every number before saving.
+    """
+    t = " " + text.lower() + " "
+    values: Dict[str, str] = {
+        "account": "100000", "risk": "0.01", "fast_ma": "50",
+        "slow_ma": "200", "breakout_lookback": "20", "pullback_pct": "0.03",
+        "max_extension_pct": "0.12", "stop_buffer_pct": "0.005",
+        "swing_window": "3",
+    }
+    notes: List[str] = []
+
+    fast_words = ("day trad", "scalp", "quick", "fast", "short term",
+                  "short-term", "few days", "daily profits", "rapid")
+    slow_words = ("long term", "long-term", "invest", "patient", "months",
+                  "position trad", "slow", "big trends", "years")
+    if any(w in t for w in fast_words):
+        values.update(fast_ma="20", slow_ma="100", breakout_lookback="10",
+                      swing_window="2", pullback_pct="0.02")
+        notes.append("Faster tempo: 20/100 averages, 10-bar breakout — more "
+                     "signals, more noise. (Heads-up: honest backtests of "
+                     "very fast trend-following usually show it getting "
+                     "chopped up — test it before you trust it.)")
+    elif any(w in t for w in slow_words):
+        values.update(fast_ma="100", slow_ma="250", breakout_lookback="40",
+                      swing_window="4", pullback_pct="0.04",
+                      max_extension_pct="0.15")
+        notes.append("Long-term tempo: 100/250 averages, 40-bar breakout — "
+                     "rare entries, big trends, weekly-checking pace.")
+    else:
+        notes.append("Tempo: the classic written rules (50/200 averages, "
+                     "20-bar breakout).")
+
+    cautious_words = ("cautious", "careful", "beginner", "nervous", "new to",
+                      "safe", "scared", "small risk")
+    aggressive_words = ("aggressive", "confident", "high risk", "risky",
+                        "big swings")
+    m = re.search(r"risk\D{0,12}?(\d+(?:\.\d+)?)\s*%", t) or \
+        re.search(r"(\d+(?:\.\d+)?)\s*%\s*risk", t)
+    if m:
+        pct = min(max(float(m.group(1)), 0.25), 2.0)
+        values["risk"] = str(pct / 100)
+        notes.append(f"Risk per trade: {pct:g}% (capped at 2% — that cap "
+                     "has no off switch).")
+    elif any(w in t for w in cautious_words):
+        values["risk"] = "0.005"
+        values["max_extension_pct"] = "0.08"
+        notes.append("Cautious: 0.5% risk per trade and a stricter "
+                     "no-chasing limit.")
+    elif any(w in t for w in aggressive_words):
+        values["risk"] = "0.02"
+        notes.append("Higher risk appetite: 2% per trade — the maximum the "
+                     "written rules allow, and it stays capped there.")
+    else:
+        notes.append("Risk per trade: the standard 1%.")
+
+    m = re.search(r"[£$€]?\s*([\d,]+(?:\.\d+)?)\s*(k)?\s*"
+                  r"(?:account|pot|capital|to trade|savings)", t)
+    if m:
+        amount = float(m.group(1).replace(",", ""))
+        if m.group(2):
+            amount *= 1000
+        if amount >= 100:
+            values["account"] = f"{amount:g}"
+            notes.append(f"Account size: {amount:,.0f}.")
+
+    if any(w in t for w in ("chas", "fomo", "jump in late", "buy the top")):
+        values["max_extension_pct"] = "0.08"
+        notes.append("Chase-prone: tightened the never-chase limit to 8% "
+                     "above the fast average.")
+
+    return values, notes
+
+
+def _ruleset_page(values: Optional[Dict[str, str]] = None,
+                  readback: Optional[List[str]] = None,
+                  described: str = "") -> str:
+    v = {
+        "ruleset_name": "", "account": "100000", "risk": "0.01",
+        "fast_ma": "50", "slow_ma": "200", "breakout_lookback": "20",
+        "pullback_pct": "0.03", "max_extension_pct": "0.12",
+        "stop_buffer_pct": "0.005", "swing_window": "3",
+    }
+    if values:
+        v.update({k: val for k, val in values.items() if val})
+
+    readback_html = ""
+    if readback:
+        items = "".join(f"<li>{_esc(n)}</li>" for n in readback)
+        readback_html = (
+            '<div class="card" style="border-left:3px solid var(--series)">'
+            "<strong>Here's how I read that</strong> (keyword matching, not "
+            "mind-reading — check the numbers below, then backtest):"
+            f"<ul>{items}</ul></div>")
+
+    skip = ' data-skip-restore="1"' if readback else ""
+    return f"""
+<h2>My Trading Diagram &mdash; how do you trade?</h2>
+<p class="note">Describe it in your own words below, or set the dials
+directly. Every scan, chart, backtest, and watchlist run then uses
+<em>your</em> rules — saved in this browser only. The one thing you can't
+switch off is the discipline: every Diagram is trend-following with a stop
+and risk-based sizing.</p>
+
+<div class="card"><form class="controls" method="get" action="/ruleset">
+  <label style="flex-basis:100%">Describe how you trade, in your own words
+    <textarea name="describe" style="width:100%;height:64px"
+      placeholder="e.g. I'm a cautious beginner with a £5,000 account — I want to hold winners for weeks and I know I have a habit of chasing.">{_esc(described)}</textarea>
+  </label>
+  <button>Fill in my Diagram from this</button>
+</form></div>
+{readback_html}
 <div class="card"><form class="controls" id="ruleset-form" method="get"
-     action="/run">
-  <label style="flex-basis:100%">Name your ruleset
-    <input name="ruleset_name" class="wide" placeholder="My rules"></label>
+     action="/run"{skip}>
+  <label style="flex-basis:100%">Name your Diagram
+    <input name="ruleset_name" class="wide" value="{_esc(v['ruleset_name'])}"
+           placeholder="My rules"></label>
 
   <label style="flex-basis:100%">Trading tempo
     <select id="rs-preset">
@@ -541,33 +652,33 @@ ruleset here is trend-following with a stop and risk-based sizing.</p>
     </select></label>
 
   <label>Account
-    <input name="account" value="100000"></label>
+    <input name="account" value="{_esc(v['account'])}"></label>
   <label>Risk per trade (fraction)
-    <input name="risk" value="0.01"></label>
+    <input name="risk" value="{_esc(v['risk'])}"></label>
   <label>Fast average (days)
-    <input name="fast_ma" value="50"></label>
+    <input name="fast_ma" value="{_esc(v['fast_ma'])}"></label>
   <label>Slow average (days)
-    <input name="slow_ma" value="200"></label>
+    <input name="slow_ma" value="{_esc(v['slow_ma'])}"></label>
   <label>Breakout window (days)
-    <input name="breakout_lookback" value="20"></label>
+    <input name="breakout_lookback" value="{_esc(v['breakout_lookback'])}"></label>
 
   <details style="flex-basis:100%"><summary class="note">Fine-tuning
   (sensible defaults &mdash; open only if you know why)</summary>
   <div class="controls" style="display:flex;flex-wrap:wrap;gap:12px;
        margin-top:8px">
   <label>Pullback tolerance (fraction of the fast average)
-    <input name="pullback_pct" value="0.03"></label>
+    <input name="pullback_pct" value="{_esc(v['pullback_pct'])}"></label>
   <label>"Never chase" limit (fraction above fast average)
-    <input name="max_extension_pct" value="0.12"></label>
+    <input name="max_extension_pct" value="{_esc(v['max_extension_pct'])}"></label>
   <label>Stop buffer below swing low (fraction)
-    <input name="stop_buffer_pct" value="0.005"></label>
+    <input name="stop_buffer_pct" value="{_esc(v['stop_buffer_pct'])}"></label>
   <label>Swing confirmation (bars)
-    <input name="swing_window" value="3"></label>
+    <input name="swing_window" value="{_esc(v['swing_window'])}"></label>
   </div></details>
 
   <input type="hidden" name="csv" value="examples/aapl_2015_2017.csv">
   <input type="hidden" name="action" value="backtest">
-  <button type="button" id="rs-save">Save my ruleset</button>
+  <button type="button" id="rs-save">Save my Diagram</button>
   <button class="ghost" type="submit">Save &amp; backtest it (AAPL sample)</button>
   <span class="note" id="rs-status"></span>
 </form>
@@ -608,7 +719,10 @@ _RULESET_JS = """
     faster:   { fast_ma: 20,  slow_ma: 100, breakout_lookback: 10 },
     longterm: { fast_ma: 100, slow_ma: 250, breakout_lookback: 40 }
   };
-  if (saved) {
+  // When the page was just filled from a plain-English description, the
+  // server's values win — don't clobber them with the previously saved
+  // Diagram.
+  if (saved && !form.hasAttribute('data-skip-restore')) {
     Object.keys(saved).forEach(function (k) {
       var el = form.querySelector('[name="' + k + '"]');
       if (el) el.value = saved[k];
@@ -1194,7 +1308,13 @@ def route(path: str, params: Dict[str, List[str]]) -> Tuple[int, str]:
                           + _chart_form({}))
 
     if path == "/ruleset":
-        return 200, _page("Trendrail", title + _RULESET_PAGE)
+        described = _first(params, "describe")
+        if described.strip():
+            values, notes = interpret_description(described)
+            body = _ruleset_page(values, notes, described)
+        else:
+            body = _ruleset_page()
+        return 200, _page("Trendrail", title + body)
 
     if path == "/chart":
         values = {k: _first(params, k) for k in
