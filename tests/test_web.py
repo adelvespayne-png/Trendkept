@@ -374,6 +374,30 @@ class TestChart(unittest.TestCase):
         _, body = route("/chart", {"csv": [AAPL_CSV]})
         self.assertIn("The rules in force", body)
 
+    def test_symbol_beats_csv_when_both_given(self):
+        # Typing a ticker means "live data" even if the CSV box has a path.
+        import trendrail.web as web
+        original = web._fetch_symbol
+        web._fetch_symbol = lambda s, i="1day": ([], f"LIVE:{s}")
+        try:
+            bars, label = web._load_bars("NVDA", AAPL_CSV)
+        finally:
+            web._fetch_symbol = original
+        self.assertEqual(label, "LIVE:NVDA")
+
+    def test_csv_with_minute_bars_explains_itself(self):
+        status, body = route("/run", {"csv": [AAPL_CSV], "action": ["scan"],
+                                      "interval": ["1min"]})
+        self.assertEqual(status, 200)
+        self.assertIn("CSV files hold daily bars", body)
+
+    def test_chart_has_bar_size_switcher(self):
+        _, body = route("/chart", {"csv": [AAPL_CSV]})
+        self.assertIn("Bar size:", body)
+        for label in (">1m<", ">1h<", ">1W<", ">1M<"):
+            self.assertIn(label, body)
+        self.assertIn("<strong>1D</strong>", body)  # current one highlighted
+
     def test_chart_one_month_window(self):
         status, body = route("/chart", {"csv": [AAPL_CSV],
                                         "window": ["1mo"]})

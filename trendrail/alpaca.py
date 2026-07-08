@@ -158,8 +158,8 @@ class AlpacaClient:
         if start is None:
             days = {"1Min": 30, "5Min": 90, "30Min": 365,
                     "1Hour": 730, "4Hour": 730,
-                    "1Week": 8 * 365, "1Month": 15 * 365}.get(
-                        timeframe, 5 * 365)
+                    "1Week": 12 * 365, "1Month": 20 * 365}.get(
+                        timeframe, 10 * 365)
             start = (datetime.now(timezone.utc) - timedelta(days=days)).strftime(
                 "%Y-%m-%d"
             )

@@ -485,7 +485,7 @@ def _form(values: Dict[str, str]) -> str:
     <input name="symbol" value="{val('symbol')}" placeholder="AAPL"></label>
   <label>&hellip;or CSV path
     <input name="csv" class="wide" value="{val('csv')}"
-           placeholder="examples/aapl_2015_2017.csv"></label>
+           placeholder="(optional) your own CSV file"></label>
   <label>Account
     <input name="account" value="{val('account')}"></label>
   <label>Risk / trade
@@ -554,7 +554,7 @@ def _chart_form(values: Dict[str, str]) -> str:
     <input name="symbol" value="{val('symbol')}" placeholder="NVDA"></label>
   <label>&hellip;or CSV path
     <input name="csv" class="wide" value="{val('csv')}"
-           placeholder="examples/aapl_2015_2017.csv"></label>
+           placeholder="(optional) your own CSV file"></label>
   <label>Bar size
     {_interval_select(interval)}</label>
   <label>Timeframe
@@ -1116,6 +1116,19 @@ def _chart_view(bars: List[Bar], label: str, cfg: StrategyConfig,
              else "uptrend confirmed — no entry today" if uptrend
              else "no confirmed uptrend")
 
+    current_iv = values.get("interval") or "1day"
+    iv_links = []
+    short = {"1min": "1m", "5min": "5m", "30min": "30m", "1hour": "1h",
+             "4hour": "4h", "1day": "1D", "1week": "1W", "1month": "1M"}
+    for key, text in short.items():
+        if key == current_iv:
+            iv_links.append(f"<strong>{text}</strong>")
+        else:
+            q = {k: v for k, v in values.items() if v}
+            q["interval"] = key
+            iv_links.append(
+                f'<a href="/chart?{_esc(urlencode(q))}">{text}</a>')
+
     links = []
     labels = {"1mo": "1 month", "6m": "6 months", "1y": "1 year",
               "2y": "2 years", "all": "everything"}
@@ -1126,7 +1139,9 @@ def _chart_view(bars: List[Bar], label: str, cfg: StrategyConfig,
             q = {k: v for k, v in values.items() if v}
             q["window"] = key
             links.append(f'<a href="/chart?{_esc(urlencode(q))}">{text}</a>')
-    selector = '<p class="windows">Timeframe: ' + "".join(links) + "</p>"
+    selector = ('<p class="windows">Bar size: ' + "".join(iv_links)
+                + "</p>"
+                '<p class="windows">Timeframe: ' + "".join(links) + "</p>")
 
     window = CHART_WINDOWS.get(window_key, 130)
     return (
@@ -1391,7 +1406,7 @@ def _fetch_symbol(symbol: str, interval: str = "1day") -> Tuple[List[Bar], str]:
         # monthly bars come from daily data, aggregated locally.
         fetch_iv = "1d" if yahoo_iv == "resample" else yahoo_iv
         bars = parse_csv_text(fetch_csv(symbol, timeout=8.0,
-                                        interval=fetch_iv))
+                                        interval=fetch_iv, range_="10y"))
         bars = resample_bars(bars, interval)
 
     _BARS_CACHE[key] = (now, bars, label)
@@ -1400,15 +1415,21 @@ def _fetch_symbol(symbol: str, interval: str = "1day") -> Tuple[List[Bar], str]:
 
 def _load_bars(symbol: str, csv_path: str,
                interval: str = "1day") -> Tuple[List[Bar], str]:
+    # A typed symbol always wins: it means "live data, through today".
+    # The CSV path is the offline/bring-your-own-data option.
+    if symbol:
+        return _fetch_symbol(symbol, interval)
     if csv_path:
+        if interval not in ("1day", "1week", "1month"):
+            raise ValueError(
+                "CSV files hold daily bars — minute/hour bar sizes need a "
+                "live symbol (clear the CSV box and type a ticker)")
         bars = load_csv(csv_path)
         label = csv_path
         if interval in ("1week", "1month"):
             bars = resample_bars(bars, interval)
             label += f" ({INTERVALS[interval][0]} bars)"
         return bars, label
-    if symbol:
-        return _fetch_symbol(symbol, interval)
     raise ValueError("provide a symbol or a CSV path")
 
 
