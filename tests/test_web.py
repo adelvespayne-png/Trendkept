@@ -374,6 +374,51 @@ class TestChart(unittest.TestCase):
         _, body = route("/chart", {"csv": [AAPL_CSV]})
         self.assertIn("The rules in force", body)
 
+    def test_classify_symbol_all_asset_classes(self):
+        from trendkept.web import classify_symbol as c
+        # Stocks (the default)
+        self.assertEqual((c("aapl").kind, c("AAPL").alpaca_kind),
+                         ("stock", "stock"))
+        # Crypto: slash, dash, or bare base; Alpaca notation preserved
+        for raw in ("BTC/USD", "btc-usd", "BTC"):
+            info = c(raw)
+            self.assertEqual(info.kind, "crypto")
+            self.assertEqual(info.alpaca, "BTC/USD")
+            self.assertEqual(info.yahoo, "BTC-USD")
+        # Forex: six-letter pairs, slashed pairs, or =X — Yahoo-only
+        for raw in ("EURUSD", "EUR/USD", "GBPJPY=X"):
+            info = c(raw)
+            self.assertEqual(info.kind, "forex")
+            self.assertTrue(info.yahoo.endswith("=X"))
+            self.assertIsNone(info.alpaca_kind)
+        # Futures: =F or slash prefix, continuous front month via Yahoo
+        for raw in ("ES=F", "/ES", "gc=f"):
+            info = c(raw)
+            self.assertEqual(info.kind, "futures")
+            self.assertTrue(info.yahoo.endswith("=F"))
+        # Indices: carets and friendly aliases
+        self.assertEqual(c("^GSPC").kind, "index")
+        self.assertEqual(c("SPX").yahoo, "^GSPC")
+        self.assertEqual(c("FTSE").yahoo, "^FTSE")
+        # EUR/USD is forex, BTC/USD is crypto — the slash is not enough
+        self.assertEqual(c("EUR/USD").kind, "forex")
+        self.assertEqual(c("BTC/USD").kind, "crypto")
+
+    def test_watchlist_treats_crypto_pair_as_symbol_not_path(self):
+        import trendkept.web as web
+        from trendkept.data import load_csv
+        seen = []
+        original = web._fetch_symbol
+        web._fetch_symbol = lambda s, i="1day": (
+            seen.append(s) or (load_csv(AAPL_CSV), f"{s} (crypto)"))
+        try:
+            status, body = route("/watchlist", {"symbols": ["BTC/USD"]})
+        finally:
+            web._fetch_symbol = original
+        self.assertEqual(status, 200)
+        self.assertEqual(seen, ["BTC/USD"])
+        self.assertNotIn("file not found", body)
+
     def test_symbol_beats_csv_when_both_given(self):
         # Typing a ticker means "live data" even if the CSV box has a path.
         import trendkept.web as web

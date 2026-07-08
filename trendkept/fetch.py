@@ -121,12 +121,19 @@ _YAHOO_INTRADAY_RANGE = {"1m": "5d", "5m": "1mo", "30m": "1mo", "60m": "6mo"}
 
 def yahoo_csv(symbol: str, range_: str = "5y", interval: str = "1d",
               timeout: float = 30.0) -> str:
-    """Raw CSV text from Yahoo's chart API (daily or intraday bars)."""
+    """Raw CSV text from Yahoo's chart API (daily or intraday bars).
+
+    Handles any Yahoo symbol notation — stocks (AAPL), indices (^GSPC),
+    futures (ES=F), forex (EURUSD=X), crypto (BTC-USD) — hence the quoting.
+    """
+    import urllib.parse
+
     intraday = interval != "1d"
     if intraday:
         range_ = _YAHOO_INTRADAY_RANGE.get(interval, "1mo")
+    quoted = urllib.parse.quote(symbol, safe="")
     url = (
-        f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
+        f"https://query1.finance.yahoo.com/v8/finance/chart/{quoted}"
         f"?range={range_}&interval={interval}&events=div%2Csplit"
     )
     return yahoo_to_csv(_http_get(url, timeout), symbol, intraday=intraday)

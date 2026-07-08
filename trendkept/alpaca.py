@@ -194,6 +194,51 @@ class AlpacaClient:
         bars.sort(key=lambda x: x.date)
         return bars
 
+    def crypto_bars(
+        self,
+        symbol: str,
+        timeframe: str = "1Day",
+        start: Optional[str] = None,
+        max_bars: int = 5000,
+    ) -> List[Bar]:
+        """Bars for a crypto pair like ``BTC/USD`` — Alpaca's crypto data
+        endpoint (24/7 market; no feed or adjustment parameters). The
+        payload keys bars by symbol, hence the reshaping before parsing."""
+        intraday = timeframe in ("1Min", "5Min", "15Min", "30Min",
+                                 "1Hour", "4Hour")
+        if start is None:
+            days = {"1Min": 30, "5Min": 90, "30Min": 365,
+                    "1Hour": 730, "4Hour": 730,
+                    "1Week": 12 * 365, "1Month": 20 * 365}.get(
+                        timeframe, 10 * 365)
+            start = (datetime.now(timezone.utc) - timedelta(days=days)).strftime(
+                "%Y-%m-%d"
+            )
+        bars: List[Bar] = []
+        page_token: Optional[str] = None
+        while True:
+            params = {
+                "symbols": symbol,
+                "timeframe": timeframe,
+                "start": start,
+                "limit": 10000,
+            }
+            if page_token:
+                params["page_token"] = page_token
+            url = (f"{DATA_HOST}/v1beta3/crypto/us/bars?"
+                   + urllib.parse.urlencode(params))
+            payload = self._request("GET", url)
+            per_symbol = (payload.get("bars") or {}).get(symbol) or []
+            bars.extend(self._bars_from_payload({"bars": per_symbol},
+                                                intraday=intraday))
+            page_token = payload.get("next_page_token")
+            if not page_token or len(bars) >= max_bars:
+                break
+        if not bars:
+            raise AlpacaError(f"no crypto bars returned for {symbol!r}")
+        bars.sort(key=lambda x: x.date)
+        return bars
+
     # --- account & positions ---------------------------------------------
 
     def account(self) -> dict:

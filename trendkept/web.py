@@ -482,7 +482,7 @@ def _form(values: Dict[str, str]) -> str:
     return f"""
 <div class="card"><form class="controls" method="get" action="/run">
   <label>Symbol (fetched live)
-    <input name="symbol" value="{val('symbol')}" placeholder="AAPL"></label>
+    <input name="symbol" value="{val('symbol')}" placeholder="AAPL, BTC/USD, EURUSD, ES=F, SPX"></label>
   <label>&hellip;or CSV path
     <input name="csv" class="wide" value="{val('csv')}"
            placeholder="(optional) your own CSV file"></label>
@@ -508,7 +508,12 @@ def _form(values: Dict[str, str]) -> str:
 replays them over the whole history &mdash; trades are drawn on the price
 chart. Both run <a href="/ruleset">your Trading Diagram</a>. The averages
 count <em>bars</em>: on 1-hour bars, 50 means 50 trading hours. Intraday
-history is limited (1-minute &asymp; the last week).</p></div>"""
+history is limited (1-minute &asymp; the last week).<br>
+<strong>Symbols:</strong> stocks <code>AAPL</code> &middot; crypto
+<code>BTC/USD</code> (24/7) &middot; forex <code>EURUSD</code> &middot;
+futures <code>ES=F</code> / <code>GC=F</code> (continuous front month)
+&middot; indices <code>SPX</code>, <code>^FTSE</code>. Stocks &amp; crypto
+use your Alpaca feed; the rest use the free feed.</p></div>"""
 
 
 def _watchlist_form(values: Dict[str, str]) -> str:
@@ -519,7 +524,7 @@ def _watchlist_form(values: Dict[str, str]) -> str:
 <div class="card"><form class="controls" method="get" action="/watchlist">
   <label>Watchlist &mdash; tickers or CSV paths, separated by spaces or commas
     <textarea name="symbols"
-      placeholder="AAPL MSFT NVDA examples/aapl_2015_2017.csv">{val('symbols')}</textarea>
+      placeholder="AAPL MSFT BTC/USD EURUSD ES=F SPX">{val('symbols')}</textarea>
   </label>
   <label>Account
     <input name="account" value="{val('account')}"></label>
@@ -551,7 +556,7 @@ def _chart_form(values: Dict[str, str]) -> str:
     return f"""
 <div class="card"><form class="controls" method="get" action="/chart">
   <label>Chart a symbol
-    <input name="symbol" value="{val('symbol')}" placeholder="NVDA"></label>
+    <input name="symbol" value="{val('symbol')}" placeholder="NVDA, BTC/USD, GC=F, ^FTSE"></label>
   <label>&hellip;or CSV path
     <input name="csv" class="wide" value="{val('csv')}"
            placeholder="(optional) your own CSV file"></label>
@@ -1163,9 +1168,7 @@ def _chart_view(bars: List[Bar], label: str, cfg: StrategyConfig,
 def _chart_href(item: str, cfg: StrategyConfig) -> str:
     from urllib.parse import urlencode
 
-    is_csv = (os.path.exists(item) or "/" in item
-              or item.lower().endswith(".csv"))
-    q = {("csv" if is_csv else "symbol"): item,
+    q = {("csv" if _is_csv_item(item) else "symbol"): item,
          "fast_ma": cfg.fast_ma, "slow_ma": cfg.slow_ma,
          "breakout_lookback": cfg.breakout_lookback,
          "pullback_pct": cfg.pullback_pct,
@@ -1367,30 +1370,98 @@ _BARS_CACHE: Dict[str, Tuple[float, List[Bar], str]] = {}
 _BARS_CACHE_TTL = 600.0
 
 
+# Symbol classification: one box accepts stocks, crypto, forex, futures,
+# and indices, in the notations people actually type.
+_INDEX_ALIASES = {
+    "SPX": "^GSPC", "SP500": "^GSPC", "S&P500": "^GSPC", "NDX": "^NDX",
+    "NASDAQ": "^IXIC", "DJI": "^DJI", "DOW": "^DJI", "FTSE": "^FTSE",
+    "FTSE100": "^FTSE", "DAX": "^GDAXI", "NIKKEI": "^N225", "VIX": "^VIX",
+    "RUSSELL": "^RUT", "RUT": "^RUT",
+}
+_CRYPTO_BASES = {"BTC", "ETH", "SOL", "DOGE", "ADA", "XRP", "LTC", "AVAX",
+                 "DOT", "LINK", "BCH", "UNI", "AAVE", "SHIB", "MATIC"}
+_FIAT = {"USD", "EUR", "GBP", "JPY", "AUD", "NZD", "CAD", "CHF"}
+
+
+class SymbolInfo:
+    """Where a typed symbol lives: its asset class and per-provider names."""
+
+    def __init__(self, kind: str, display: str, yahoo: str,
+                 alpaca: Optional[str] = None,
+                 alpaca_kind: Optional[str] = None):
+        self.kind = kind                # stock/crypto/forex/futures/index
+        self.display = display
+        self.yahoo = yahoo
+        self.alpaca = alpaca            # symbol in Alpaca notation, if served
+        self.alpaca_kind = alpaca_kind  # "stock" | "crypto" | None
+
+
+def classify_symbol(raw: str) -> SymbolInfo:
+    s = raw.strip().upper()
+
+    if s.startswith("^") or s in _INDEX_ALIASES:
+        return SymbolInfo("index", s, _INDEX_ALIASES.get(s, s))
+
+    if s.endswith("=F") or (s.startswith("/") and 2 <= len(s) <= 5):
+        base = s.lstrip("/")
+        yahoo = base if base.endswith("=F") else f"{base}=F"
+        return SymbolInfo("futures", yahoo, yahoo)
+
+    if s.endswith("=X"):
+        return SymbolInfo("forex", s[:-2], s)
+
+    for sep in ("/", "-"):
+        if sep in s:
+            base, _, quote = s.partition(sep)
+            if base in _CRYPTO_BASES:
+                quote = quote or "USD"
+                return SymbolInfo("crypto", f"{base}/{quote}",
+                                  f"{base}-{quote}", f"{base}/{quote}",
+                                  "crypto")
+            if base in _FIAT and quote in _FIAT:
+                return SymbolInfo("forex", f"{base}{quote}",
+                                  f"{base}{quote}=X")
+    if s in _CRYPTO_BASES:
+        return SymbolInfo("crypto", f"{s}/USD", f"{s}-USD", f"{s}/USD",
+                          "crypto")
+    if len(s) == 6 and s[:3] in _FIAT and s[3:] in _FIAT:
+        return SymbolInfo("forex", s, f"{s}=X")
+
+    return SymbolInfo("stock", s, s, s, "stock")
+
+
 def _fetch_symbol(symbol: str, interval: str = "1day") -> Tuple[List[Bar], str]:
-    """Bars for a ticker at the chosen bar size: Alpaca first when keys are
-    configured (the user's own entitlement — reliable and not rate-limited
-    like the free scrape endpoints), else Yahoo/Stooq with a short timeout."""
+    """Bars for any symbol at the chosen bar size. Alpaca serves stocks and
+    crypto when keys are configured (the user's own entitlement); futures,
+    forex, and indices ride the free Yahoo feed. Stooq stays in the fallback
+    chain for plain stocks only."""
     import time
 
     label_txt, alpaca_tf, yahoo_iv = INTERVALS.get(interval, INTERVALS["1day"])
-    key = f"{symbol.upper()}:{interval}"
+    info = classify_symbol(symbol)
+    key = f"{info.display}:{interval}"
     hit = _BARS_CACHE.get(key)
     now = time.time()
     if hit and now - hit[0] < _BARS_CACHE_TTL:
         return hit[1], hit[2]
 
     bars: Optional[List[Bar]] = None
-    label = symbol.upper()
+    label = info.display
+    if info.kind != "stock":
+        label += f" ({info.kind})"
     if interval != "1day":
         label += f" ({label_txt} bars)"
-    if os.environ.get("APCA_API_KEY_ID") and \
+
+    if info.alpaca_kind and os.environ.get("APCA_API_KEY_ID") and \
             os.environ.get("APCA_API_SECRET_KEY"):
         try:
             from .alpaca import AlpacaClient
 
             client = AlpacaClient(paper=True, feed="iex")
-            bars = client.daily_bars(symbol.upper(), timeframe=alpaca_tf)
+            if info.alpaca_kind == "crypto":
+                bars = client.crypto_bars(info.alpaca, timeframe=alpaca_tf)
+            else:
+                bars = client.daily_bars(info.alpaca, timeframe=alpaca_tf)
         except Exception:
             bars = None  # fall through to the free providers
 
@@ -1398,15 +1469,23 @@ def _fetch_symbol(symbol: str, interval: str = "1day") -> Tuple[List[Bar], str]:
         if yahoo_iv is None:
             from .fetch import FetchError
 
-            raise FetchError(f"{label_txt} bars need your Alpaca keys set — "
-                             "the free providers don't serve that bar size")
+            if info.alpaca_kind:
+                raise FetchError(
+                    f"{label_txt} bars need your Alpaca keys set — the "
+                    "free providers don't serve that bar size")
+            raise FetchError(
+                f"{label_txt} bars aren't available for {info.kind} "
+                "symbols — try 1 hour or 1 day")
         from .fetch import fetch_csv  # lazy: offline use needs no network
 
         # Fail fast: a browser won't wait minutes for a page. Weekly and
-        # monthly bars come from daily data, aggregated locally.
+        # monthly bars come from daily data, aggregated locally. Stooq only
+        # understands plain stocks; everything else goes straight to Yahoo.
         fetch_iv = "1d" if yahoo_iv == "resample" else yahoo_iv
-        bars = parse_csv_text(fetch_csv(symbol, timeout=8.0,
-                                        interval=fetch_iv, range_="10y"))
+        provider = "auto" if info.kind == "stock" else "yahoo"
+        bars = parse_csv_text(fetch_csv(info.yahoo, provider=provider,
+                                        timeout=8.0, interval=fetch_iv,
+                                        range_="10y"))
         bars = resample_bars(bars, interval)
 
     _BARS_CACHE[key] = (now, bars, label)
@@ -1433,10 +1512,16 @@ def _load_bars(symbol: str, csv_path: str,
     raise ValueError("provide a symbol or a CSV path")
 
 
+def _is_csv_item(item: str) -> bool:
+    """A file if it ends .csv or actually exists — NOT merely because it
+    contains a slash (BTC/USD is a crypto pair, not a path)."""
+    return item.lower().endswith(".csv") or os.path.exists(item)
+
+
 def _load_watchlist_item(item: str) -> Tuple[List[Bar], str]:
     """One watchlist entry: a CSV path if it looks/behaves like one, else a
-    ticker fetched live."""
-    if os.path.exists(item) or "/" in item or item.lower().endswith(".csv"):
+    symbol fetched live (stocks, crypto, forex, futures, indices)."""
+    if _is_csv_item(item):
         return load_csv(item), item
     return _load_bars(item, "")
 

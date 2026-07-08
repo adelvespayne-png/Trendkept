@@ -33,6 +33,18 @@ class TestBarPayloadParsing(unittest.TestCase):
         self.assertEqual(bars[0].date, "2021-01-04 14:30")
         self.assertNotEqual(bars[0].date, bars[1].date)
 
+    def test_crypto_payload_shape_reuses_bar_parser(self):
+        # The crypto endpoint keys bars by symbol; reshaping must feed the
+        # same parser without loss.
+        payload = {"bars": {"BTC/USD": [
+            {"t": "2021-01-04T00:00:00Z", "o": 30000, "h": 31000,
+             "l": 29500, "c": 30500, "v": 12.5},
+        ]}}
+        per_symbol = (payload.get("bars") or {}).get("BTC/USD") or []
+        bars = AlpacaClient._bars_from_payload({"bars": per_symbol})
+        self.assertEqual(len(bars), 1)
+        self.assertAlmostEqual(bars[0].close, 30500)
+
     def test_clamps_inconsistent_bar(self):
         payload = {"bars": [
             {"t": "2021-01-04T05:00:00Z", "o": 10, "h": 9.99, "l": 8,
