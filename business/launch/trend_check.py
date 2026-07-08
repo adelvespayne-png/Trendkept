@@ -18,9 +18,9 @@ from typing import List, Optional
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", ".."))
 
-from trendrail.data import parse_csv_text            # noqa: E402
-from trendrail.fetch import fetch_csv, FetchError    # noqa: E402
-from trendrail.strategy import (                     # noqa: E402
+from trendkept.data import parse_csv_text            # noqa: E402
+from trendkept.fetch import fetch_csv, FetchError    # noqa: E402
+from trendkept.strategy import (                     # noqa: E402
     Signal, StrategyConfig, TrendFollowingStrategy)
 
 DEFAULT_TICKERS = [

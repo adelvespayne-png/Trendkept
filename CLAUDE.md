@@ -1,7 +1,7 @@
-# Trendrail — session handoff & working rules
+# Trendkept — session handoff & working rules
 
 This repo is both a product (an open-source trend-following toolkit) and a
-business-in-a-box (Trendrail Pro). The owner is non-technical: explain in
+business-in-a-box (Trendkept Pro). The owner is non-technical: explain in
 plain English, build without asking them to touch code, and put anything
 important into committed files — the repo is the memory between sessions.
 
@@ -17,10 +17,10 @@ important into committed files — the repo is the memory between sessions.
   licensing (§5 — paid product must not run on scraped Stooq/Yahoo).
 - `business/GO_TO_MARKET.md`, `LAUNCH_CHECKLIST.md`, `business/launch/` —
   playbook + paste-ready posts + newsletter template/generator.
-- `business/build_manual.py --pdf` — rebuilds `Trendrail_Owners_Manual.pdf`
+- `business/build_manual.py --pdf` — rebuilds `Trendkept_Owners_Manual.pdf`
   (the all-in-one PDF). Rebuild after any business-doc change.
-- `trendrail/` — the engine + `web.py` local dashboard (scan, backtest,
-  watchlist, per-user appearance settings). `python -m trendrail.web`.
+- `trendkept/` — the engine + `web.py` local dashboard (scan, backtest,
+  watchlist, per-user appearance settings). `python -m trendkept.web`.
 - Tests: `python -m unittest discover -s tests` (all must pass; don't quote
   a hardcoded count in docs — it drifts).
 
@@ -48,14 +48,16 @@ important into committed files — the repo is the memory between sessions.
 
 - Branch: `claude/business-plan-ownership-8m18uu` (all work pushed; not yet
   merged — repo still named "Archie" until the owner renames it on GitHub).
-- Rebrand Archie→Trendrail complete across code/docs/site.
+- Rebrand Archie→Trendkept complete across code/docs/site.
 - Product done: engine, CLI, dashboard, watchlist, appearance customization.
 - Plan rebuilt after an external critique (gate contradiction, optimistic
   model, fabricated post stories, data licensing, US legal, wedge
   overstatement — all fixed; see the commit "Rebuild the plan against
   external review").
-- Owner's next physical step: registrar/WHOIS check on trendrail.com
-  (START_HERE Step 0). Fallback name if taken: Trendkept.
+- Name is FINAL: **Trendkept / trendkept.com** (owner's call, July 2026,
+  after trendrail.com fell through; previously Trendrail, before that
+  Archie). Owner's next physical steps: buy trendkept.com, rename the
+  GitHub repo to Trendkept, merge the working branch.
 - Next build candidates: trade journal (roadmap month 2, the retention
   hook), Sunday auto-draft GitHub Action for the newsletter, SEO calculator
   pages for the site, wiring the Buttondown form once the owner supplies

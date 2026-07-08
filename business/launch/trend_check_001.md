@@ -50,7 +50,7 @@ metric; R-expectancy is the business model. Next week: why the stop goes in
 
 — [YOUR NAME]
 
-*Trendrail is analysis software and education, not investment advice. This
+*Trendkept is analysis software and education, not investment advice. This
 table is the mechanical output of a published ruleset on public data. Trading
 involves risk of loss; past and backtested performance do not predict future
 results. Unsubscribe below — no hard feelings.*

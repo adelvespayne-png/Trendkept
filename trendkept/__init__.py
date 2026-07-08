@@ -1,6 +1,6 @@
-"""Trendrail — a disciplined trend-following toolkit.
+"""Trendkept — a disciplined trend-following toolkit.
 
-Trendrail encodes one strategy and nothing else: ride confirmed uptrends, cut
+Trendkept encodes one strategy and nothing else: ride confirmed uptrends, cut
 losers fast and small, let winners run. The whole package is pure standard
 library so it runs anywhere Python 3.9+ does, with no pip install.
 

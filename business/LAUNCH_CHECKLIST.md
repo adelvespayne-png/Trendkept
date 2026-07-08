@@ -1,4 +1,4 @@
-# Trendrail Pro — first-90-days launch checklist
+# Trendkept Pro — first-90-days launch checklist
 
 Work top to bottom. **The order is deliberate: validate with ~£10 before
 spending the ~£100 on company paperwork** — the plan's gate philosophy,
@@ -9,11 +9,10 @@ sprints.**
 ## Week 1 — validate first (~£10 total)
 
 - [ ] Name search: UK IPO trademark search + Companies House name check for
-      "Trendrail" / fallback. Decide once, move on.
-- [ ] **Check domain availability properly** — a registrar search or
-      WHOIS/RDAP lookup, not a DNS check (registered domains often have no
-      DNS records). Buy `trendrail.com` (~£10) or the fallback that
-      survives.
+      "Trendkept". Decide once, move on.
+- [ ] **Buy `trendkept.com`** (~£10) at Cloudflare Registrar or Namecheap —
+      the name is decided; the registrar's availability search is the final
+      word.
 - [ ] Deploy `site/index.html` (Cloudflare Pages — free) with the waitlist.
 - [ ] Create the newsletter list ("The Trend Check") on Buttondown free
       tier; wire the landing-page form to it.
@@ -25,7 +24,7 @@ sprints.**
 
 ## Week 2 — make the free tier shine (it's the top of the funnel)
 
-- [ ] Record a 60-second GIF/video: `python -m trendrail.web`, scan, backtest,
+- [ ] Record a 60-second GIF/video: `python -m trendkept.web`, scan, backtest,
       equity curve. Put it at the top of the README and the landing page.
 - [ ] Add GitHub topics: `trading`, `trend-following`, `backtesting`,
       `python`, `zero-dependencies`.
@@ -58,7 +57,7 @@ sprints.**
 
 ## Month 2 — build the retention hooks (ship weekly)
 
-- [x] Watchlist page in the dashboard (scan N symbols at once) — **done, shipped in `trendrail/web.py`**.
+- [x] Watchlist page in the dashboard (scan N symbols at once) — **done, shipped in `trendkept/web.py`**.
 - [ ] Trade journal: log entries/exits, auto-computed R-multiples, discipline
       score ("did you follow all five rules?").
 - [ ] Content pieces 5–8; keep the newsletter streak.

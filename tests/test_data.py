@@ -1,6 +1,6 @@
 import unittest
 
-from trendrail.data import Bar, parse_csv_text
+from trendkept.data import Bar, parse_csv_text
 
 
 class TestBarValidation(unittest.TestCase):

@@ -8,20 +8,18 @@ section contain the full detail — this section is what you *do*.
 
 ## Step 0 — Today, from your phone (~30 minutes)
 
-1. **Check the domain properly (2 min).** Search `trendrail.com` at a
-   registrar (Cloudflare Registrar or Namecheap) — the registrar's own
-   availability search or a WHOIS/RDAP lookup is the real answer (an
-   earlier DNS check showing "no records" is *not* proof: registered
-   domains often have no DNS). If it's free, buy it (~£10/yr). If taken,
-   buy `trendkept.com` and say so — the rebrand is a five-minute job for
-   your Claude session.
-2. **Trademark sanity check (5 min).** Search "Trendrail" at
+1. **Buy the domain (15 min).** The name is decided: **trendkept.com**
+   (chosen after trendrail.com fell through). Buy it at Cloudflare
+   Registrar or Namecheap (~£10/yr) — use the registrar's own availability
+   search as the final check. If it has somehow gone too, tell your Claude
+   session before buying anything else; a rename is a five-minute job.
+2. **Trademark sanity check (5 min).** Search "Trendkept" at
    trademarks.ipo.gov.uk and in the Companies House name search. You're
    looking for an existing trading-software company with the same name.
    Don't *register* a trademark yet — that waits for revenue (£220 for
    classes 9+42, later).
 3. **Rename the GitHub repository (2 min).** Repo → Settings → rename
-   `Archie` to `Trendrail`. Old links redirect automatically. Then merge
+   `Archie` to `Trendkept`. Old links redirect automatically. Then merge
    the working branch — or ask Claude to open the pull request and just
    click Merge.
 
@@ -30,7 +28,7 @@ section contain the full detail — this section is what you *do*.
 *No company yet, no bank yet — first, find out if anyone cares.*
 
 1. **Put the landing page live (free, 20 min).** pages.cloudflare.com →
-   Create a project → connect GitHub → pick the Trendrail repo → build
+   Create a project → connect GitHub → pick the Trendkept repo → build
    output directory `site` → deploy → add the custom domain. The page is
    already built, waitlist included.
 2. **Business email — yes, you need one (30 min).**
@@ -39,9 +37,9 @@ section contain the full detail — this section is what you *do*.
      spam — that's lost revenue); and business signups stay separate from
      your personal email, which matters the day you sell the company.
    - **Create three addresses** (all can land in one inbox):
-     `hello@trendrail.com` (public: support, website, social profiles),
-     `[yourname]@trendrail.com` (private: registrar, Buttondown, later the
-     bank and Paddle), and `news@trendrail.com` (the newsletter's sending
+     `hello@trendkept.com` (public: support, website, social profiles),
+     `[yourname]@trendkept.com` (private: registrar, Buttondown, later the
+     bank and Paddle), and `news@trendkept.com` (the newsletter's sending
      address).
    - **Where:** if you already pay for any iCloud+ tier, custom email
      domains are **included free** — iPhone Settings → [your name] →
@@ -50,13 +48,13 @@ section contain the full detail — this section is what you *do*.
      ten minutes of copy-pasting DNS records (MX, SPF, DKIM) into
      Cloudflare — screenshot anything confusing and ask Claude.
 3. **Create the newsletter (15 min).** buttondown.com → free tier → name it
-   **The Trend Check** → sending address `news@trendrail.com` (two more DNS
+   **The Trend Check** → sending address `news@trendkept.com` (two more DNS
    records). Give Claude the form URL and the landing-page signup box gets
    wired to it.
 4. **Start the dogfooding clock (30 min).** Open a free Alpaca
    paper-trading account (fake money), put the keys in your environment as
    the README shows, and run the daily routine from today: dashboard scan
-   (`python -m trendrail.web`) and `python -m trendrail.cli manage` after
+   (`python -m trendkept.web`) and `python -m trendkept.cli manage` after
    the close, 15 minutes a day. This is quality control, it generates your
    only honest marketing material, **and the r/swingtrading launch post is
    blocked until you have 4+ weeks of these logs** — so the clock starts
@@ -86,8 +84,8 @@ section contain the full detail — this section is what you *do*.
 
 ## Step 3 — Month 2: incorporate and build the retention hook
 
-1. **Incorporate Trendrail Ltd (~£50, 40 min).** gov.uk → "Set up a limited
-   company". You need: the name (**Trendrail Ltd**), your details as sole
+1. **Incorporate Trendkept Ltd (~£50, 40 min).** gov.uk → "Set up a limited
+   company". You need: the name (**Trendkept Ltd**), your details as sole
    director and shareholder (1 share, £1), SIC code **62012**. Buy a
    **registered-office address service** first (~£40/yr) so your home
    address isn't public. Approval usually within 24 hours.
@@ -118,10 +116,10 @@ founding pricing, Product Hunt. Full detail in LAUNCH_CHECKLIST.md.
 
 ## What this business is (one page, plain English)
 
-**Trendrail sells discipline to hobbyist stock traders.** The free,
+**Trendkept sells discipline to hobbyist stock traders.** The free,
 open-source core tests a written set of trend-following rules against real
 market history and reports what the rules' conditions show today.
-**Trendrail Pro (£12/mo or £99/yr)** is the cockpit: a browser dashboard, a
+**Trendkept Pro (£12/mo or £99/yr)** is the cockpit: a browser dashboard, a
 watchlist scanning many stocks at once, a trade journal that scores
 rule-following, a daily "what the rules say" email — and the stop-loss
 placed *with* the broker order, so exits don't depend on willpower.
@@ -130,12 +128,12 @@ placed *with* the broker order, so exits don't depend on willpower.
 most people lose money through broken discipline, not bad picks. Someone
 who just torched £2,000 ignoring their own rules compares £12/month to the
 £2,000. Journalling tools (Edgewonk, TraderSync) prove the market pays for
-discipline; Trendrail's edge is being the only one that structures the
+discipline; Trendkept's edge is being the only one that structures the
 trade *before* it happens — trend qualification, risk-based sizing, the
 stop in the entry order — with an open-source, provably honest engine. And
 the objection "my broker's bracket orders are free" has a straight answer:
 a bracket is one rule (a static stop on a trade you already picked);
-Trendrail is the whole ruleset, plus the scorecard.
+Trendkept is the whole ruleset, plus the scorecard.
 
 **The money (from the honest model — `business/FINANCIALS.md`):**
 ~£9.66/subscriber/month after real payment fees. Costs step from ~£270/month

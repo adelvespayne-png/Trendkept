@@ -7,7 +7,7 @@ Two free providers, tried in order by ``provider="auto"``:
   shape (including an ``Adj Close`` column). Fallback.
 
 Both are best-effort public endpoints. They can rate-limit or change; that is
-exactly why the rest of Trendrail works fine on a plain CSV you saved yourself.
+exactly why the rest of Trendkept works fine on a plain CSV you saved yourself.
 Network calls live *only* here, isolated from the strategy and backtester.
 
 Note: this sandbox restricts outbound network, so these functions are exercised

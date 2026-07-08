@@ -1,8 +1,8 @@
 import unittest
 
-from trendrail.alpaca import AlpacaClient, plan_trade, TradePlan
-from trendrail.strategy import TrendFollowingStrategy, StrategyConfig
-from trendrail.data import Bar
+from trendkept.alpaca import AlpacaClient, plan_trade, TradePlan
+from trendkept.strategy import TrendFollowingStrategy, StrategyConfig
+from trendkept.data import Bar
 
 
 class TestBarPayloadParsing(unittest.TestCase):

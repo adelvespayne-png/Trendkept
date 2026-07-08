@@ -1,9 +1,9 @@
 import math
 import unittest
 
-from trendrail.data import Bar
-from trendrail.backtest import Backtester, Trade
-from trendrail.strategy import TrendFollowingStrategy, StrategyConfig
+from trendkept.data import Bar
+from trendkept.backtest import Backtester, Trade
+from trendkept.strategy import TrendFollowingStrategy, StrategyConfig
 
 
 class TestPositionSizing(unittest.TestCase):

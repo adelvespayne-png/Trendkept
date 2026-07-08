@@ -1,6 +1,6 @@
 # The 4-week paper-trading test — step by step
 
-This is START_HERE Step 1.4 in full detail: running Trendrail against an
+This is START_HERE Step 1.4 in full detail: running Trendkept against an
 Alpaca **paper** (fake-money) account every trading day for four weeks. It
 is quality control, it makes you user #1, and it unlocks the r/swingtrading
 launch post — which quotes *your real logs* and is blocked until they exist.
@@ -24,7 +24,7 @@ process.
    the Terminal window, press enter) and test the engine offline:
 
    ```bash
-   python3 -m trendrail.cli backtest examples/aapl_2015_2017.csv --account 1000 -v
+   python3 -m trendkept.cli backtest examples/aapl_2015_2017.csv --account 1000 -v
    ```
 
    Backtest results printing = everything works.
@@ -40,7 +40,7 @@ process.
    Copy both immediately — the secret is shown only once. Keys for the
    paper account can't touch real money (there is none).
 
-### 3. Connect Trendrail to Alpaca
+### 3. Connect Trendkept to Alpaca
 
 In Terminal, replacing the placeholders with your two keys:
 
@@ -53,7 +53,7 @@ Close and reopen Terminal (that file loads on startup), `cd` back to the
 folder, then verify the connection:
 
 ```bash
-python3 -m trendrail.cli account
+python3 -m trendkept.cli account
 ```
 
 You should see: `Alpaca account (paper)`, equity ~100,000. That's it — set
@@ -75,17 +75,17 @@ the next morning (same daily bars either way). Markets are closed weekends
 and US holidays; those days, no routine.
 
 **1. Scan the watchlist (5 min).** Either in the dashboard —
-`python3 -m trendrail.web`, open http://127.0.0.1:8181, paste your tickers
+`python3 -m trendkept.web`, open http://127.0.0.1:8181, paste your tickers
 into the watchlist box — or per-symbol in the CLI:
-`python3 -m trendrail.cli scan --symbol AAPL --provider alpaca --account 100000 --risk 0.01`
+`python3 -m trendkept.cli scan --symbol AAPL --provider alpaca --account 100000 --risk 0.01`
 
 **2. If (and only if) a symbol shows an entry SIGNAL (2 min each):**
 
 ```bash
 # Dry run first — prints the exact order, sends nothing:
-python3 -m trendrail.cli trade AAPL --risk 0.01
+python3 -m trendkept.cli trade AAPL --risk 0.01
 # Looks right? Send it to the PAPER account:
-python3 -m trendrail.cli trade AAPL --risk 0.01 --confirm
+python3 -m trendkept.cli trade AAPL --risk 0.01 --confirm
 ```
 
 The order goes in as entry + protective stop together — rule #3, enforced
@@ -94,8 +94,8 @@ by the broker. Most days there is no signal. **Do nothing on those days.**
 **3. Manage whatever is open (2 min):**
 
 ```bash
-python3 -m trendrail.cli manage            # dry run: shows what it would do
-python3 -m trendrail.cli manage --confirm  # do it (raise stops / exit breaks)
+python3 -m trendkept.cli manage            # dry run: shows what it would do
+python3 -m trendkept.cli manage --confirm  # do it (raise stops / exit breaks)
 ```
 
 **4. Log the day (2 min).** One row, even (especially) for "nothing" days —
@@ -112,7 +112,7 @@ file called `paper_log.md`:
 
 ## The weekly close-out (Sunday, 10 min — same sitting as the newsletter)
 
-- Run `python3 -m trendrail.cli account` and note equity + open positions.
+- Run `python3 -m trendkept.cli account` and note equity + open positions.
 - Count the week's log rows: trading days, signals, entries, exits.
 - Screenshot the dashboard once a week — future launch material.
 

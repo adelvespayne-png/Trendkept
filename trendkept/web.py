@@ -1,6 +1,6 @@
-"""Trendrail's local dashboard — the rules in a browser, no dependencies.
+"""Trendkept's local dashboard — the rules in a browser, no dependencies.
 
-    python -m trendrail.web
+    python -m trendkept.web
     # then open http://127.0.0.1:8181
 
 The dashboard is a thin skin over the same engine the CLI uses: ``scan`` asks
@@ -12,7 +12,7 @@ Design constraints, in order:
 
 * **Local-first.** Binds to 127.0.0.1 by default. This is your tool on your
   machine; it never phones home and serves nobody but you.
-* **Standard library only**, like the rest of Trendrail. ``http.server`` is plenty
+* **Standard library only**, like the rest of Trendkept. ``http.server`` is plenty
   for one user on localhost.
 * **Honest rendering.** The equity curve is the backtester's actual curve —
   idealized fills and all — with the same caveat the CLI prints.
@@ -307,7 +307,7 @@ details.appearance summary:hover { color: var(--ink-2); }
 _APPEARANCE_BOOT_JS = """
 (function () {
   try {
-    var s = JSON.parse(localStorage.getItem('trendrail-appearance')) || {};
+    var s = JSON.parse(localStorage.getItem('trendkept-appearance')) || {};
     ['theme', 'accent', 'font', 'density', 'corners'].forEach(function (k) {
       var v = s[k];
       if (v && v !== 'auto' && v !== 'default') {
@@ -361,7 +361,7 @@ Nothing leaves your computer.</p>
 
 _APPEARANCE_JS = """
 (function () {
-  var KEY = 'trendrail-appearance';
+  var KEY = 'trendkept-appearance';
   var root = document.documentElement;
   function load() {
     try { return JSON.parse(localStorage.getItem(KEY)) || {}; }
@@ -441,7 +441,7 @@ _HOVER_JS = """
 
 _NAV = """
 <nav class="top">
-  <a class="home" href="/">Trendrail <small>disciplined
+  <a class="home" href="/">Trendkept <small>disciplined
   trend-following</small></a>
   <a class="btn ghost" href="/">Home</a>
   <a class="btn" href="/ruleset">My Trading Diagram</a>
@@ -457,7 +457,7 @@ def _page(title: str, body: str) -> str:
         f"<style>{_STYLE}</style></head>"
         f"<body><main>{_NAV}{body}"
         f"{_APPEARANCE_PANEL}"
-        "<footer>Trendrail is an educational backtesting/paper-trading tool, not "
+        "<footer>Trendkept is an educational backtesting/paper-trading tool, not "
         "financial advice. Backtests use idealized fills; real markets gap, "
         "slip, and surprise.</footer>"
         f"</main><script>{_HOVER_JS}</script>"
@@ -747,7 +747,7 @@ you liked today's answer.</p></div>
 
 _RULESET_JS = """
 (function () {
-  var KEY = 'trendrail-ruleset';
+  var KEY = 'trendkept-ruleset';
   function load() {
     try { return JSON.parse(localStorage.getItem(KEY)) || null; }
     catch (e) { return null; }
@@ -1525,9 +1525,9 @@ def route(path: str, params: Dict[str, List[str]]) -> Tuple[int, str]:
     if path == "/":
         note = ('<p class="note" id="ruleset-note">Rules run with the '
                 'defaults until you fill in <a href="/ruleset">My Trading '
-                "Diagram</a> &mdash; tell Trendrail how <em>you</em> trade "
+                "Diagram</a> &mdash; tell Trendkept how <em>you</em> trade "
                 "and every scan, chart, and backtest uses your rules.</p>")
-        return 200, _page("Trendrail",
+        return 200, _page("Trendkept",
                           title + note + _form({}) + _watchlist_form({})
                           + _chart_form({}))
 
@@ -1538,7 +1538,7 @@ def route(path: str, params: Dict[str, List[str]]) -> Tuple[int, str]:
             body = _ruleset_page(values, notes, described)
         else:
             body = _ruleset_page()
-        return 200, _page("Trendrail", title + body)
+        return 200, _page("Trendkept", title + body)
 
     if path == "/chart":
         values = {k: _first(params, k) for k in
@@ -1551,7 +1551,7 @@ def route(path: str, params: Dict[str, List[str]]) -> Tuple[int, str]:
             window_key = "6m"
 
         def chart_fail(msg: str) -> Tuple[int, str]:
-            return 200, _page("Trendrail", title + '<div class="card warn">'
+            return 200, _page("Trendkept", title + '<div class="card warn">'
                               f"{_esc(msg)}</div>"
                               '<p class="note"><a href="/">&larr; back</a></p>')
 
@@ -1579,7 +1579,7 @@ def route(path: str, params: Dict[str, List[str]]) -> Tuple[int, str]:
                 "averages in My Trading Diagram.")
         if chart_interval != "1day":
             window_key = "all"  # intraday: show everything the feed serves
-        return 200, _page("Trendrail",
+        return 200, _page("Trendkept",
                           title + _chart_view(bars, label, cfg, values,
                                               window_key))
 
@@ -1594,18 +1594,18 @@ def route(path: str, params: Dict[str, List[str]]) -> Tuple[int, str]:
         except ValueError as exc:
             msg = (str(exc) if "average" in str(exc)
                    else "Account, risk, and rule settings must be numbers.")
-            return 200, _page("Trendrail", header + '<div class="card warn">'
+            return 200, _page("Trendkept", header + '<div class="card warn">'
                               f"{_esc(msg)}</div>")
         if not 0 < risk <= 0.1:
-            return 200, _page("Trendrail", header + '<div class="card warn">'
+            return 200, _page("Trendkept", header + '<div class="card warn">'
                               "Risk per trade should be a small fraction, "
                               "e.g. 0.01-0.02.</div>")
         items = [s for s in re.split(r"[,\s]+", values["symbols"]) if s]
         if not items:
-            return 200, _page("Trendrail", header + '<div class="card warn">'
+            return 200, _page("Trendkept", header + '<div class="card warn">'
                               "Add at least one ticker or CSV path.</div>")
         view = _watchlist_view(items, account, risk, cfg)
-        return 200, _page("Trendrail", header + view)
+        return 200, _page("Trendkept", header + view)
 
     if path != "/run":
         return 404, _page("Not found", "<h1>404</h1><p>Nothing here.</p>")
@@ -1620,7 +1620,7 @@ def route(path: str, params: Dict[str, List[str]]) -> Tuple[int, str]:
 
     def fail(msg: str) -> Tuple[int, str]:
         return 200, _page(
-            "Trendrail", header + f'<div class="card warn">{_esc(msg)}</div>')
+            "Trendkept", header + f'<div class="card warn">{_esc(msg)}</div>')
 
     try:
         account = float(values["account"] or DEFAULTS["account"])
@@ -1652,7 +1652,7 @@ def route(path: str, params: Dict[str, List[str]]) -> Tuple[int, str]:
         view = _backtest_view(bars, label, account, risk, cfg)
     else:
         view = _scan_view(bars, label, account, risk, cfg)
-    return 200, _page("Trendrail", header + view)
+    return 200, _page("Trendkept", header + view)
 
 
 class DashboardHandler(BaseHTTPRequestHandler):
@@ -1662,7 +1662,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             status, body = route(parsed.path, parse_qs(parsed.query))
         except Exception as exc:  # always answer; a silent close helps nobody
             status = 500
-            body = _page("Trendrail", (
+            body = _page("Trendkept", (
                 "<h1>Something went wrong</h1>"
                 f'<div class="card warn">{_esc(exc.__class__.__name__)}: '
                 f"{_esc(str(exc))}</div>"
@@ -1698,14 +1698,14 @@ class QuietServer(ThreadingHTTPServer):
 
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(
-        prog="trendrail-web", description="Trendrail's local web dashboard.")
+        prog="trendkept-web", description="Trendkept's local web dashboard.")
     parser.add_argument("--host", default="127.0.0.1",
                         help="bind address (default 127.0.0.1 — local only)")
     parser.add_argument("--port", type=int, default=8181)
     args = parser.parse_args(argv)
 
     server = QuietServer((args.host, args.port), DashboardHandler)
-    print(f"Trendrail dashboard: http://{args.host}:{args.port}  (Ctrl-C to stop)")
+    print(f"Trendkept dashboard: http://{args.host}:{args.port}  (Ctrl-C to stop)")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

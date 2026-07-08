@@ -1,11 +1,11 @@
-"""Build the Trendrail Owner's Manual — one document containing everything.
+"""Build the Trendkept Owner's Manual — one document containing everything.
 
     python business/build_manual.py            # writes the HTML
     python business/build_manual.py --pdf      # also prints to PDF (Chromium)
 
 Assembles START_HERE (the action steps) followed by every business document
 and the launch content pack into a single print-ready HTML file, then
-optionally renders `Trendrail_Owners_Manual.pdf` via headless Chromium
+optionally renders `Trendkept_Owners_Manual.pdf` via headless Chromium
 (pass --chromium PATH if yours isn't on PATH as `chromium`).
 
 Standard library only, including the small markdown converter — it covers
@@ -261,9 +261,9 @@ def build_html() -> str:
                     f"{md_to_html(md)}</section>")
 
     return f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
-<title>Trendrail — Owner's Manual</title><style>{_CSS}</style></head><body>
+<title>Trendkept — Owner's Manual</title><style>{_CSS}</style></head><body>
 <div class="cover">
-  <div class="brand">Trendrail</div>
+  <div class="brand">Trendkept</div>
   <h1>The Owner's Manual</h1>
   <p>Everything, in one document: the steps to take right now, the business
   plan, the financial projections, the go-to-market playbook, the legal
@@ -273,7 +273,7 @@ def build_html() -> str:
   <code>python business/build_manual.py --pdf</code></p>
 </div>
 <div class="toc"><h1>Contents</h1><ol>{''.join(toc)}</ol>
-<p class="footer-note">Trendrail is analysis software and education, not
+<p class="footer-note">Trendkept is analysis software and education, not
 investment advice. Trading involves risk of loss; past and backtested
 performance do not predict future results. This document contains business
 planning material, not legal or financial advice — the one-hour solicitor
@@ -290,7 +290,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                         help="path to a Chromium/Chrome binary")
     args = parser.parse_args(argv)
 
-    html_path = os.path.join(HERE, "Trendrail_Owners_Manual.html")
+    html_path = os.path.join(HERE, "Trendkept_Owners_Manual.html")
     with open(html_path, "w") as fh:
         fh.write(build_html())
     print(f"wrote {html_path}")
@@ -304,7 +304,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         print("no Chromium/Chrome found; open the HTML in a browser and "
               "print to PDF instead, or pass --chromium PATH")
         return 1
-    pdf_path = os.path.join(HERE, "Trendrail_Owners_Manual.pdf")
+    pdf_path = os.path.join(HERE, "Trendkept_Owners_Manual.pdf")
     subprocess.run(
         [chromium, "--headless", "--disable-gpu", "--no-sandbox",
          "--no-pdf-header-footer", f"--print-to-pdf={pdf_path}", html_path],

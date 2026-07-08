@@ -1,7 +1,7 @@
 import unittest
 
-from trendrail.data import Bar
-from trendrail import indicators as ind
+from trendkept.data import Bar
+from trendkept import indicators as ind
 
 
 def bar(i, o, h, l, c):
@@ -37,7 +37,7 @@ class TestSwings(unittest.TestCase):
         self.assertIn(7, lows_found)
 
     def test_higher_highs_and_lows(self):
-        from trendrail.indicators import Swing
+        from trendkept.indicators import Swing
 
         rising = [
             Swing(1, 5, "low"), Swing(2, 10, "high"),

@@ -3,16 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Trendrail — trade the trend. Follow the rules.</title>
+<title>Trendkept — trade the trend. Follow the rules.</title>
 <meta name="description"
-      content="Trendrail doesn't predict markets. It makes you follow your own
+      content="Trendkept doesn't predict markets. It makes you follow your own
 trend-following rules — backtested honestly, with the stop enforced by your
 broker instead of your nerves.">
 <script>
   /* Apply the visitor's saved look before first paint (no theme flash). */
   (function () {
     try {
-      var s = JSON.parse(localStorage.getItem('trendrail-appearance')) || {};
+      var s = JSON.parse(localStorage.getItem('trendkept-appearance')) || {};
       ['theme', 'accent', 'font'].forEach(function (k) {
         var v = s[k];
         if (v && v !== 'auto' && v !== 'default') {
@@ -113,15 +113,15 @@ broker instead of your nerves.">
 </head>
 <body>
 <main>
-  <div class="brand">Trendrail</div>
+  <div class="brand">Trendkept</div>
   <h1>Trade the trend.<br>Follow the rules.</h1>
-  <p class="sub">Trendrail doesn't predict markets — nobody can. It makes you
+  <p class="sub">Trendkept doesn't predict markets — nobody can. It makes you
   follow your own written trend-following rules: backtested honestly, sized by
   risk, with the stop-loss enforced by your broker instead of your nerves.</p>
 
   <p style="margin-top:28px">
     <a class="cta" href="#signup">Get the weekly Trend Check — free</a>
-    <a class="cta ghost" href="https://github.com/adelvespayne-png/Trendrail">
+    <a class="cta ghost" href="https://github.com/adelvespayne-png/Trendkept">
       Star the open-source core</a>
   </p>
 
@@ -144,14 +144,14 @@ broker instead of your nerves.">
     <b>The honest part.</b> You can be wrong more than half the time and still
     come out ahead — because each loss is capped small and winners run. That
     only works if you follow the rules <i>every time</i>. That's the hard part.
-    That's what Trendrail is for.
+    That's what Trendkept is for.
   </div>
 
   <h2>See it work — honestly</h2>
-  <p>Every Trendrail backtest is <b>causal</b>: a signal at bar <i>i</i> uses only
+  <p>Every Trendkept backtest is <b>causal</b>: a signal at bar <i>i</i> uses only
   data up to bar <i>i</i>. Backtests that peek at the future look brilliant and
-  trade terribly; Trendrail refuses to peek, and says so in the results.</p>
-<pre><code>$ python -m trendrail.cli backtest --symbol AAPL --account 1000 --risk 0.02
+  trade terribly; Trendkept refuses to peek, and says so in the results.</p>
+<pre><code>$ python -m trendkept.cli backtest --symbol AAPL --account 1000 --risk 0.02
 
 Starting equity  : 1,000.00
 Ending equity    : 1,252.00
@@ -174,11 +174,11 @@ Expectancy       : +7.13R per trade</code></pre>
         <li>Daily scan &amp; paper trading</li>
         <li>Broker stop management</li>
       </ul>
-      <a class="cta ghost" href="https://github.com/adelvespayne-png/Trendrail">
+      <a class="cta ghost" href="https://github.com/adelvespayne-png/Trendkept">
         GitHub</a>
     </div>
     <div class="tier featured">
-      <div class="name">Trendrail Pro</div>
+      <div class="name">Trendkept Pro</div>
       <div class="price">£12<span class="per">/mo</span></div>
       <div class="per">or £99/yr · 14-day trial</div>
       <ul>
@@ -225,21 +225,21 @@ Expectancy       : +7.13R per trade</code></pre>
         <option value="large">Large</option>
       </select></label>
     <p class="hint">Make it yours — saved in your browser only. The same
-    personalisation runs through the whole Trendrail dashboard.</p>
+    personalisation runs through the whole Trendkept dashboard.</p>
   </div>
 
   <footer>
-    Trendrail is analysis software and education, <b>not investment advice</b>.
+    Trendkept is analysis software and education, <b>not investment advice</b>.
     It makes no personal recommendations and never touches your money — you
     connect your own broker. Trading involves risk of loss. Past or backtested
     performance does not predict future results; backtests use idealized
-    fills. &copy; Trendrail Ltd.
+    fills. &copy; Trendkept Ltd.
   </footer>
 </main>
 <script>
   /* Appearance controls: persist per visitor in localStorage. */
   (function () {
-    var KEY = 'trendrail-appearance';
+    var KEY = 'trendkept-appearance';
     var root = document.documentElement;
     function load() {
       try { return JSON.parse(localStorage.getItem(KEY)) || {}; }

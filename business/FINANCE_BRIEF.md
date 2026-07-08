@@ -1,4 +1,4 @@
-# Trendrail — personal budget brief
+# Trendkept — personal budget brief
 
 *One page for personal-finance planning. Business context lives in the repo
 (START_HERE.md / PLAN.md); figures from the honest model
@@ -7,7 +7,7 @@ changes.*
 
 ## What this is
 
-A side business (Trendrail: subscription software for hobbyist stock
+A side business (Trendkept: subscription software for hobbyist stock
 traders) run solo at ~10 hours/week, ~2 h/week minimum viable. No staff, no
 inventory, no borrowing. Personal liability is capped by a Ltd company from
 month 2.

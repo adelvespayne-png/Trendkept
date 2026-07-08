@@ -1,4 +1,4 @@
-# Trendrail Pro — legal & structure guide
+# Trendkept Pro — legal & structure guide
 
 **This is orientation, not legal advice.** Before taking money, budget **two
 hours of professional review, not one** (~£300–£500): a UK
@@ -9,7 +9,7 @@ file exists so those hours are efficient.
 
 ## 1. Company structure
 
-- **Form a UK private limited company** (e.g. "Trendrail Ltd").
+- **Form a UK private limited company** (e.g. "Trendkept Ltd").
   ~£50 online at Companies House, done in a day. Why a Ltd and not sole
   trader: liability protection (you sell to traders; someone will lose money
   and be angry), credibility with payment processors, clean asset to sell
@@ -26,17 +26,17 @@ file exists so those hours are efficient.
 
 Selling **software and education** is unregulated. Giving **investment
 advice** or making **personal recommendations** requires FCA authorisation in
-the UK (and equivalents elsewhere). Trendrail is designed to stay on the safe
+the UK (and equivalents elsewhere). Trendkept is designed to stay on the safe
 side of the line — keep it there:
 
-**Trendrail may (all fine):**
+**Trendkept may (all fine):**
 - Execute *the user's* mechanical ruleset on market data and show the result.
 - Compute position sizes from a formula the user configures.
 - Say "the 50/200 ruleset's conditions are met for AAPL today" — that's a
   factual statement about data, like a calculator or a chart.
 - Teach risk-management concepts generally.
 
-**Trendrail (and you, in all marketing) must NEVER:**
+**Trendkept (and you, in all marketing) must NEVER:**
 1. Make a **personal recommendation** — "given your situation, you should buy
    X". No "buy/sell" language directed at a person. The tool reports rule
    states; the user decides.
@@ -94,7 +94,7 @@ hour:
   who lose money; assume one of them will eventually be angry enough to try
   something.
 - **The disclaimer**, on the site, in the app, in the newsletter footer:
-  *"Trendrail is analysis software, not investment advice. Trading involves risk
+  *"Trendkept is analysis software, not investment advice. Trading involves risk
   of loss. Past or backtested performance does not predict future results.
   Backtests use idealized fills."*
 
@@ -106,7 +106,7 @@ hour:
 - **Pro features live in a separate private repository** owned by the Ltd,
   under a commercial licence (licence key per subscription). The dashboard in
   this repo is the free seed; watchlist/journal/email/hosted are Pro.
-- Register the trademark ("Trendrail" word mark, classes 9 + 42, UK IPO
+- Register the trademark ("Trendkept" word mark, classes 9 + 42, UK IPO
   £170 + £50 for the second class = **£220**) once revenue exists — do a
   name search *before* buying the domain in case a clash forces a rename
   while it's still cheap.
@@ -119,7 +119,7 @@ hour:
 The single most concrete legal exposure in the whole plan, and it's easy to
 miss because the free tier gets away with it:
 
-- `trendrail/fetch.py` pulls daily prices by **scraping Stooq and Yahoo
+- `trendkept/fetch.py` pulls daily prices by **scraping Stooq and Yahoo
   Finance**. Neither source licenses that data for **commercial
   redistribution** — and both the paid product and the weekly newsletter
   table are exactly that. A business built on it is one cease-and-desist

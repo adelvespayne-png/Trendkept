@@ -1,4 +1,4 @@
-# Trendrail Pro — go-to-market playbook
+# Trendkept Pro — go-to-market playbook
 
 Distribution is the whole game (PLAN.md §8: "no distribution" is the risk that
 kills tool businesses). This file is the concrete plan: the message, the
@@ -7,7 +7,7 @@ and the numbers that tell you whether it's working.
 
 ## 1. Positioning — say this, everywhere, verbatim
 
-> **Trendrail doesn't predict markets. It makes you follow your own rules.**
+> **Trendkept doesn't predict markets. It makes you follow your own rules.**
 > Written trend-following rules, backtested honestly, with the stop-loss
 > enforced by your broker instead of your nerves.
 
@@ -35,10 +35,10 @@ returns" makes the calm brand more visible.
   trade you already picked; it doesn't tell you whether the trend qualifies,
   size the position from your risk budget, trail the stop under market
   structure day by day, or keep score of whether you followed your own
-  rules. Brackets are a seatbelt; Trendrail is the driving test, the
+  rules. Brackets are a seatbelt; Trendkept is the driving test, the
   seatbelt, and the logbook.
 - *"Journal apps (Edgewonk, TraderSync) already score discipline."* They do
-  — after the trade. Trendrail structures the trade *before* it happens and
+  — after the trade. Trendkept structures the trade *before* it happens and
   is the only tool in the niche whose engine is open source and provably
   free of look-ahead bias. Respect them by name; they validate that people
   pay for discipline.
@@ -48,7 +48,7 @@ returns" makes the calm brand more visible.
 ### Tier 1 — do these first, they're free and fit the asset
 
 1. **Show HN / Hacker News.** A dependency-free, causally-honest backtester is
-   catnip. Title: *"Show HN: Trendrail – a dependency-free trend-following
+   catnip. Title: *"Show HN: Trendkept – a dependency-free trend-following
    backtester that refuses to peek at the future"*. Post Tue–Thu ~14:00 UTC.
    Be in the comments all day. Goal: stars + newsletter signups.
 2. **Reddit:** r/algotrading (technical honesty angle), r/swingtrading
@@ -88,7 +88,7 @@ Free CLI on GitHub + landing page    (site/index.html)
         ↓
 "The Trend Check" newsletter         (owned audience — the real asset)
         ↓
-Trendrail Pro trial (14 days)           (dashboard + watchlist + journal)
+Trendkept Pro trial (14 days)           (dashboard + watchlist + journal)
         ↓
 £12/mo or £99/yr                     (subscriber)
         ↓
@@ -122,7 +122,7 @@ material.
 
 1. T-14 days: lifetime deal (£299, cap 200) offered to the newsletter only.
 2. T-7: "founding subscriber" pricing (£79/yr locked forever) to newsletter.
-3. T-0: Product Hunt + Show HN ("Trendrail now has a cockpit") + Reddit posts.
+3. T-0: Product Hunt + Show HN ("Trendkept now has a cockpit") + Reddit posts.
 4. T+7: publish real launch numbers ("open startup" post — transparency is
    on-brand and is itself content).
 

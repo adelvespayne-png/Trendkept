@@ -3,7 +3,7 @@
 import os
 import unittest
 
-from trendrail.web import equity_curve_svg, route
+from trendkept.web import equity_curve_svg, route
 
 EXAMPLES = os.path.join(os.path.dirname(__file__), "..", "examples")
 UPTREND_CSV = os.path.join(EXAMPLES, "sample_uptrend.csv")
@@ -132,7 +132,7 @@ class TestAppearance(unittest.TestCase):
             status, body = route(path, params)
             self.assertEqual(status, 200)
             self.assertIn('class="appearance"', body)
-            self.assertIn("trendrail-appearance", body)   # localStorage key
+            self.assertIn("trendkept-appearance", body)   # localStorage key
 
     def test_theme_override_hooks_exist(self):
         _, body = route("/", {})
@@ -177,7 +177,7 @@ class TestRuleset(unittest.TestCase):
         self.assertIn("My Trading Diagram", body)
         self.assertIn("how do you trade?", body)
         self.assertIn("rs-preset", body)          # the style presets
-        self.assertIn("trendrail-ruleset", body)  # localStorage key
+        self.assertIn("trendkept-ruleset", body)  # localStorage key
 
     def test_describe_box_present(self):
         _, body = route("/ruleset", {})
@@ -196,7 +196,7 @@ class TestRuleset(unittest.TestCase):
         self.assertIn("data-skip-restore", body)
 
     def test_interpret_description_directly(self):
-        from trendrail.web import interpret_description
+        from trendkept.web import interpret_description
         # Explicit risk % beats mood words; tempo words map to averages.
         values, notes = interpret_description(
             "long term investor, risk 2%, patient")
@@ -257,7 +257,7 @@ class TestRuleset(unittest.TestCase):
         self.assertIn("need 501", body)
 
     def test_build_cfg_clamps_nonsense(self):
-        from trendrail.web import _build_cfg
+        from trendkept.web import _build_cfg
         cfg = _build_cfg({"pullback_pct": "9", "swing_window": "999",
                           "fast_ma": "1", "slow_ma": "50000"})
         self.assertLessEqual(cfg.pullback_pct, 0.2)
@@ -314,8 +314,8 @@ class TestChart(unittest.TestCase):
             self.assertIn(f'value="{key}"', body)
 
     def test_weekly_monthly_resample(self):
-        from trendrail.data import load_csv
-        from trendrail.web import resample_bars
+        from trendkept.data import load_csv
+        from trendkept.web import resample_bars
         daily = load_csv(AAPL_CSV)
         weekly = resample_bars(daily, "1week")
         monthly = resample_bars(daily, "1month")
@@ -376,7 +376,7 @@ class TestChart(unittest.TestCase):
 
     def test_symbol_beats_csv_when_both_given(self):
         # Typing a ticker means "live data" even if the CSV box has a path.
-        import trendrail.web as web
+        import trendkept.web as web
         original = web._fetch_symbol
         web._fetch_symbol = lambda s, i="1day": ([], f"LIVE:{s}")
         try:
@@ -417,8 +417,8 @@ class TestChart(unittest.TestCase):
     def test_intraday_without_alpaca_keys_fails_cleanly(self):
         import os
         from unittest import mock
-        from trendrail.web import _fetch_symbol
-        from trendrail.fetch import FetchError
+        from trendkept.web import _fetch_symbol
+        from trendkept.fetch import FetchError
         with mock.patch.dict(os.environ, {"APCA_API_KEY_ID": "",
                                           "APCA_API_SECRET_KEY": ""}):
             with self.assertRaises(FetchError) as ctx:
@@ -428,7 +428,7 @@ class TestChart(unittest.TestCase):
     def test_watchlist_survives_any_row_exception(self):
         # A provider blowing up with an unexpected error type must produce
         # an error row, never a dead page.
-        import trendrail.web as web
+        import trendkept.web as web
         original = web._load_watchlist_item
         web._load_watchlist_item = lambda item: (_ for _ in ()).throw(
             RuntimeError("provider exploded"))
@@ -445,9 +445,9 @@ class TestChart(unittest.TestCase):
         self.assertIn('href="/chart?', body)
 
     def test_candle_svg_direct(self):
-        from trendrail.data import load_csv
-        from trendrail.strategy import StrategyConfig
-        from trendrail.web import candle_chart_svg
+        from trendkept.data import load_csv
+        from trendkept.strategy import StrategyConfig
+        from trendkept.web import candle_chart_svg
         bars = load_csv(AAPL_CSV)
         svg = candle_chart_svg(bars, StrategyConfig())
         self.assertIn("<svg", svg)

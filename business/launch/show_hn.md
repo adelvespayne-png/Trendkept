@@ -13,9 +13,9 @@ history that isn't literally yours on the day.
 
 ## Title (pick one — A is recommended)
 
-A) `Show HN: Trendrail – a dependency-free backtester that refuses to peek at the future`
+A) `Show HN: Trendkept – a dependency-free backtester that refuses to peek at the future`
 
-B) `Show HN: Trendrail – trend-following rules as code, stdlib Python only`
+B) `Show HN: Trendkept – trend-following rules as code, stdlib Python only`
 
 ## URL
 
@@ -23,12 +23,12 @@ Your GitHub repo link.
 
 ## Text (paste as the submission text)
 
-> I built Trendrail because almost every retail backtesting result I saw
+> I built Trendkept because almost every retail backtesting result I saw
 > looked too good to be true — and usually was, through look-ahead bias —
 > and because the standard advice ("write your rules down and follow them")
 > has no tooling that actually enforces it.
 >
-> Trendrail is a small toolkit that turns a written trend-following ruleset —
+> Trendkept is a small toolkit that turns a written trend-following ruleset —
 > confirmed uptrend only, stop below the last swing low, risk 1–2% per trade,
 > trail the stop, exit on trend break — into code you can backtest and
 > paper-trade. Design choices HN might find interesting:
@@ -43,7 +43,7 @@ Your GitHub repo link.
 >   entry+stop pairs (OTO). Live trading is triple-gated behind
 >   --confirm --live --i-understand-live.
 > - There's a local web dashboard (also stdlib only) — `python -m
->   trendrail.web`.
+>   trendkept.web`.
 >
 > It's MIT licensed. The honest caveat is in the README: backtests use
 > idealized fills and are an optimistic ceiling, not a promise. Would love

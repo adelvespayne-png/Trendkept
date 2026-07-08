@@ -47,7 +47,7 @@ pre, blockquote { page-break-inside: avoid; }
   plan, the financial projections, the go-to-market playbook, the legal
   guide, the 90-day checklist, and the ready-to-paste launch content.</p>
   <p><b>Start with section 1 and work top to bottom.</b></p>
-  <p style="color:#888">Compiled 07 July 2026 · regenerate with
+  <p style="color:#888">Compiled 08 July 2026 · regenerate with
   <code>python business/build_manual.py --pdf</code></p>
 </div>
 <div class="toc"><h1>Contents</h1><ol><li>START HERE — your steps, in order</li><li>The business plan</li><li>Trendkept Pro — financial projections</li><li>Trendkept Pro — go-to-market playbook</li><li>Trendkept Pro — legal &amp; structure guide</li><li>Trendkept Pro — first-90-days launch checklist</li><li>The 4-week paper-trading test — step by step</li><li>Launch pack — Show HN</li><li>Launch pack — r/algotrading</li><li>Launch pack — r/swingtrading</li><li>Launch pack — The Trend Check #1</li></ol>
@@ -59,7 +59,7 @@ review in the Legal guide covers the specifics.</p></div>
 <section class="doc"><h1>START HERE — your steps, in order</h1><p>This is the front door to the whole package. Do these steps in order; every one is explained. <b>The order is deliberate: validate the idea with ~£10 before spending the ~£100 on company paperwork</b> — the plan's own stop-loss philosophy, applied from the first day. The documents after this section contain the full detail — this section is what you <i>do</i>.</p>
 <h2>Step 0 — Today, from your phone (~30 minutes)</h2>
 <ol>
-<li><b>Check the domain properly (2 min).</b> Search <code>trendkept.com</code> at a registrar (Cloudflare Registrar or Namecheap) — the registrar's own availability search or a WHOIS/RDAP lookup is the real answer (an earlier DNS check showing "no records" is <i>not</i> proof: registered domains often have no DNS). If it's free, buy it (~£10/yr). If taken, buy <code>trendkept.com</code> and say so — the rebrand is a five-minute job for your Claude session.</li>
+<li><b>Buy the domain (15 min).</b> The name is decided: <b>trendkept.com</b> (chosen after trendrail.com fell through). Buy it at Cloudflare Registrar or Namecheap (~£10/yr) — use the registrar's own availability search as the final check. If it has somehow gone too, tell your Claude session before buying anything else; a rename is a five-minute job.</li>
 <li><b>Trademark sanity check (5 min).</b> Search "Trendkept" at trademarks.ipo.gov.uk and in the Companies House name search. You're looking for an existing trading-software company with the same name. Don't <i>register</i> a trademark yet — that waits for revenue (£220 for classes 9+42, later).</li>
 <li><b>Rename the GitHub repository (2 min).</b> Repo → Settings → rename <code>Archie</code> to <code>Trendkept</code>. Old links redirect automatically. Then merge the working branch — or ask Claude to open the pull request and just click Merge.</li>
 </ol>
@@ -473,8 +473,8 @@ Journal history + daily email        (retention — the moat)</code></pre>
 <p>Once a year (put it in the calendar): re-check the FCA perimeter guidance hasn't moved (and the US position if the customer mix is still US-heavy), ToS/privacy still match the product, ICO registration renewed, the data provider's licence still covers how the data is actually used, insurance renewed, and the disclaimer still appears on every new surface shipped that year.</p></section><section class="doc"><h1>Trendkept Pro — first-90-days launch checklist</h1><p>Work top to bottom. <b>The order is deliberate: validate with ~£10 before spending the ~£100 on company paperwork</b> — the plan's gate philosophy, applied from day one. Time budget: ~10 focused hours/week steady-state; <b>launch weeks (Show HN, Product Hunt) run 25+ hours — schedule them like sprints.</b></p>
 <h2>Week 1 — validate first (~£10 total)</h2>
 <ul>
-<li>&#9744; Name search: UK IPO trademark search + Companies House name check for "Trendkept" / fallback. Decide once, move on.</li>
-<li>&#9744; <b>Check domain availability properly</b> — a registrar search or WHOIS/RDAP lookup, not a DNS check (registered domains often have no DNS records). Buy <code>trendkept.com</code> (~£10) or the fallback that survives.</li>
+<li>&#9744; Name search: UK IPO trademark search + Companies House name check for "Trendkept". Decide once, move on.</li>
+<li>&#9744; <b>Buy <code>trendkept.com</code></b> (~£10) at Cloudflare Registrar or Namecheap — the name is decided; the registrar's availability search is the final word.</li>
 <li>&#9744; Deploy <code>site/index.html</code> (Cloudflare Pages — free) with the waitlist.</li>
 <li>&#9744; Create the newsletter list ("The Trend Check") on Buttondown free tier; wire the landing-page form to it.</li>
 <li>&#9744; Set up the domain email (hello@ / you@ / news@ — see START_HERE Step 2; iCloud+ custom domain or Zoho free tier).</li>
