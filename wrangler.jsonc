@@ -1,0 +1,10 @@
+// Cloudflare deployment config: serve the landing page in `site/` as a
+// static-assets Worker. This makes the dashboard's default "Create a
+// Worker from Git" wizard work as-is (deploy command: npx wrangler deploy).
+{
+  "name": "trendkept",
+  "compatibility_date": "2026-01-01",
+  "assets": {
+    "directory": "./site"
+  }
+}

@@ -1,9 +1,9 @@
 import math
 import unittest
 
-from archie.data import Bar
-from archie.backtest import Backtester, Trade
-from archie.strategy import TrendFollowingStrategy, StrategyConfig
+from trendkept.data import Bar
+from trendkept.backtest import Backtester, Trade
+from trendkept.strategy import TrendFollowingStrategy, StrategyConfig
 
 
 class TestPositionSizing(unittest.TestCase):

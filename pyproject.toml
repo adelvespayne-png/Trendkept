@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "archie"
+name = "trendkept"
 version = "0.1.0"
 description = "A dependency-free trend-following backtesting and signal toolkit."
 readme = "README.md"
@@ -13,7 +13,8 @@ keywords = ["trading", "trend-following", "backtesting", "technical-analysis"]
 dependencies = []
 
 [project.scripts]
-archie = "archie.cli:main"
+trendkept = "trendkept.cli:main"
+trendkept-web = "trendkept.web:main"
 
 [tool.setuptools]
-packages = ["archie"]
+packages = ["trendkept"]

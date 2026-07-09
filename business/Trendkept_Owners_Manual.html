@@ -1,0 +1,761 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<title>Trendkept — Owner's Manual</title><style>
+@page { size: A4; margin: 18mm 16mm; }
+* { box-sizing: border-box; }
+body { font: 10.5pt/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #111; margin: 0; }
+.cover { text-align: left; padding-top: 90mm; page-break-after: always; }
+.cover .brand { color: #2a78d6; font-weight: 700; letter-spacing: .14em;
+  text-transform: uppercase; font-size: 12pt; }
+.cover h1 { font-size: 30pt; margin: 8pt 0 6pt; letter-spacing: -.02em; }
+.cover p { color: #555; font-size: 12pt; max-width: 130mm; }
+.toc { page-break-after: always; }
+.toc ol { font-size: 11pt; line-height: 2; }
+section.doc { page-break-before: always; }
+h1 { font-size: 19pt; margin: 0 0 10pt; letter-spacing: -.01em;
+  border-bottom: 2.5pt solid #2a78d6; padding-bottom: 6pt; }
+h2 { font-size: 13.5pt; margin: 16pt 0 6pt; }
+h3 { font-size: 11.5pt; margin: 13pt 0 4pt; }
+p { margin: 6pt 0; }
+ul, ol { margin: 6pt 0; padding-left: 18pt; }
+li { margin: 3pt 0; }
+code { font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 9.2pt; background: #f2f1ee; padding: 1pt 3pt;
+  border-radius: 3pt; }
+pre { background: #f2f1ee; border: .5pt solid #ddd; border-radius: 5pt;
+  padding: 8pt 10pt; overflow-wrap: anywhere; white-space: pre-wrap; }
+pre code { background: none; padding: 0; }
+table { border-collapse: collapse; width: 100%; margin: 8pt 0;
+  font-size: 9.3pt; }
+th, td { border-bottom: .5pt solid #ccc; padding: 4pt 6pt;
+  text-align: left; vertical-align: top; }
+th { color: #555; font-weight: 600; border-bottom: 1pt solid #999; }
+tr { page-break-inside: avoid; }
+blockquote { border-left: 2.5pt solid #2a78d6; margin: 8pt 0;
+  padding: 2pt 0 2pt 10pt; color: #444; }
+hr { border: 0; border-top: .5pt solid #ccc; margin: 12pt 0; }
+a { color: #2a78d6; text-decoration: none; }
+h1, h2, h3 { page-break-after: avoid; }
+pre, blockquote { page-break-inside: avoid; }
+.footer-note { color: #777; font-size: 9pt; margin-top: 18pt;
+  border-top: .5pt solid #ccc; padding-top: 8pt; }
+</style></head><body>
+<div class="cover">
+  <div class="brand">Trendkept</div>
+  <h1>The Owner's Manual</h1>
+  <p>Everything, in one document: the steps to take right now, the business
+  plan, the financial projections, the go-to-market playbook, the legal
+  guide, the 90-day checklist, and the ready-to-paste launch content.</p>
+  <p><b>Start with section 1 and work top to bottom.</b></p>
+  <p style="color:#888">Compiled 08 July 2026 · regenerate with
+  <code>python business/build_manual.py --pdf</code></p>
+</div>
+<div class="toc"><h1>Contents</h1><ol><li>START HERE — your steps, in order</li><li>The business plan</li><li>Trendkept Pro — financial projections</li><li>Trendkept Pro — go-to-market playbook</li><li>Trendkept Pro — legal &amp; structure guide</li><li>Trendkept Pro — first-90-days launch checklist</li><li>The 4-week paper-trading test — step by step</li><li>Launch pack — Show HN</li><li>Launch pack — r/algotrading</li><li>Launch pack — r/swingtrading</li><li>Launch pack — The Trend Check #1</li></ol>
+<p class="footer-note">Trendkept is analysis software and education, not
+investment advice. Trading involves risk of loss; past and backtested
+performance do not predict future results. This document contains business
+planning material, not legal or financial advice — the one-hour solicitor
+review in the Legal guide covers the specifics.</p></div>
+<section class="doc"><h1>START HERE — your steps, in order</h1><p>This is the front door to the whole package. Do these steps in order; every one is explained. <b>The order is deliberate: validate the idea with ~£10 before spending the ~£100 on company paperwork</b> — the plan's own stop-loss philosophy, applied from the first day. The documents after this section contain the full detail — this section is what you <i>do</i>.</p>
+<h2>Step 0 — Today, from your phone (~30 minutes)</h2>
+<ol>
+<li><b>Buy the domain (15 min).</b> The name is decided: <b>trendkept.com</b> (chosen after trendrail.com fell through). Buy it at Cloudflare Registrar or Namecheap (~£10/yr) — use the registrar's own availability search as the final check. If it has somehow gone too, tell your Claude session before buying anything else; a rename is a five-minute job.</li>
+<li><b>Trademark sanity check (5 min).</b> Search "Trendkept" at trademarks.ipo.gov.uk and in the Companies House name search. You're looking for an existing trading-software company with the same name. Don't <i>register</i> a trademark yet — that waits for revenue (£220 for classes 9+42, later).</li>
+<li><b>Rename the GitHub repository (2 min).</b> Repo → Settings → rename <code>Archie</code> to <code>Trendkept</code>. Old links redirect automatically. Then merge the working branch — or ask Claude to open the pull request and just click Merge.</li>
+</ol>
+<h2>Step 1 — This weekend: validate for £10 (~2 hours)</h2>
+<p><i>No company yet, no bank yet — first, find out if anyone cares.</i></p>
+<ol>
+<li><b>Put the landing page live (free, 20 min).</b> pages.cloudflare.com → Create a project → connect GitHub → pick the Trendkept repo → build output directory <code>site</code> → deploy → add the custom domain. The page is already built, waitlist included.</li>
+<li><b>Business email — yes, you need one (30 min).</b></li>
+</ol>
+<ul>
+<li><b>Why:</b> payment processors trust a domain address; newsletter deliverability needs your own domain (a personal address lands in spam — that's lost revenue); and business signups stay separate from your personal email, which matters the day you sell the company.</li>
+<li><b>Create three addresses</b> (all can land in one inbox): <code>hello@trendkept.com</code> (public: support, website, social profiles), <code>[yourname]@trendkept.com</code> (private: registrar, Buttondown, later the bank and Paddle), and <code>news@trendkept.com</code> (the newsletter's sending address).</li>
+<li><b>Where:</b> if you already pay for any iCloud+ tier, custom email domains are <b>included free</b> — iPhone Settings → [your name] → iCloud → Custom Email Domain. No iCloud+? Zoho Mail's free tier. Google Workspace (~£5/mo) only once revenue exists. Either way it's ten minutes of copy-pasting DNS records (MX, SPF, DKIM) into Cloudflare — screenshot anything confusing and ask Claude.</li>
+</ul>
+<ol>
+<li><b>Create the newsletter (15 min).</b> buttondown.com → free tier → name it</li>
+</ol>
+<p><b>The Trend Check</b> → sending address <code>news@trendkept.com</code> (two more DNS records). Give Claude the form URL and the landing-page signup box gets wired to it.</p>
+<ol>
+<li><b>Start the dogfooding clock (30 min).</b> Open a free Alpaca paper-trading account (fake money), put the keys in your environment as the README shows, and run the daily routine from today: dashboard scan (<code>python -m trendkept.web</code>) and <code>python -m trendkept.cli manage</code> after the close, 15 minutes a day. This is quality control, it generates your only honest marketing material, <b>and the r/swingtrading launch post is blocked until you have 4+ weeks of these logs</b> — so the clock starts now.</li>
+</ol>
+<h2>Step 2 — Weeks 2–4: launch the free tier and read the signal</h2>
+<ol>
+<li><b>Record a 60-second demo</b> of the dashboard (scan → backtest → hover the equity curve); it goes at the top of the README and landing page.</li>
+<li><b>Post, in this order</b> (drafts in <code>business/launch/</code> — every claim in them is true on the day you post; keep it that way):</li>
+</ol>
+<ul>
+<li><b>Show HN</b> (<code>show_hn.md</code>) — Tuesday–Thursday ~2pm UTC. Clear the whole day for comments; launch weeks are 25+ hours, plan them like sprints.</li>
+<li><b>r/algotrading</b> (<code>reddit_algotrading.md</code>) a few days later — all claims are about the code, postable as-is.</li>
+<li><b>r/swingtrading</b> (<code>reddit_swingtrading.md</code>) — <b>only after</b> the</li>
+</ul>
+<p>4-week paper-trading logs exist; fill its bracketed numbers from your real journal.</p>
+<ol>
+<li><b>Start the Sunday streak.</b> Run <code>python business/launch/trend_check.py --default</code>, paste the table into the Issue #1 template, add two sentences, send. <b>Every Sunday, no matter what.</b> (Ask Claude for the GitHub Action that auto-drafts it.)</li>
+<li><b>Day-30 validation read:</b> compare waitlist and stars to the curves in GO_TO_MARKET.md §6. A pulse → go to Step 3. Silence even after one messaging retry → stop here having spent ~£10, not ~£120 and a company.</li>
+</ol>
+<h2>Step 3 — Month 2: incorporate and build the retention hook</h2>
+<ol>
+<li><b>Incorporate Trendkept Ltd (~£50, 40 min).</b> gov.uk → "Set up a limited company". You need: the name (<b>Trendkept Ltd</b>), your details as sole director and shareholder (1 share, £1), SIC code <b>62012</b>. Buy a</li>
+</ol>
+<p><b>registered-office address service</b> first (~£40/yr) so your home address isn't public. Approval usually within 24 hours.</p>
+<ol>
+<li><b>Business bank account (20 min, free).</b> Tide or Starling app, business account, photo ID, company number. Never mix funds.</li>
+<li><b>Have Claude build the trade journal</b> (the retention hook) while your newsletter streak and weekly content continue.</li>
+</ol>
+<h2>Step 4 — Month 3: turn on the money (all of these, before any charge)</h2>
+<p>License a market-data feed (~£25–80/mo — the paid product must not run on scraped Stooq/Yahoo data, LEGAL.md §5) · Paddle account · licence-key gate · ToS/privacy/refund pages · ICO registration (~£40) · indemnity + cyber insurance (~£25/mo) · the professional review, UK <b>plus a US-perimeter check</b> (~£300–500) · then the launch week: lifetime deal to the newsletter, founding pricing, Product Hunt. Full detail in LAUNCH_CHECKLIST.md.</p>
+<h2>Your operating rhythm (~10 h/week steady; launch weeks 25+)</h2>
+<ul>
+<li><b>Daily, 15 min:</b> dashboard scan on the paper account; answer support.</li>
+<li><b>One evening:</b> paste the week's content piece (Claude drafts it); reply to comments in your own voice.</li>
+<li><b>Sunday, ~30 min:</b> send The Trend Check; write down the four numbers — visitors, newsletter subscribers, paying subscribers, cancellations.</li>
+<li><b>Monthly, 1 h:</b> give the four numbers to Claude → the model re-runs on reality and tells you which curve you're on.</li>
+<li><b>Quarterly:</b> act on the gates (below). No exceptions.</li>
+</ul>
+<h2>What this business is (one page, plain English)</h2>
+<p><b>Trendkept sells discipline to hobbyist stock traders.</b> The free, open-source core tests a written set of trend-following rules against real market history and reports what the rules' conditions show today. <b>Trendkept Pro (£12/mo or £99/yr)</b> is the cockpit: a browser dashboard, a watchlist scanning many stocks at once, a trade journal that scores rule-following, a daily "what the rules say" email — and the stop-loss placed <i>with</i> the broker order, so exits don't depend on willpower.</p>
+<p><b>Why people pay:</b> the best-documented fact about retail trading is that most people lose money through broken discipline, not bad picks. Someone who just torched £2,000 ignoring their own rules compares £12/month to the £2,000. Journalling tools (Edgewonk, TraderSync) prove the market pays for discipline; Trendkept's edge is being the only one that structures the trade <i>before</i> it happens — trend qualification, risk-based sizing, the stop in the entry order — with an open-source, provably honest engine. And the objection "my broker's bracket orders are free" has a straight answer: a bracket is one rule (a static stop on a trade you already picked); Trendkept is the whole ruleset, plus the scorecard.</p>
+<p><b>The money (from the honest model — <code>business/FINANCIALS.md</code>):</b> ~£9.66/subscriber/month after real payment fees. Costs step from ~£270/month pre-revenue to ~£350–450/month running (licensed data feed, insurance, newsletter tiers, AI tooling — all counted). Break-even at ~35–40 subscribers. Revenue starts month 3, when payments ship.</p>
+<p><b>Risk to reward, honestly:</b> worst realistic case is ~£3,500–4,000 cash over year one plus your evenings — and the validate-first ordering means a dead-on-arrival idea costs ~£10 and a few weekends before you'd have incorporated anything. The <b>conservative scenario (the most likely one)</b> builds to ~£4–5k/month profit by year 5 and ~£240k of combined value — a genuinely good side business; <b>it never reaches £1M</b>. The <b>base scenario</b> (the plan working) crosses £1M around <b>month 50</b>; the <b>ambitious</b> one around month 27. No plan can promise the base case; this one caps the downside, forces early decisions via the gates, and leaves the upside uncapped — the same logic as the trading rules it sells.</p>
+<p><b>The gates (trajectory checks against the three modelled curves — FINANCIALS.md):</b></p>
+<ul>
+<li><b>Day 90:</b> newsletter list vs curves (conservative ≈ 340, base ≈ 800). Below conservative and flat after a messaging retry → stop cheaply.</li>
+<li><b>Month 6:</b> paying subs vs curves (conservative ≈ 65, base ≈ 230). On conservative → freeze features, distribution only, 8 weeks.</li>
+<li><b>Month 12:</b> MRR vs curves. ≥£2k → winner, let it run. On the conservative curve → a deliberate choice: continue (the year-3-5 payoff requires it) or side-asset mode at ~2 h/week. Below and shrinking → sell the codebase + audience. Exiting a non-winner at a small profit is winning; drifting without deciding is the only losing move.</li>
+</ul>
+<h2>Who does what</h2>
+<p><b>You (short list, but only you):</b> identity-bound admin (domain, company, bank, account signups), pressing "post" under your own name, replying to comments in your own voice, the Sunday send, and the owner decisions (pricing, launch timing, acting on the gates).</p>
+<p><b>Claude (Code sessions on the repo; Cowork for desktop work):</b> everything else — every product feature on the roadmap, every content draft and newsletter issue, comment-reply suggestions, the legal drafts for the professional review, monthly model updates, and automations like the Sunday draft generator. Its subscription is a real dependency, so it's a real line in the cost model. You describe outcomes in plain English; you never need to touch code.</p></section><section class="doc"><h1>The business plan</h1><p><b>One line:</b> sell the discipline, not the predictions. Trendkept Pro is a paid tool that makes retail traders follow a written trend-following ruleset — backtest it, get today's signal, and have the broker (not their nerves) enforce the stop.</p>
+<p><b>Owner:</b> you, 100%. No investors, no partners, no permission needed.</p>
+<hr>
+<h2>0. Read this first — the honest part</h2>
+<p>Nobody can guarantee you'll become a millionaire, and every plan that promises it is selling you something. What this plan gives you instead:</p>
+<ol>
+<li><b>A real asset you already own</b> — working software with a clear philosophy.</li>
+<li><b>A business model that is legal, ownable solo, and scales without staff.</b></li>
+<li><b>Numbers you can check</b> (<code>business/FINANCIALS.md</code>, regenerated by <code>python business/model.py --md</code>) — modelled honestly: revenue starts when payments actually ship (month 3), real ~8-9% payment fees, 10%/7%/5% churn, launch-spike traffic that decays, stepped costs including a licensed data feed, and a profit-multiple valuation. On those numbers the</li>
+</ol>
+<p><b>base scenario crosses £1M net worth around month 50</b>; the <b>ambitious</b> one around month 27; the <b>conservative scenario — the most likely one — never gets there</b> (≈£240k net worth at year 5, throwing off ~£4k/month). The plan tells you at which checkpoints to double down, demote, or fold (§9), and §9 is consistent with all three curves.</p>
+<p>The same edge as the trading rules applies to the business: <b>cap the downside (your costs are ~£200/mo and your time), and let the winner run if you get one.</b> You can be "wrong" about several marketing channels and still win, because the losing channels cost little and a winning channel compounds.</p>
+<h2>1. Why THIS business</h2>
+<p>You asked for a business chosen for you. Criteria used:</p>
+<ul>
+<li><b>You already own the hard part.</b> Trendkept is a working engine: strategy, backtester, data loaders, broker integration, dashboard — all covered by a test suite (<code>python -m unittest discover -s tests</code> is the live count). Competitors start from zero; you start from a product.</li>
+<li><b>The market is huge and perpetually renewing.</b> Millions of retail traders; tens of thousands of new ones every month. Their #1 failure mode is well-documented and permanent: not bad ideas, but <b>indiscipline</b> — no stop, oversized positions, chasing, panic exits. Trendkept exists precisely to remove those failure modes.</li>
+<li><b>The wedge is narrow and real.</b> Discipline tools do exist — Edgewonk and TraderSync sell journaling that scores you <i>after</i> the fact, and they prove the market pays for discipline. Trendkept's differentiator is what none of them are: <b>an open-source, causally-honest backtester wired to broker-enforced execution of the same ruleset</b> — it structures the trade</li>
+</ul>
+<p><i>before</i> it happens (trend qualification, risk-based sizing, the stop placed with the entry order) and then scores adherence after. And the question every buyer will ask — <i>"my broker's bracket/OCO orders enforce stops for free; why pay?"</i> — has a straight answer that goes in all positioning: a bracket enforces a static stop on a trade you already chose; it doesn't tell you whether the trend qualifies, size the position off your risk, trail the stop under market structure daily, or keep score of whether you followed your own rules. Brackets are one rule; Trendkept is the ruleset. Crucially the whole frame stays <b>compliant</b> (see §6 and LEGAL.md): a tool that executes the user's ruleset is not investment advice.</p>
+<ul>
+<li><b>Solo-ownable.</b> Software subscriptions, no inventory, no staff, no custom client work. The whole company runs on your laptop and a £200/mo stack.</li>
+<li><b>Two ways to win.</b> Monthly profit while you run it, and a sellable asset (small SaaS businesses routinely sell for 2–4× ARR on Acquire.com and similar marketplaces) when you're done.</li>
+</ul>
+<h2>2. The product ladder</h2>
+<table><tr><th>Tier</th><th>Price</th><th>What it is</th></tr>
+<tr><td><b>Trendkept (open core)</b></td><td>Free, MIT</td><td>What's in this repo today: CLI backtest/scan/trade/manage. This is the <i>marketing engine</i> — every GitHub star, blog post, and "Show HN" is free distribution.</td></tr>
+<tr><td><b>Trendkept Pro</b></td><td><b>£12/mo or £99/yr</b></td><td>The dashboard (<code>trendkept/web.py</code> is the seed — see §4), multi-symbol watchlist scans, the trade journal with R-multiple discipline scoring, daily "what do the rules say" email, one-click broker stop management.</td></tr>
+<tr><td><b>Trendkept Pro Lifetime</b></td><td>£299 (launch-window only)</td><td>Early cashflow + evangelists. Cap at 200 sold.</td></tr>
+</table>
+<p>Why this shape:</p>
+<ul>
+<li><b>Open core is the moat.</b> "The rules are free and open source; pay for the cockpit" builds trust in a market drowning in scams — and trust is the scarcest commodity in retail trading.</li>
+<li><b>£12/mo is an impulse price</b> for someone risking hundreds per trade, and cheap enough to survive as a "keeper" subscription. £99/yr front-loads cash.</li>
+<li><b>The journal is the retention hook.</b> A subscriber with 40 logged trades and a discipline score will not churn — their history lives here. Churn is the single most important number in the model (see FINANCIALS.md).</li>
+</ul>
+<h2>3. Who buys it</h2>
+<p><b>Primary:</b> the self-directed retail swing trader, 25–55, account £1k–£100k, has been burned once by no-stop/oversize/chase, actively looking for structure. They're on r/swingtrading, r/algotrading, FinTwit/X, and YouTube trading channels. There are hundreds of thousands of them in the UK/US alone, and the population refreshes constantly.</p>
+<p><b>Secondary:</b> the systematic-curious programmer (Hacker News, GitHub) who wants a clean, dependency-free engine and will pay for the tooling around it.</p>
+<p><b>Not the customer:</b> day-traders wanting real-time tick data and "signals groups" wanting predictions. Saying no to them keeps the product simple and the compliance position clean.</p>
+<h2>4. Product roadmap (12 months)</h2>
+<p>The repo already contains month 0. Ship order is chosen so <b>every month has a marketable release</b>:</p>
+<table><tr><th>Month</th><th>Ship</th><th>Why</th></tr>
+<tr><td>0</td><td>✅ Engine + CLI (done, in this repo)</td><td>The asset</td></tr>
+<tr><td>0</td><td>✅ Local web dashboard (<code>python -m trendkept.web</code>)</td><td>Non-CLI users can now use it — 10× the audience</td></tr>
+<tr><td>1</td><td>✅ Watchlist: scan N symbols at once, one page (done, in the dashboard)</td><td>The daily habit begins</td></tr>
+<tr><td>2</td><td>Trade journal + R-multiple discipline score</td><td>The retention hook</td></tr>
+<tr><td>3</td><td>Payments (Stripe/Paddle) + licence keys; <b>launch Pro</b></td><td>Revenue on</td></tr>
+<tr><td>4</td><td>Daily email: "what the rules say" for your watchlist</td><td>Habit → subscription that survives</td></tr>
+<tr><td>5</td><td>Hosted version for non-installers — <b>analysis + journal only; broker keys are never held server-side</b> (broker automation stays local-first; see LEGAL.md)</td><td>Removes the biggest funnel drop without becoming a key custodian</td></tr>
+<tr><td>6</td><td>Broker coverage #2 (e.g. IBKR)</td><td>Widens the market</td></tr>
+<tr><td>7–9</td><td>Discipline analytics: where YOU break rules; portfolio heat</td><td>The thing nobody else has</td></tr>
+<tr><td>10–12</td><td>Community: subscriber forum, monthly "rule review" call</td><td>Moat deepens, churn falls</td></tr>
+</table>
+<p>Rule for all of it: <b>stay boring.</b> No AI predictions, no crypto pivots, no real-time anything. The brand is the boring thing that works.</p>
+<h2>5. How people find it (summary — full playbook in GO_TO_MARKET.md)</h2>
+<ol>
+<li><b>Open-source distribution:</b> Show HN, r/algotrading, GitHub trending. The free CLI is the top of the funnel.</li>
+<li><b>Content that IS the product philosophy:</b> weekly posts/videos with titles like "You don't need better entries, you need smaller losses" — every backtest chart generated by Trendkept is content with the product in it.</li>
+<li><b>The newsletter as the mid-funnel:</b> free weekly "trend check" email on</li>
+</ol>
+<p>20 liquid tickers, generated by the engine — subscribers convert to Pro.</p>
+<ol>
+<li><b>Comparison &amp; SEO pages:</b> "position size calculator", "trailing stop rules", "trend following backtest" — searches with buying intent that big players ignore.</li>
+</ol>
+<h2>6. Why this is legal to sell (details in LEGAL.md)</h2>
+<p>The bright line: <b>Trendkept executes the user's ruleset on the user's data; it never gives person-specific recommendations, never manages money, and never promises returns.</b> That keeps it software/education, outside FCA-regulated investment advice — the same footing as TradingView or a backtesting library. LEGAL.md covers the company structure (UK Ltd), the disclaimers already baked into the product, refunds, and the three things you must never do (personal recommendations, performance promises, holding client funds).</p>
+<h2>7. The money (details in FINANCIALS.md — regenerate with <code>python business/model.py --md</code>)</h2>
+<p>All figures from the honest model (month-3 revenue start, real fees, honest churn, decaying launch spikes, stepped costs, launch offers included):</p>
+<ul>
+<li>Net revenue ≈ <b>£9.66/subscriber/month</b> after real payment fees (5% + £0.50/transaction ≈ 8-9% effective); founding-cohort annuals net less.</li>
+<li>Costs <b>step with scale</b>: ~£270/month pre-revenue, ~£350-450/month once the licensed data feed, insurance, and newsletter tiers kick in. Break-even at <b>~35-40 recurring subscribers</b> (recurring profit turns positive around months 6-7 in the conservative case — the plan survives its own worst likely case, which is the test that matters).</li>
+<li><b>Base scenario:</b> ~£2.2k MRR at month 12, £5k at ~month 24, <b>£1M net worth around month 50</b>. A winner — on a 4-year fuse, not 2.</li>
+<li><b>Ambitious scenario:</b> £1M around month 27. Plan for it, don't count on it.</li>
+<li><b>Conservative scenario (most likely):</b> ~£600 MRR at month 12, ~£4-5k/mo profit by year 5, <b>~£240k net worth at month 60 — £1M is never reached.</b> A genuinely good side business; not a jackpot. §9 tells you how to hold it.</li>
+<li><b>The lever that matters is churn</b> (10%/mo means the average subscriber stays 10 months), which is why months 2, 4, and 7-9 of the roadmap are all retention features.</li>
+</ul>
+<h2>8. Risks, stated plainly</h2>
+<table><tr><th>Risk</th><th>Likelihood</th><th>Mitigation</th></tr>
+<tr><td><b>No distribution</b> — great tool, nobody knows</td><td><b>High — this kills most tool businesses</b></td><td>The whole GTM playbook; review gates below; open-source as free reach; <b>validate before incorporating</b> (§11)</td></tr>
+<tr><td><b>Market-data licensing</b> — Stooq/Yahoo scraping is not licensed for a commercial product; one cease-and-desist from no data</td><td><b>High if ignored</b></td><td>License an EOD feed (~£25-80/mo, in the model) <b>before charging money</b> — LEGAL.md §5</td></tr>
+<tr><td>A bear market makes acquisition <i>and</i> churn worse at once</td><td>Medium</td><td>Costs are low enough to winter (~£450/mo fully loaded); the newsletter pivots to "the rules kept you out" and risk education, which is when that message converts best; the £99 annual mix cushions monthly churn</td></tr>
+<tr><td>Churn runs at the 10-15% typical for trader B2C despite the journal</td><td>Medium-High</td><td>The model's conservative case already assumes 10%; if actuals exceed it, the gates catch it early — retention features outrank all acquisition work</td></tr>
+<tr><td><b>Single-vendor production dependence</b> — features, content, and analysis all run through one AI subscription</td><td>Medium</td><td>It's in the cost base (£80/mo); the repo, docs, and processes are plain files any tool or human can pick up; nothing is locked in a proprietary format</td></tr>
+<tr><td>Copycats</td><td>Medium</td><td>They can copy features, not the brand/trust/journal history; open core makes "cheaper clone" pointless</td></tr>
+<tr><td>Platform dependence (broker API changes)</td><td>Medium</td><td>Engine is broker-agnostic by design; add a second broker by month 6</td></tr>
+<tr><td>Regulatory drift (UK <b>and US</b> — the audience is US-heavy)</td><td>Low-Medium</td><td>The §6 bright line + LEGAL.md's US perimeter check before charging + annual review</td></tr>
+<tr><td>You burn out</td><td>Medium</td><td>~10 focused h/week steady-state, <b>but launch weeks are 25+</b> — schedule them like sprints, not surprises</td></tr>
+</table>
+<h2>9. Review gates — trajectory checks, not a single tripwire</h2>
+<p>The old draft had a contradiction: a £2k-MRR month-12 gate that the conservative scenario — the plan's own "most likely outcome" — fails, while the plan simultaneously sold conservative's year-3-5 payoffs. Fixed: <b>each gate compares your actuals to the three modelled curves</b> (FINANCIALS.md tables; update monthly with real numbers) and prescribes a decision per band. Set these now, before emotion is involved (rule #3, applied to the company).</p>
+<ul>
+<li><b>Day 90 (validation gate — before heavy investment):</b> newsletter list vs the curves (conservative ≈ 340, base ≈ 800 by month 3). At/above base → proceed at full pace. On conservative → proceed, expectations set. Below conservative and flat after one messaging re-run → stop before sinking more time; you've spent ~£100 and learned cheaply.</li>
+<li><b>Month 6:</b> paying subscribers vs curves (conservative ≈ 65, base ≈ 230). Above base → double down; consider accelerating the roadmap. On conservative → freeze features, 8 weeks of distribution only, then re-read. Below conservative → prepare the exit while it still has launch shine.</li>
+<li><b>Month 12:</b> MRR vs curves (conservative ≈ £600, base ≈ £2.2k). <b>Above £2k</b> → winner; let it run (full-time at £5k). <b>On the conservative curve (£500-1k and growing)</b> → a deliberate choice, made consciously: continue at current effort (the year-3-5 conservative payoff <i>requires</i> this choice), or demote to side-asset mode — ~2 h/week keeping the newsletter streak and the product alive, accepting slower growth. <b>Below the conservative curve or shrinking</b> → sell the codebase + audience on a micro-acquisition marketplace. Exiting a non-winner at a small profit is winning; drifting without deciding is the only losing move.</li>
+</ul>
+<h2>10. Operating cadence (solo owner)</h2>
+<ul>
+<li><b>Daily (15 min):</b> run <code>manage</code> on your own paper account (you are user #1; dogfooding is QA), answer support.</li>
+<li><b>Weekly (half day):</b> one piece of content + the newsletter; ship one small improvement; check the four numbers: visitors, trials, MRR, churn.</li>
+<li><b>Monthly (2 h):</b> regenerate FINANCIALS.md with actuals replacing assumptions; write a one-paragraph "investor update" to yourself.</li>
+<li><b>Quarterly:</b> re-read §9 and act on the gates. No exceptions — that's the whole point of writing rules down.</li>
+</ul>
+<h2>11. First 90 days — validate first, incorporate second</h2>
+<p>Step-by-step in LAUNCH_CHECKLIST.md. Short version, in the order that risks the least money: buy the domain and deploy <code>site/index.html</code> with an email capture (~£10), post the open-source repo everywhere it belongs, and let the waitlist and stars tell you whether the message lands — <b>then</b> incorporate (~£50, Companies House) once there's a pulse, and always before taking money. Ship the journal in month 2; license the data feed and turn on payments in month 3. That ordering is the plan's own gate philosophy applied one step earlier: the cheapest test runs first.</p>
+<hr>
+<p><i>Companion documents:</i> <a href="FINANCIALS.md">FINANCIALS.md</a> · <a href="GO_TO_MARKET.md">GO_TO_MARKET.md</a> · <a href="LEGAL.md">LEGAL.md</a> · <a href="LAUNCH_CHECKLIST.md">LAUNCH_CHECKLIST.md</a> · landing page in <a href="../site/"><code>site/</code></a> · the product seed in <a href="../trendkept/web.py"><code>trendkept/web.py</code></a> (<code>python -m trendkept.web</code>).</p></section><section class="doc"><h1>Trendkept Pro — financial projections</h1><blockquote>
+<p>Generated by <code>python business/model.py --md</code>. Do not edit by hand — change the assumptions in <code>business/model.py</code> and regenerate.</p>
+</blockquote>
+<h2>Assumptions</h2>
+<ul>
+<li>Pricing: £12/mo or £99/yr (40% annual). Fees 5% + £0.50/transaction -&gt; net ARPU £9.66/mo (~8% effective fee).</li>
+<li>Revenue starts month 3 (when payments ship). Months 1-2 are pre-revenue: costs run, the newsletter builds, nothing is for sale yet.</li>
+<li>Launch offers modelled: founding cohort at £79/yr (months 3-4 signups, net £6.21/mo forever); lifetime £299 one-off (no MRR, still costs to serve).</li>
+<li>Costs step with scale: £260/mo baseline (incl. £80 AI tooling), + licensed data feed £60 and insurance £25 from revenue start, + newsletter platform tiers, + £0.10/user/mo.</li>
+<li>Traffic = organic base (grows to a cap) + launch spikes that decay 55% per month. Churn: 10%/7%/5% by scenario — hobbyist-trader B2C reality, not SaaS-blog folklore.</li>
+<li>Valuation: 3x trailing-12-month profit (SDE; small owner-run SaaS trades ~2.5-4x profit, not ARR), excluding one-off lifetime revenue.</li>
+<li>Horizon: 60 months. All figures GBP. Owner salary excluded — profit is the owner's pay.</li>
+</ul>
+<h2>Scenarios</h2>
+<h3>Conservative</h3>
+<p><i>Content gets modest traction; you keep the day job. This is the most likely outcome and the one to budget your life around.</i></p>
+<table><tr><th>Month</th><th>Visitors</th><th>List</th><th>Active</th><th>MRR (net)</th><th>Profit /mo</th><th>Cum. profit</th><th>Valuation (3x SDE)</th><th>Net worth</th></tr>
+<tr><td>1</td><td>5,800</td><td>145</td><td>0</td><td>£0</td><td>£-268</td><td>£-268</td><td>£0</td><td>£-268</td></tr>
+<tr><td>3</td><td>4,911</td><td>338</td><td>54</td><td>£213</td><td>£5,525</td><td>£4,989</td><td>£0</td><td>£4,989</td></tr>
+<tr><td>6</td><td>1,436</td><td>465</td><td>67</td><td>£351</td><td>£-8</td><td>£4,852</td><td>£0</td><td>£4,852</td></tr>
+<tr><td>12</td><td>4,022</td><td>670</td><td>83</td><td>£577</td><td>£216</td><td>£5,315</td><td>£0</td><td>£5,315</td></tr>
+<tr><td>18</td><td>2,175</td><td>908</td><td>96</td><td>£752</td><td>£389</td><td>£7,335</td><td>£7,450</td><td>£14,785</td></tr>
+<tr><td>24</td><td>5,056</td><td>1,235</td><td>122</td><td>£1,037</td><td>£655</td><td>£10,315</td><td>£15,001</td><td>£25,316</td></tr>
+<tr><td>30</td><td>4,351</td><td>1,670</td><td>155</td><td>£1,377</td><td>£992</td><td>£15,474</td><td>£24,418</td><td>£39,892</td></tr>
+<tr><td>36</td><td>8,149</td><td>2,295</td><td>210</td><td>£1,926</td><td>£1,535</td><td>£23,007</td><td>£38,077</td><td>£61,084</td></tr>
+<tr><td>42</td><td>8,739</td><td>3,155</td><td>283</td><td>£2,640</td><td>£2,242</td><td>£34,680</td><td>£57,617</td><td>£92,298</td></tr>
+<tr><td>48</td><td>14,000</td><td>4,375</td><td>391</td><td>£3,702</td><td>£3,293</td><td>£51,440</td><td>£85,299</td><td>£136,739</td></tr>
+<tr><td>54</td><td>12,017</td><td>5,625</td><td>468</td><td>£4,457</td><td>£3,995</td><td>£73,981</td><td>£117,902</td><td>£191,883</td></tr>
+<tr><td>60</td><td>12,000</td><td>6,696</td><td>505</td><td>£4,813</td><td>£4,347</td><td>£99,291</td><td>£143,553</td><td>£242,844</td></tr>
+</table>
+<p><b>Milestones</b></p>
+<ul>
+<li>Monthly profit turns positive: month 3 (~year 1)</li>
+<li>MRR £1,000 (real side income): month 24 (~year 2)</li>
+<li>MRR £2,000 (the month-12 gate line): month 37 (~year 4)</li>
+<li>MRR £5,000 (quit-the-job territory): not within 60 months</li>
+<li>MRR £10,000: not within 60 months</li>
+<li>Net worth £250,000: not within 60 months</li>
+<li>Net worth £1,000,000: not within 60 months</li>
+</ul>
+<h3>Base</h3>
+<p><i>The plan works: launches land, weekly content compounds, and churn stays merely bad (7%/mo) instead of typical (10%+), because the journal and daily habit genuinely hold people.</i></p>
+<table><tr><th>Month</th><th>Visitors</th><th>List</th><th>Active</th><th>MRR (net)</th><th>Profit /mo</th><th>Cum. profit</th><th>Valuation (3x SDE)</th><th>Net worth</th></tr>
+<tr><td>1</td><td>13,500</td><td>338</td><td>0</td><td>£0</td><td>£-268</td><td>£-268</td><td>£0</td><td>£-268</td></tr>
+<tr><td>3</td><td>12,212</td><td>802</td><td>168</td><td>£679</td><td>£17,322</td><td>£16,786</td><td>£0</td><td>£16,786</td></tr>
+<tr><td>6</td><td>3,258</td><td>1,099</td><td>227</td><td>£1,231</td><td>£838</td><td>£18,862</td><td>£11,095</td><td>£29,957</td></tr>
+<tr><td>12</td><td>9,879</td><td>1,594</td><td>309</td><td>£2,228</td><td>£1,827</td><td>£26,325</td><td>£27,936</td><td>£54,261</td></tr>
+<tr><td>18</td><td>6,541</td><td>2,282</td><td>412</td><td>£3,375</td><td>£2,964</td><td>£41,522</td><td>£67,981</td><td>£109,503</td></tr>
+<tr><td>24</td><td>16,887</td><td>3,445</td><td>612</td><td>£5,427</td><td>£4,996</td><td>£64,980</td><td>£115,965</td><td>£180,946</td></tr>
+<tr><td>30</td><td>18,308</td><td>5,298</td><td>926</td><td>£8,541</td><td>£8,033</td><td>£105,436</td><td>£191,741</td><td>£297,177</td></tr>
+<tr><td>36</td><td>31,000</td><td>8,188</td><td>1,421</td><td>£13,385</td><td>£12,828</td><td>£169,265</td><td>£312,854</td><td>£482,118</td></tr>
+<tr><td>42</td><td>25,050</td><td>10,932</td><td>1,771</td><td>£16,813</td><td>£16,171</td><td>£259,201</td><td>£461,295</td><td>£720,496</td></tr>
+<tr><td>48</td><td>31,000</td><td>13,403</td><td>2,012</td><td>£19,184</td><td>£18,518</td><td>£363,928</td><td>£583,989</td><td>£947,916</td></tr>
+<tr><td>54</td><td>25,050</td><td>15,552</td><td>2,152</td><td>£20,565</td><td>£19,885</td><td>£480,635</td><td>£664,301</td><td>£1,144,935</td></tr>
+<tr><td>60</td><td>25,000</td><td>17,345</td><td>2,218</td><td>£21,234</td><td>£20,547</td><td>£602,406</td><td>£715,436</td><td>£1,317,842</td></tr>
+</table>
+<p><b>Milestones</b></p>
+<ul>
+<li>Monthly profit turns positive: month 3 (~year 1)</li>
+<li>MRR £1,000 (real side income): month 5 (~year 1)</li>
+<li>MRR £2,000 (the month-12 gate line): month 12 (~year 1)</li>
+<li>MRR £5,000 (quit-the-job territory): month 24 (~year 2)</li>
+<li>MRR £10,000: month 33 (~year 3)</li>
+<li>Net worth £250,000: month 28 (~year 3)</li>
+<li>Net worth £1,000,000: month 50 (~year 5)</li>
+</ul>
+<h3>Ambitious</h3>
+<p><i>A breakout: front page of HN and Product Hunt, a big collab, word of mouth, retention near best-in-class. Plan for it, don't count on it.</i></p>
+<table><tr><th>Month</th><th>Visitors</th><th>List</th><th>Active</th><th>MRR (net)</th><th>Profit /mo</th><th>Cum. profit</th><th>Valuation (3x SDE)</th><th>Net worth</th></tr>
+<tr><td>1</td><td>32,500</td><td>812</td><td>0</td><td>£0</td><td>£-268</td><td>£-268</td><td>£0</td><td>£-268</td></tr>
+<tr><td>3</td><td>29,211</td><td>1,910</td><td>497</td><td>£2,175</td><td>£44,288</td><td>£43,735</td><td>£14,426</td><td>£58,161</td></tr>
+<tr><td>6</td><td>6,782</td><td>2,559</td><td>717</td><td>£4,102</td><td>£3,661</td><td>£53,154</td><td>£63,728</td><td>£116,882</td></tr>
+<tr><td>12</td><td>23,716</td><td>3,645</td><td>1,047</td><td>£7,834</td><td>£7,359</td><td>£84,085</td><td>£124,656</td><td>£208,741</td></tr>
+<tr><td>18</td><td>17,290</td><td>5,401</td><td>1,555</td><td>£13,172</td><td>£12,601</td><td>£146,951</td><td>£281,393</td><td>£428,344</td></tr>
+<tr><td>24</td><td>48,882</td><td>8,897</td><td>2,634</td><td>£23,920</td><td>£23,241</td><td>£253,022</td><td>£506,813</td><td>£759,836</td></tr>
+<tr><td>30</td><td>60,125</td><td>15,361</td><td>4,605</td><td>£43,223</td><td>£42,297</td><td>£456,102</td><td>£927,452</td><td>£1,383,554</td></tr>
+<tr><td>36</td><td>75,001</td><td>22,546</td><td>6,561</td><td>£62,324</td><td>£61,123</td><td>£775,128</td><td>£1,566,318</td><td>£2,341,446</td></tr>
+<tr><td>42</td><td>60,125</td><td>28,814</td><td>7,948</td><td>£75,882</td><td>£74,542</td><td>£1,192,763</td><td>£2,209,984</td><td>£3,402,747</td></tr>
+<tr><td>48</td><td>60,001</td><td>34,089</td><td>8,873</td><td>£84,956</td><td>£83,523</td><td>£1,672,808</td><td>£2,693,039</td><td>£4,365,847</td></tr>
+<tr><td>54</td><td>60,000</td><td>38,759</td><td>9,551</td><td>£91,618</td><td>£90,118</td><td>£2,198,013</td><td>£3,015,750</td><td>£5,213,763</td></tr>
+<tr><td>60</td><td>60,000</td><td>42,896</td><td>10,049</td><td>£96,515</td><td>£94,965</td><td>£2,756,411</td><td>£3,250,808</td><td>£6,007,218</td></tr>
+</table>
+<p><b>Milestones</b></p>
+<ul>
+<li>Monthly profit turns positive: month 3 (~year 1)</li>
+<li>MRR £1,000 (real side income): month 3 (~year 1)</li>
+<li>MRR £2,000 (the month-12 gate line): month 3 (~year 1)</li>
+<li>MRR £5,000 (quit-the-job territory): month 9 (~year 1)</li>
+<li>MRR £10,000: month 15 (~year 2)</li>
+<li>Net worth £250,000: month 14 (~year 2)</li>
+<li>Net worth £1,000,000: month 27 (~year 3)</li>
+</ul>
+<h2>Reading the numbers</h2>
+<p>Churn remains the highest-leverage variable: at 10%/mo the average subscriber stays 10 months; at 7%, 14 months. Retention work (the journal, the daily habit, the weekly email) beats any acquisition hack. Traffic spikes decay — the organic base and the newsletter are what compound. The conservative scenario never reaches £1M and sits under the £2k-MRR gate line at month 12: that is exactly the situation the trajectory gates in PLAN.md §9 exist to adjudicate — deliberately continue in side-asset mode, or exit. Neither is failure; drifting without deciding is.</p></section><section class="doc"><h1>Trendkept Pro — go-to-market playbook</h1><p>Distribution is the whole game (PLAN.md §8: "no distribution" is the risk that kills tool businesses). This file is the concrete plan: the message, the channels in priority order, a 12-week content calendar, the launch sequence, and the numbers that tell you whether it's working.</p>
+<h2>1. Positioning — say this, everywhere, verbatim</h2>
+<blockquote>
+<p><b>Trendkept doesn't predict markets. It makes you follow your own rules.</b></p>
+<p>Written trend-following rules, backtested honestly, with the stop-loss</p>
+<p>enforced by your broker instead of your nerves.</p>
+</blockquote>
+<p>Supporting messages (rotate; never dilute):</p>
+<ul>
+<li>"You don't need better entries. You need smaller losses." (the R-multiple pitch)</li>
+<li>"Every backtest here is causal — no peeking at the future. Most backtests lie to you; ours refuses." (the honesty pitch — devs love this)</li>
+<li>"The edge isn't any single rule. It's following all of them, every time." (the discipline pitch)</li>
+</ul>
+<p><b>Anti-positioning</b> (what we never say): no return promises, no "signals", no "beat the market", no screenshots of gains as marketing, <b>and no invented first-person war stories</b> — every personal claim in any post must be literally true of you on the day you post it (see the notes in <code>business/launch/</code>). This is the compliance line (LEGAL.md), the platform-ban line, and the trust wedge all at once — every competitor screaming "300% returns" makes the calm brand more visible.</p>
+<p><b>The two objections, answered the same way everywhere:</b></p>
+<ul>
+<li><i>"My broker's bracket/OCO orders already enforce stops for free."</i> True — and a bracket is one rule out of five. It enforces a static stop on a trade you already picked; it doesn't tell you whether the trend qualifies, size the position from your risk budget, trail the stop under market structure day by day, or keep score of whether you followed your own rules. Brackets are a seatbelt; Trendkept is the driving test, the seatbelt, and the logbook.</li>
+<li><i>"Journal apps (Edgewonk, TraderSync) already score discipline."</i> They do — after the trade. Trendkept structures the trade <i>before</i> it happens and is the only tool in the niche whose engine is open source and provably free of look-ahead bias. Respect them by name; they validate that people pay for discipline.</li>
+</ul>
+<h2>2. Channels, in priority order</h2>
+<h3>Tier 1 — do these first, they're free and fit the asset</h3>
+<ol>
+<li><b>Show HN / Hacker News.</b> A dependency-free, causally-honest backtester is catnip. Title: <i>"Show HN: Trendkept – a dependency-free trend-following backtester that refuses to peek at the future"</i>. Post Tue–Thu ~14:00 UTC. Be in the comments all day. Goal: stars + newsletter signups.</li>
+<li><b>Reddit:</b> r/algotrading (technical honesty angle), r/swingtrading (discipline angle), r/UKInvesting. <b>Rule: give value 10× before any link.</b> Post full backtest write-ups, answer sizing questions with the maths, let people ask for the tool.</li>
+<li><b>GitHub itself.</b> Good README (done), topics/tags, a demo GIF of the dashboard, CONTRIBUTING.md. Stars → trending → passive inbound forever.</li>
+</ol>
+<h3>Tier 2 — the compounding engine (start week 1, pays off month 3+)</h3>
+<ol>
+<li><b>The weekly newsletter: "The Trend Check".</b> Every Sunday: the engine's verdict on ~20 liquid tickers (uptrend confirmed / no entry / trend broke), one R-multiple lesson, one honest backtest. It is literally generated by the product — the newsletter IS a product demo. This is the single most important channel: an owned list converts at 10–50× social.</li>
+<li><b>SEO pages that match buying intent</b> (each one is a small tool page): position size calculator, trailing stop calculator, "trend following rules", "backtest [TICKER]". Low competition, high intent, evergreen.</li>
+<li><b>YouTube/Shorts:</b> screen-recorded 3-minute honest backtests. "I backtested the 50/200 rules on AAPL for 10 years. Here's every trade." No face needed.</li>
+</ol>
+<h3>Tier 3 — spikes (use once the funnel exists)</h3>
+<ol>
+<li><b>Product Hunt</b> at Pro launch (month 3).</li>
+<li><b>Podcast/YouTube guesting</b> in the retail-trading niche: the pitch is the contrarian one — "stop trying to predict".</li>
+<li><b>Affiliates</b> (20% recurring) for trading educators who teach risk management — aligned ones exist and they need exactly this tool.</li>
+</ol>
+<h2>3. The funnel, explicitly</h2>
+<pre><code>HN / Reddit / SEO / YouTube          (strangers)
+        ↓
+Free CLI on GitHub + landing page    (site/index.html)
+        ↓
+"The Trend Check" newsletter         (owned audience — the real asset)
+        ↓
+Trendkept Pro trial (14 days)           (dashboard + watchlist + journal)
+        ↓
+£12/mo or £99/yr                     (subscriber)
+        ↓
+Journal history + daily email        (retention — the moat)</code></pre>
+<p>Every piece of content links one step down the funnel, never straight to the paywall.</p>
+<h2>4. 12-week content calendar (repeatable)</h2>
+<table><tr><th>Wk</th><th>Piece (blog + cross-post)</th><th>Channel push</th></tr>
+<tr><td>1</td><td>"The five rules, written down" (the README, humanized)</td><td>Show HN</td></tr>
+<tr><td>2</td><td>"Position sizing: the only maths that matters" + calculator page</td><td>r/swingtrading</td></tr>
+<tr><td>3</td><td>"I backtested AAPL 2015–2017. Every trade, every loss."</td><td>r/algotrading</td></tr>
+<tr><td>4</td><td>"Why your backtest is lying to you (look-ahead bias)"</td><td>HN, dev Twitter</td></tr>
+<tr><td>5</td><td>"R-multiples: how to be wrong 60% of the time and profit"</td><td>newsletter feature</td></tr>
+<tr><td>6</td><td>"The stop-loss goes in BEFORE the trade" (broker OTO orders)</td><td>YouTube demo</td></tr>
+<tr><td>7</td><td>"What a confirmed uptrend actually looks like" (chart teardown)</td><td>Reddit</td></tr>
+<tr><td>8</td><td>"Trailing stops: locking in gains mechanically"</td><td>YouTube</td></tr>
+<tr><td>9</td><td>"The never-chase rule: why extension kills"</td><td>newsletter</td></tr>
+<tr><td>10</td><td>"Paper trade until you don't flinch" (the psychology)</td><td>podcast pitch</td></tr>
+<tr><td>11</td><td>"Building a watchlist the rules can actually scan"</td><td>Pro teaser</td></tr>
+<tr><td>12</td><td><b>Pro launch:</b> "The cockpit for the rules"</td><td>Product Hunt + everything</td></tr>
+</table>
+<p>Then repeat with new tickers/markets — the engine generates infinite honest material.</p>
+<h2>5. Launch sequence for Pro (month 3)</h2>
+<ol>
+<li>T-14 days: lifetime deal (£299, cap 200) offered to the newsletter only.</li>
+<li>T-7: "founding subscriber" pricing (£79/yr locked forever) to newsletter.</li>
+<li>T-0: Product Hunt + Show HN ("Trendkept now has a cockpit") + Reddit posts.</li>
+<li>T+7: publish real launch numbers ("open startup" post — transparency is on-brand and is itself content).</li>
+</ol>
+<h2>6. Metrics — which curve are you on? (check weekly, act monthly)</h2>
+<p>There is no single "healthy" number — there are three modelled curves (FINANCIALS.md), and the only question that matters is which one your actuals track. Reference points from the model:</p>
+<table><tr><th>Number</th><th>Conservative m3 / m12</th><th>Base m3 / m12</th><th>Ambitious m3 / m12</th></tr>
+<tr><td>Visitors /mo</td><td>~4,900 / ~4,000</td><td>~12,200 / ~9,900</td><td>~29,200 / ~23,700</td></tr>
+<tr><td>Newsletter list</td><td>~340 / ~670</td><td>~800 / ~1,600</td><td>~1,900 / ~3,600</td></tr>
+<tr><td>Paying subscribers</td><td>~55 / ~85</td><td>~170 / ~310</td><td>~500 / ~1,050</td></tr>
+<tr><td>MRR (net)</td><td>~£210 / ~£580</td><td>~£680 / ~£2,200</td><td>~£2,200 / ~£7,800</td></tr>
+<tr><td>Monthly churn</td><td>≤10%</td><td>≤7%</td><td>≤5%</td></tr>
+</table>
+<p>(Visitors <i>fall</i> after month 3 in every scenario — launch spikes decay. That's modelled, not failure; the newsletter list and subscriber count are the compounding numbers.)</p>
+<p>Replace the model's assumptions with your actuals monthly and regenerate FINANCIALS.md; the curve you're on feeds the trajectory gates in PLAN.md §9. One time-budget honesty note: steady-state is ~10 h/week, but <b>launch weeks (Show HN, Product Hunt) are 25+ hours</b> — schedule them like sprints.</p></section><section class="doc"><h1>Trendkept Pro — legal &amp; structure guide</h1><p><b>This is orientation, not legal advice.</b> Before taking money, budget <b>two hours of professional review, not one</b> (~£300–£500): a UK solicitor/accountant for the company-and-contracts pack, <b>plus a check of the US position</b> — the launch channels (HN, the subreddits) and the default watchlist (AAPL, SPY, QQQ) mean the audience will be mostly American. This file exists so those hours are efficient.</p>
+<h2>1. Company structure</h2>
+<ul>
+<li><b>Form a UK private limited company</b> (e.g. "Trendkept Ltd"). ~£50 online at Companies House, done in a day. Why a Ltd and not sole trader: liability protection (you sell to traders; someone will lose money and be angry), credibility with payment processors, clean asset to sell later, and corporation-tax flexibility.</li>
+<li>You own 100% of the shares. Director: you. Registered office: a registered- office service (~£40/yr), not your home address.</li>
+<li>Open a business bank account (Starling/Tide are free) — never mix funds.</li>
+<li>Register for VAT only when turnover approaches the threshold (currently £90k/yr); your accountant will time it. Use <b>Paddle</b> as merchant of record early on and it handles VAT/sales tax globally for you — worth its ~5% for a solo owner.</li>
+</ul>
+<h2>2. The regulatory bright line (the part that matters most)</h2>
+<p>Selling <b>software and education</b> is unregulated. Giving <b>investment advice</b> or making <b>personal recommendations</b> requires FCA authorisation in the UK (and equivalents elsewhere). Trendkept is designed to stay on the safe side of the line — keep it there:</p>
+<p><b>Trendkept may (all fine):</b></p>
+<ul>
+<li>Execute <i>the user's</i> mechanical ruleset on market data and show the result.</li>
+<li>Compute position sizes from a formula the user configures.</li>
+<li>Say "the 50/200 ruleset's conditions are met for AAPL today" — that's a factual statement about data, like a calculator or a chart.</li>
+<li>Teach risk-management concepts generally.</li>
+</ul>
+<p><b>Trendkept (and you, in all marketing) must NEVER:</b></p>
+<ol>
+<li>Make a <b>personal recommendation</b> — "given your situation, you should buy X". No "buy/sell" language directed at a person. The tool reports rule states; the user decides.</li>
+<li><b>Promise or imply returns</b> — no "make £X", no cherry-picked gain screenshots in ads, no "beat the market". (Also the marketing wedge — see GO_TO_MARKET.md §1.)</li>
+<li><b>Hold or manage client money</b> — users connect <i>their own</i> broker with</li>
+</ol>
+<p><i>their own</i> API keys; funds never touch you.</p>
+<p>Also stay away from: running a "signals group" (drifts into advice), copy-trading features (regulated), and managing anyone's account "just this once" (absolutely regulated).</p>
+<p><b>The US perimeter (get this checked — the audience is US-heavy).</b> The working theory is the US "publisher's exclusion" (Investment Advisers Act): impersonal commentary of general and regular circulation — which is what a weekly mechanical table sent to everyone identically is — falls outside "investment adviser". But a weekly emailed table of tickers with entry/exit states walks closer to a signals product than the software itself does, so: (a) have a US-savvy adviser confirm the newsletter format before charging money, and (b) keep the newsletter's language <b>descriptive, never imperative</b> — "the trend filter is no longer met on this ticker's data", not "the rules say get out". State facts about data; never tell readers to act. The launch templates in <code>business/launch/</code> already follow this register — keep every future issue to it.</p>
+<p><b>Hosted version (roadmap month 5): never hold broker keys.</b> The hosted tier ships as analysis + journal only; broker automation remains a local-first feature where users' API keys stay on their own machines. If key custody is ever reconsidered, that's a security-architecture project and a fresh legal review, not a feature toggle.</p>
+<p>The product already embodies this: dry-run by default, <code>--confirm</code> for every order, <code>--live --i-understand-live</code> double-gate, and a disclaimer on every surface. Keep those; they are compliance features, not just safety features.</p>
+<h2>3. Documents needed before charging money</h2>
+<p>All are standard SaaS boilerplate; a solicitor can review the pack in the same hour:</p>
+<ul>
+<li><b>Terms of Service</b> — key clauses: no advice given; no warranty on data accuracy or outcomes; user is responsible for orders their broker executes; limitation of liability to fees paid; English law.</li>
+<li><b>Privacy policy</b> (UK GDPR) — you hold emails and (if hosted) watchlists/ journals. Never hold broker API secrets on your servers if avoidable; the local-first design means you usually don't. Register with the ICO (~£40/yr).</li>
+<li><b>Refund policy</b> — 14-day no-questions refund. (Strictly, the statutory digital-content cooling-off right can be waived on immediate access — most SaaS does exactly that — so the generous policy is a <i>choice</i>, made because refunds kill chargebacks and fit the brand. Don't claim the law requires it.)</li>
+<li><b>Insurance</b> — professional indemnity + cyber cover (~£25/mo, in the model) from the month you first charge money. You sell software to people who lose money; assume one of them will eventually be angry enough to try something.</li>
+<li><b>The disclaimer</b>, on the site, in the app, in the newsletter footer:</li>
+</ul>
+<p><i>"Trendkept is analysis software, not investment advice. Trading involves risk of loss. Past or backtested performance does not predict future results. Backtests use idealized fills."</i></p>
+<h2>4. Intellectual property &amp; licensing</h2>
+<ul>
+<li>The current repo is <b>MIT</b> — that ships; it's the open core and the marketing engine (PLAN.md §2). You cannot un-MIT what's published, and you shouldn't want to.</li>
+<li><b>Pro features live in a separate private repository</b> owned by the Ltd, under a commercial licence (licence key per subscription). The dashboard in this repo is the free seed; watchlist/journal/email/hosted are Pro.</li>
+<li>Register the trademark ("Trendkept" word mark, classes 9 + 42, UK IPO £170 + £50 for the second class = <b>£220</b>) once revenue exists — do a name search <i>before</i> buying the domain in case a clash forces a rename while it's still cheap.</li>
+<li>Contributor licence: keep it simple — small PRs to the open core under MIT are fine; anything substantial, ask contributors to confirm MIT licensing in the PR (the default anyway).</li>
+</ul>
+<h2>5. Market data licensing — fix this before charging money</h2>
+<p>The single most concrete legal exposure in the whole plan, and it's easy to miss because the free tier gets away with it:</p>
+<ul>
+<li><code>trendkept/fetch.py</code> pulls daily prices by <b>scraping Stooq and Yahoo Finance</b>. Neither source licenses that data for <b>commercial redistribution</b> — and both the paid product and the weekly newsletter table are exactly that. A business built on it is one cease-and-desist away from having no data. This risk sits in the PLAN.md risk table for that reason.</li>
+<li><b>The fix is cheap: license an end-of-day feed before the first paid invoice.</b> EOD-licensed providers (e.g. EOD Historical Data, Polygon.io, Databento, or Alpaca's own data for its account holders where the licence fits the use) run roughly <b>£25–£80/month</b> for daily bars — it's in the cost model (<code>business/model.py</code>, <code>DATA_FEED</code>). Check the chosen provider's redistribution terms cover (a) showing derived indicator states in a paid app and (b) the newsletter table.</li>
+<li>The free, local, open-source tier — an individual fetching data for their own use — is a different posture, but note in the README that users are responsible for the data sources' terms, and prefer routing free-tier users to their own broker's data (Alpaca) where they have their own entitlement.</li>
+</ul>
+<h2>6. Taxes (UK, headline only — accountant confirms)</h2>
+<ul>
+<li>Corporation tax on profits (19–25%); pay yourself small salary + dividends (the standard owner-director mix your accountant will set up).</li>
+<li><b>Your own trading profits are separate from the company</b> — the company sells software; you trade your personal account personally.</li>
+<li>Budget ~£600–£1,200/yr for an accountant from year 1. Fixed cost is in the model (<code>business/model.py</code>).</li>
+</ul>
+<h2>7. Annual review</h2>
+<p>Once a year (put it in the calendar): re-check the FCA perimeter guidance hasn't moved (and the US position if the customer mix is still US-heavy), ToS/privacy still match the product, ICO registration renewed, the data provider's licence still covers how the data is actually used, insurance renewed, and the disclaimer still appears on every new surface shipped that year.</p></section><section class="doc"><h1>Trendkept Pro — first-90-days launch checklist</h1><p>Work top to bottom. <b>The order is deliberate: validate with ~£10 before spending the ~£100 on company paperwork</b> — the plan's gate philosophy, applied from day one. Time budget: ~10 focused hours/week steady-state; <b>launch weeks (Show HN, Product Hunt) run 25+ hours — schedule them like sprints.</b></p>
+<h2>Week 1 — validate first (~£10 total)</h2>
+<ul>
+<li>&#9744; Name search: UK IPO trademark search + Companies House name check for "Trendkept". Decide once, move on.</li>
+<li>&#9744; <b>Buy <code>trendkept.com</code></b> (~£10) at Cloudflare Registrar or Namecheap — the name is decided; the registrar's availability search is the final word.</li>
+<li>&#9744; Deploy <code>site/index.html</code> (Cloudflare Pages — free) with the waitlist.</li>
+<li>&#9744; Create the newsletter list ("The Trend Check") on Buttondown free tier; wire the landing-page form to it.</li>
+<li>&#9744; Set up the domain email (hello@ / you@ / news@ — see START_HERE Step 2; iCloud+ custom domain or Zoho free tier).</li>
+<li>&#9744; Dogfood from day one: open an Alpaca paper account, run the daily cadence. <b>The r/swingtrading post is blocked until you have 4+ weeks of real logs</b> — start the clock now.</li>
+</ul>
+<h2>Week 2 — make the free tier shine (it's the top of the funnel)</h2>
+<ul>
+<li>&#9744; Record a 60-second GIF/video: <code>python -m trendkept.web</code>, scan, backtest, equity curve. Put it at the top of the README and the landing page.</li>
+<li>&#9744; Add GitHub topics: <code>trading</code>, <code>trend-following</code>, <code>backtesting</code>, <code>python</code>, <code>zero-dependencies</code>.</li>
+<li>&#9744; Write CONTRIBUTING.md (two paragraphs) and enable Discussions.</li>
+</ul>
+<h2>Weeks 3–4 — first public swings (the validation data arrives)</h2>
+<ul>
+<li>&#9744; Publish content pieces 1 &amp; 2 (calendar in GO_TO_MARKET.md §4).</li>
+<li>&#9744; <b>Show HN</b> — draft ready to paste in <code>business/launch/show_hn.md</code> (Tue–Thu ~14:00 UTC; clear the whole day for comments).</li>
+<li>&#9744; r/algotrading value-post — <code>business/launch/reddit_algotrading.md</code> (all claims about the code; postable as-is).</li>
+<li>&#9744; Send "The Trend Check" #1 — template + table generator ready in <code>business/launch/trend_check_001.md</code> and <code>business/launch/trend_check.py</code>. Weekly from now on, no matter what — the streak is the asset.</li>
+<li>&#9744; <b>Day-30 validation read:</b> waitlist + stars vs the curves (GO_TO_MARKET.md §6). A pulse → proceed to incorporation below. Dead silence after a messaging retry → stop here, ~£10 spent, lesson cheap.</li>
+</ul>
+<h2>Month 2 — incorporate, then build the retention hooks</h2>
+<ul>
+<li>&#9744; Incorporate the Ltd at Companies House (~£50, online, same day). Registered-office service (~£40/yr), you as sole director/shareholder. SIC code 62012.</li>
+<li>&#9744; Open a free business bank account (Starling/Tide) with the company number.</li>
+<li>&#9744; r/swingtrading post — <b>only once the 4-week logs exist</b>; fill the bracketed numbers in <code>business/launch/reddit_swingtrading.md</code> from your real journal.</li>
+</ul>
+<h2>Month 2 — build the retention hooks (ship weekly)</h2>
+<ul>
+<li>&#9745; Watchlist page in the dashboard (scan N symbols at once) — <b>done, shipped in <code>trendkept/web.py</code></b>.</li>
+<li>&#9744; Trade journal: log entries/exits, auto-computed R-multiples, discipline score ("did you follow all five rules?").</li>
+<li>&#9744; Content pieces 5–8; keep the newsletter streak.</li>
+<li>&#9744; Collect a waiting list for Pro on the landing page ("founding subscriber" £79/yr, locked forever).</li>
+</ul>
+<h2>Month 3 — turn on the money (nothing gets charged before ALL of these)</h2>
+<ul>
+<li>&#9744; <b>License a market-data feed</b> (~£25-80/mo — EOD Historical Data, Polygon, Databento; check redistribution terms cover the app and the newsletter table). The paid product must not run on scraped Stooq/Yahoo data — LEGAL.md §5.</li>
+<li>&#9744; Paddle account (merchant of record — handles VAT/sales tax for you).</li>
+<li>&#9744; Licence-key gate for Pro features; 14-day trial, card required.</li>
+<li>&#9744; ToS, privacy policy, refund policy live (checklist in LEGAL.md §3); ICO registration (~£40); professional indemnity + cyber insurance (~£25/mo); the professional review — UK solicitor <b>plus the US perimeter check</b> (LEGAL.md §2), ~£300-500 total.</li>
+<li>&#9744; Lifetime deal (£299, cap 200) to the newsletter, T-14 before launch.</li>
+<li>&#9744; <b>Launch:</b> Product Hunt + Show HN + Reddit, same week (this is a</li>
+</ul>
+<p>25+ hour week — plan for it).</p>
+<ul>
+<li>&#9744; T+7: publish the "open startup" launch-numbers post.</li>
+</ul>
+<h2>The gates (from PLAN.md §9 — trajectory vs the modelled curves)</h2>
+<ul>
+<li>&#9744; <b>Day 90:</b> which curve is the newsletter list on? (conservative ≈</li>
+</ul>
+<p>340, base ≈ 800). At/above base → full pace. On conservative → proceed, expectations set. Below and flat after a messaging retry → stop before sinking more time.</p>
+<ul>
+<li>&#9744; <b>Month 6:</b> paying subs vs curves (conservative ≈ 65, base ≈ 230). Above base → double down. On conservative → freeze features, 8 weeks distribution only. Below → prepare the exit.</li>
+<li>&#9744; <b>Month 12:</b> MRR vs curves. ≥£2k → winner, let it run (full-time at £5k). On the conservative curve (£500-1k, growing) → <i>choose</i> deliberately: continue (the year-3-5 payoff requires it) or side-asset mode (~2 h/week). Below and shrinking → sell the codebase + audience (Acquire.com, Tiny Acquisitions). Exiting a non-winner at a small profit is winning.</li>
+</ul>
+<h2>Standing weekly rhythm (from day 1, ~10 h/week)</h2>
+<table><tr><th>When</th><th>What</th></tr>
+<tr><td>Daily, 15 min</td><td><code>manage</code> on the paper account; answer support</td></tr>
+<tr><td>One evening</td><td>Ship one small improvement</td></tr>
+<tr><td>One evening</td><td>Write the week's content piece</td></tr>
+<tr><td>Sunday, 1 h</td><td>Send "The Trend Check"; log the four numbers (GO_TO_MARKET.md §6)</td></tr>
+<tr><td>Month-end, 1 h</td><td>Put actuals into <code>business/model.py</code>, regenerate FINANCIALS.md, compare scenario</td></tr>
+</table></section><section class="doc"><h1>The 4-week paper-trading test — step by step</h1><p>This is START_HERE Step 1.4 in full detail: running Trendkept against an Alpaca <b>paper</b> (fake-money) account every trading day for four weeks. It is quality control, it makes you user #1, and it unlocks the r/swingtrading launch post — which quotes <i>your real logs</i> and is blocked until they exist.</p>
+<p><b>Paper only.</b> Never use <code>--live</code> during this test. Paper trading uses Alpaca's fake $100,000 account; no real money exists anywhere in this process.</p>
+<h2>One-time setup (~45 minutes)</h2>
+<h3>1. Get the tools onto your computer</h3>
+<ol>
+<li><b>Check Python is installed.</b> Open Terminal (Mac: press Cmd+Space, type "Terminal"; Windows: use PowerShell) and type: <code>python3 --version</code> If it prints "Python 3.9" or higher, you're done. If not, install it from python.org (big yellow Download button, default options).</li>
+<li><b>Download the code.</b> On the GitHub repo page: green <b>Code</b> button →</li>
+</ol>
+<p><b>Download ZIP</b> → unzip it somewhere permanent (e.g. Documents). Or, if you have git: <code>git clone &lt;repo URL&gt;</code>.</p>
+<ol>
+<li><b>Open Terminal in that folder</b> (Mac: type <code>cd </code>, drag the folder onto the Terminal window, press enter) and test the engine offline:</li>
+</ol>
+<p>``<code>bash python3 -m trendkept.cli backtest examples/aapl_2015_2017.csv --account 1000 -v </code>``</p>
+<p>Backtest results printing = everything works.</p>
+<h3>2. Create the Alpaca paper account (~15 min)</h3>
+<ol>
+<li>Go to <b>alpaca.markets</b> → Sign Up (free; email + password).</li>
+<li>In the dashboard, make sure you're in <b>Paper</b> mode — the account switcher (top-left) should say "Paper". It comes pre-loaded with $100,000 of fake money.</li>
+<li>Find <b>API Keys</b> on the paper dashboard (right-hand panel) →</li>
+</ol>
+<p><b>Generate</b>. You get two strings: a <b>Key ID</b> and a <b>Secret Key</b>. Copy both immediately — the secret is shown only once. Keys for the paper account can't touch real money (there is none).</p>
+<h3>3. Connect Trendkept to Alpaca</h3>
+<p>In Terminal, replacing the placeholders with your two keys:</p>
+<pre><code>echo 'export APCA_API_KEY_ID=YOUR_KEY_ID' &gt;&gt; ~/.zshrc
+echo 'export APCA_API_SECRET_KEY=YOUR_SECRET' &gt;&gt; ~/.zshrc</code></pre>
+<p>Close and reopen Terminal (that file loads on startup), <code>cd</code> back to the folder, then verify the connection:</p>
+<pre><code>python3 -m trendkept.cli account</code></pre>
+<p>You should see: <code>Alpaca account (paper)</code>, equity ~100,000. That's it — set up forever. (Windows/PowerShell: use <code>[Environment]::SetEnvironmentVariable('APCA_API_KEY_ID','...','User')</code> for each key instead, then reopen the window.)</p>
+<h3>4. Pick the test parameters (write them down, then don't touch them)</h3>
+<ul>
+<li><b>Watchlist:</b> 15–20 liquid US names. Reasonable default: AAPL MSFT NVDA GOOGL AMZN META TSLA AVGO JPM V UNH XOM COST PG HD NFLX AMD SPY QQQ IWM.</li>
+<li><b>Risk per trade:</b> <code>--risk 0.01</code> (1% of the account).</li>
+<li>Changing rules mid-test invalidates the test — that's the whole lesson.</li>
+</ul>
+<h2>The daily routine (15 minutes, Mon–Fri)</h2>
+<p>Do it after the US market close — <b>from ~9pm UK time</b> — or first thing the next morning (same daily bars either way). Markets are closed weekends and US holidays; those days, no routine.</p>
+<p><b>1. Scan the watchlist (5 min).</b> Either in the dashboard — <code>python3 -m trendkept.web</code>, open http://127.0.0.1:8181, paste your tickers into the watchlist box — or per-symbol in the CLI: <code>python3 -m trendkept.cli scan --symbol AAPL --provider alpaca --account 100000 --risk 0.01</code></p>
+<p><b>2. If (and only if) a symbol shows an entry SIGNAL (2 min each):</b></p>
+<pre><code># Dry run first — prints the exact order, sends nothing:
+python3 -m trendkept.cli trade AAPL --risk 0.01
+# Looks right? Send it to the PAPER account:
+python3 -m trendkept.cli trade AAPL --risk 0.01 --confirm</code></pre>
+<p>The order goes in as entry + protective stop together — rule #3, enforced by the broker. Most days there is no signal. <b>Do nothing on those days.</b></p>
+<p><b>3. Manage whatever is open (2 min):</b></p>
+<pre><code>python3 -m trendkept.cli manage            # dry run: shows what it would do
+python3 -m trendkept.cli manage --confirm  # do it (raise stops / exit breaks)</code></pre>
+<p><b>4. Log the day (2 min).</b> One row, even (especially) for "nothing" days — the no-action count is the launch post's headline finding. Keep it in a file called <code>paper_log.md</code>:</p>
+<pre><code>| Date | Action | Symbol | Signal | Entry | Stop | Shares | Exit/R | Followed rules? | Note |
+|---|---|---|---|---|---|---|---|---|---|
+| 2026-07-13 | none | — | no signals on 19 tickers | | | | | Y | |
+| 2026-07-14 | enter | NVDA | breakout | 182.40 | 171.10 | 88 | | Y | stop = swing low −0.5% |
+| 2026-07-21 | stop hit | NVDA | | | | | −1.0R | Y | gap through stop, filled lower |</code></pre>
+<h2>The weekly close-out (Sunday, 10 min — same sitting as the newsletter)</h2>
+<ul>
+<li>Run <code>python3 -m trendkept.cli account</code> and note equity + open positions.</li>
+<li>Count the week's log rows: trading days, signals, entries, exits.</li>
+<li>Screenshot the dashboard once a week — future launch material.</li>
+</ul>
+<h2>What four weeks buys you</h2>
+<p>After ~20 trading days you can fill every bracket in <code>business/launch/reddit_swingtrading.md</code> with literal truth: [N] weeks, [X] valid entries across [Y] tickers in [N×5] days, a real entry/stop/size example from the log, and what following the rules actually felt like. You will also have found any rough edges in the product before a paying customer does — report them to your Claude session as you hit them.</p>
+<p><b>The rules of the test itself</b> (the meta-discipline):</p>
+<ol>
+<li>The rules decide; you execute. No overrides, no "just this once".</li>
+<li>A missed day is logged as a missed day — honesty includes the log.</li>
+<li>Paper only. <code>--live</code> does not exist for you this month.</li>
+<li>If you <i>disagree</i> with a rule by week 4, that's a finding — write it down and raise it; don't silently change the config mid-test.</li>
+</ol></section><section class="doc"><h1>Launch pack — Show HN</h1><p><b>When:</b> Tuesday–Thursday, around 14:00–15:00 UTC (peak HN traffic). <b>Where:</b> https://news.ycombinator.com/submit <b>Golden rule:</b> clear your day — launch days are 8+ hours of comments, and launch weeks run 25+ hours total. The submission is 10% of the work; being present, humble, and technical in the comments is the other 90%. <b>Honesty rule:</b> every claim in the draft below is about the software's design, which is why it's safe to post as-is. Don't add personal trading history that isn't literally yours on the day.</p>
+<hr>
+<h2>Title (pick one — A is recommended)</h2>
+<p>A) <code>Show HN: Trendkept – a dependency-free backtester that refuses to peek at the future</code></p>
+<p>B) <code>Show HN: Trendkept – trend-following rules as code, stdlib Python only</code></p>
+<h2>URL</h2>
+<p>Your GitHub repo link.</p>
+<h2>Text (paste as the submission text)</h2>
+<blockquote>
+<p>I built Trendkept because almost every retail backtesting result I saw</p>
+<p>looked too good to be true — and usually was, through look-ahead bias —</p>
+<p>and because the standard advice ("write your rules down and follow them")</p>
+<p>has no tooling that actually enforces it.</p>
+<p></p>
+<p>Trendkept is a small toolkit that turns a written trend-following ruleset —</p>
+<p>confirmed uptrend only, stop below the last swing low, risk 1–2% per trade,</p>
+<p>trail the stop, exit on trend break — into code you can backtest and</p>
+<p>paper-trade. Design choices HN might find interesting:</p>
+<p></p>
+<p>- <b>Every signal is causal.</b> A value at bar i is computed only from bars</p>
+<p>≤ i. Swing pivots need confirmation bars before they exist, so the</p>
+<p>backtest can only act on information the market had actually revealed.</p>
+<p>- <b>Zero dependencies.</b> Pure Python stdlib, runs on 3.9+. The CSV loader</p>
+<p>copes with Yahoo/Stooq/broker exports and adjusts whole OHLC bars for</p>
+<p>splits so a 2:1 split never reads as a 50% "lower low".</p>
+<p>- <b>The stop is enforced by the broker, not willpower.</b> Orders go in as</p>
+<p>entry+stop pairs (OTO). Live trading is triple-gated behind</p>
+<p>--confirm --live --i-understand-live.</p>
+<p>- There's a local web dashboard (also stdlib only) — `python -m</p>
+<p>trendkept.web`.</p>
+<p></p>
+<p>It's MIT licensed. The honest caveat is in the README: backtests use</p>
+<p>idealized fills and are an optimistic ceiling, not a promise. Would love</p>
+<p>feedback on the causality approach and what I've missed.</p>
+</blockquote>
+<h2>Comment playbook</h2>
+<ul>
+<li>Answer every technical question, fast, with code references.</li>
+<li>If someone says "trend following doesn't work": don't argue returns. Say the tool's claim is narrower — <i>if</i> you trade rules, it makes you follow them, and the backtest is honest about what the rules did historically.</li>
+<li>If someone finds a bug: thank them, fix it same-day, reply with the commit. Nothing plays better on HN.</li>
+<li>Never mention Pro/pricing unless directly asked; if asked: "planning a paid hosted version later; the core stays MIT."</li>
+<li>Have the newsletter link in your HN profile, not in the post.</li>
+</ul></section><section class="doc"><h1>Launch pack — r/algotrading</h1><p><b>When:</b> a few days after the Show HN (momentum compounds). <b>Honesty rule (non-negotiable):</b> every sentence below is a claim about the <i>code and the data</i>, not about your trading history. Post it as-is and it's all literally true. Do not add war stories that haven't happened to you — this community traces, and the brand is honesty. <b>Sub rules:</b> value first, no naked self-promo. Read the sub's rules on the day; if links are restricted, share the repo in a comment when asked.</p>
+<hr>
+<h2>Title</h2>
+<p><code>Look-ahead bias checklist: five places your backtest reads the future (worked examples from building an open-source backtester)</code></p>
+<h2>Body</h2>
+<blockquote>
+<p>I've been building an open-source trend-following backtester, and the most</p>
+<p>useful part of the project turned out to be cataloguing every place future</p>
+<p>information can silently leak into a "simple" daily-bars strategy. The</p>
+<p>checklist, with how the code has to handle each one:</p>
+<p></p>
+<p><b>1. Swing highs/lows don't exist when you think they do.</b> A swing low</p>
+<p>needs N bars <i>after</i> it before it's confirmed. A backtest that places the</p>
+<p>stop under a swing low on the day the low prints is trading information</p>
+<p>from the future. Fix: pivots only become actionable after the confirmation</p>
+<p>bars have actually closed.</p>
+<p></p>
+<p><b>2. Split adjustment applied to close but not OHLC.</b> Adjust closes but</p>
+<p>test stops against raw lows and a 2:1 split reads as a 50% crash — every</p>
+<p>backtest position stops out on a phantom. Fix: scale the whole OHLC bar by</p>
+<p>the same adjustment factor.</p>
+<p></p>
+<p><b>3. Same-bar entry+stop ambiguity.</b> If one daily bar crosses both your</p>
+<p>entry and your stop, which fired first? Daily data can't tell you. Honest</p>
+<p>answer: assume the worst ordering (stop first).</p>
+<p></p>
+<p><b>4. Gap-throughs filled at the stop price.</b> If the market opens below</p>
+<p>your stop you don't get the stop price, you get the open. Fix: model the</p>
+<p>fill as min(stop, open).</p>
+<p></p>
+<p><b>5. Sizing off equity you don't have yet.</b> Position size must come from</p>
+<p>equity <i>at entry time</i>, marked to market including open-position drawdown</p>
+<p>— not from the smooth final curve.</p>
+<p></p>
+<p>I encoded all five into a small stdlib-Python backtester for the boring</p>
+<p>50/200 trend-following ruleset (MIT licensed, zero dependencies). Enforcing</p>
+<p>honesty makes the results dramatically less exciting than the backtests</p>
+<p>you see posted around here — which I've come to think is the point.</p>
+<p>Genuinely interested in what leaks this list still misses.</p>
+</blockquote>
+<h2>Follow-up</h2>
+<p>When people ask for the link, reply with the GitHub URL and full disclosure in one line: "I built it — it's MIT/open source; the causality bits are in <code>indicators.py</code> (confirmed swings) and <code>backtest.py</code> (fill rules)." If someone asks whether you trade it yourself, answer with the literal truth of that day (e.g. "paper-trading it daily since [date]; the journal is the next thing I'm building"). Never inflate.</p></section><section class="doc"><h1>Launch pack — r/swingtrading</h1><p><b>Precondition — do not post before this is true:</b> you have <b>at least four weeks of real paper-trading logs</b> from running the rules daily (START_HERE Step 3). The post quotes your actual logs; the brackets below get filled with your real numbers. If the logs don't exist yet, the post waits. An invented version of this post would be astroturfing from a brand whose whole pitch is honesty — and these communities are good at catching it.</p>
+<p><b>When:</b> the week after the r/algotrading post, logs permitting. <b>Sub rules:</b> check self-promo rules on the day; no link in the body — offer the repo in comments, with the one-line "I built this" disclosure.</p>
+<hr>
+<h2>Title</h2>
+<p><code>I made the classic trend rules mechanical so I couldn't improvise, then paper-traded them for [N] weeks. What the logs actually show</code></p>
+<h2>Body</h2>
+<blockquote>
+<p>The rules are the boring ones everyone knows: only confirmed uptrends</p>
+<p>(price above the 50 and 200 SMA, higher highs/lows), enter on pullback or</p>
+<p>breakout, stop below the last swing low, risk max 1–2% per trade, trail</p>
+<p>the stop, exit on trend break. What I changed: I wrote them as code so</p>
+<p>that every day there's exactly one mechanical answer, and I've followed</p>
+<p>that answer on a paper account for [N] weeks. From the actual logs:</p>
+<p></p>
+<p><b>1. Most days the correct action is nothing.</b> Out of [N×5] trading</p>
+<p>days, the rules produced [X] valid entries across a [Y]-ticker watchlist.</p>
+<p>Backtesting the same rules over [period] shows the same pattern. Eyeballing</p>
+<p>charts, I would have "found" far more trades — every extra one would have</p>
+<p>been a rule violation (chasing extension, or trading an unconfirmed</p>
+<p>trend).</p>
+<p></p>
+<p>**2. The stop distance decides the position size — conviction doesn't get</p>
+<p>a knob.** Risking 1% with a stop 5% away forces a position of 20% of the</p>
+<p>account, mechanically. [Real example from your log: ticker, entry, stop,</p>
+<p>computed size.]</p>
+<p></p>
+<p><b>3. Honest backtests of these rules win by asymmetry, not accuracy.</b></p>
+<p>The edge, when it shows up, is the average win being a multiple of the</p>
+<p>average loss (R-multiples), not a high win rate. Once the scorecard is R</p>
+<p>instead of win %, losing small stops feeling like failing.</p>
+<p></p>
+<p><b>4. The stop goes in with the entry order.</b> The ruleset sends entries as</p>
+<p>entry+stop pairs so the broker holds the exit from second one. Willpower</p>
+<p>isn't part of the system, which — [N] weeks in — I've concluded is the</p>
+<p>entire point.</p>
+<p></p>
+<p>The ruleset and the code that enforces it are open source (I built it —</p>
+<p>happy to share in comments). Curious what the discretionary traders here</p>
+<p>think: what do you do when the mechanical answer is "nothing" for a week?</p>
+</blockquote>
+<h2>Follow-up</h2>
+<p>Give the repo link when asked, with the disclosure line. When someone shares a discipline failure story, reply with empathy first — those threads are where newsletter subscribers come from. Answer every "does it make money?" with the honest frame: it's a discipline tool and an honest backtester, not a promise of returns — and your paper results to date, stated plainly, whatever they are.</p></section><section class="doc"><h1>Launch pack — The Trend Check #1</h1><p><b>How to produce this issue in ~20 minutes:</b></p>
+<ol>
+<li>Run <code>python business/launch/trend_check.py --default</code> (needs internet).</li>
+<li>Paste the generated table where marked.</li>
+<li>Fill the two [BRACKETED] spots.</li>
+<li>Send on Sunday. Same skeleton every week — only the table and the lesson change.</li>
+</ol>
+<hr>
+<p>Subject: <b>The Trend Check #1 — what the rules say this week</b></p>
+<hr>
+<p>Welcome to the first Trend Check.</p>
+<p>Every Sunday, this email does one boring, useful thing: it runs a written trend-following ruleset over ~20 liquid tickers and reports what the rules say — uptrend confirmed, no entry, or trend broken. No predictions. No hot takes. The ruleset is public and the code that produces this table is open source.</p>
+<h2>This week's board</h2>
+<p>[PASTE THE GENERATED TABLE HERE]</p>
+<p>A quick reminder of what the states mean (they describe the data — what you do with your own account is always your decision):</p>
+<ul>
+<li><b>Uptrend confirmed</b> — price above the 50- and 200-day averages, averages aligned, structure making higher highs and lows. The ruleset only defines entries here, and only on a pullback or breakout that isn't over-extended.</li>
+<li><b>No confirmed uptrend</b> — the ruleset's conditions aren't met, so it defines no action. In a mechanical system, "no action" is the most common state — that's a feature, not a gap.</li>
+<li><b>Trend filter no longer met</b> — a close below the 50-day average or a lower low. This is the condition the ruleset treats as a trend break.</li>
+</ul>
+<h2>One honest lesson: [THIS WEEK: R-multiples]</h2>
+<p>The only score that matters in this system is the R-multiple: profit measured in units of what you risked. Risk £10 on a trade (that's entry minus stop, times shares) and make £30 — that's +3R. Get stopped — that's −1R.</p>
+<p>Here's the maths that surprises everyone: at +3R average winners, you can be wrong 60% of the time and still grow the account. Win rate is a vanity metric; R-expectancy is the business model. Next week: why the stop goes in <i>with</i> the order, not after.</p>
+<p>— [YOUR NAME]</p>
+<p><i>Trendkept is analysis software and education, not investment advice. This table is the mechanical output of a published ruleset on public data. Trading involves risk of loss; past and backtested performance do not predict future results. Unsubscribe below — no hard feelings.</i></p>
+<hr>
+<h1>Issue skeletons for weeks 2–4 (so the streak never breaks)</h1>
+<ul>
+<li><b>#2 — The stop goes in with the order.</b> Lesson: OTO orders; willpower is not a risk-management system. Board + lesson + one reader question.</li>
+<li><b>#3 — Position sizing has no conviction knob.</b> Lesson: shares = (account × risk%) ÷ (entry − stop), with two worked examples (tight vs wide stop).</li>
+<li><b>#4 — Doing nothing is a position.</b> Lesson: count the board's "no confirmed uptrend" rows over four weeks; show how few valid entries a disciplined ruleset actually produces.</li>
+</ul></section>
+</body></html>

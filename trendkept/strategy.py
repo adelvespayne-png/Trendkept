@@ -11,7 +11,7 @@ These are *the exact rules*, in code:
 4. Exit when the trend breaks: a close below the 50-day average, or a lower low.
 
 This module produces *signals*. Position sizing and trade management live in
-:mod:`archie.backtest` so the rules stay readable and testable in isolation.
+:mod:`trendkept.backtest` so the rules stay readable and testable in isolation.
 """
 
 from __future__ import annotations
