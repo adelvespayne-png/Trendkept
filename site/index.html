@@ -195,13 +195,17 @@ Expectancy       : +7.13R per trade</code></pre>
   <p>The engine's verdict on 20 liquid tickers — uptrend confirmed, no entry,
   or trend broken — plus one honest lesson in risk. No predictions, no hype,
   unsubscribe anytime.</p>
-  <!-- Wire this to your list provider (Buttondown/ConvertKit): set action="…" -->
-  <form class="signup" action="#" method="post"
-        onsubmit="alert('Connect this form to your newsletter provider — see business/LAUNCH_CHECKLIST.md'); return false;">
+  <!-- Live signup: Buttondown (The Trend Check), sending from
+       news.trendkept.com -->
+  <form class="signup"
+        action="https://buttondown.com/api/emails/embed-subscribe/Trendkept"
+        method="post" target="_blank">
     <input type="email" name="email" required placeholder="you@example.com"
            aria-label="Email address">
     <button class="cta" type="submit">Subscribe free</button>
   </form>
+  <p class="fine">Double opt-in: you'll get one confirmation email first.
+  Unsubscribe anytime; your address is never shared.</p>
 
   <div class="appearance" aria-label="Appearance settings">
     <label>Theme
