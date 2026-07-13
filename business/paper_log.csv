@@ -1,2 +1,2 @@
 Date,Day #,Action,Symbol,Signal,Entry,Stop,Shares,Exit / R,Followed rules? (Y/N),Note
-2026-07-13,1,signal,UNH,pullback,429.05,396.66,30,,Y,1 signal across 20 tickers (UNH pullback); NVDA/V/AMD in uptrend but no entry; order placement in Alpaca to be confirmed
+2026-07-13,1,none,,no entries across 20 tickers,,,,,Y,Outdated (Trendrail-era) copy showed a UNH pullback; updated copy + trade command both said no entry — no order placed. UNH/V/AMD in confirmed uptrends; watching.
