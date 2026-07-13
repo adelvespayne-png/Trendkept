@@ -1,0 +1,60 @@
+# Every Sunday morning, draft The Trend Check automatically:
+# run the engine's verdict table over the standard tickers and open a
+# GitHub issue containing the ready-to-paste newsletter draft. GitHub
+# emails the issue to the owner — the Sunday job becomes: open email,
+# paste into Buttondown, press Send.
+#
+# Scheduled workflows only run from the default branch (main).
+name: Sunday Trend Check draft
+
+on:
+  schedule:
+    - cron: "0 7 * * 0" # Sundays 07:00 UTC (~8am UK)
+  workflow_dispatch: {} # and on demand, via the Actions tab
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  draft:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Generate the verdict table
+        run: |
+          python business/launch/trend_check.py --default > /tmp/table.md
+          cat /tmp/table.md
+
+      - name: Assemble the draft issue body
+        run: |
+          {
+            echo "Paste-ready draft for this Sunday's issue. Template and"
+            echo "lesson skeletons: \`business/launch/trend_check_001.md\`."
+            echo
+            echo "---"
+            echo
+            echo "## This week's board"
+            echo
+            cat /tmp/table.md
+            echo
+            echo "---"
+            echo
+            echo "_Generated automatically. Review before sending: states"
+            echo "must stay descriptive (LEGAL.md §2), and any ticker row"
+            echo "showing a data error should be removed or rerun._"
+          } > /tmp/issue.md
+
+      - name: Open the draft issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create \
+            --title "The Trend Check — draft for Sunday $(date -u +%Y-%m-%d)" \
+            --body-file /tmp/issue.md \
+            --repo "$GITHUB_REPOSITORY"

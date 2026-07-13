@@ -99,8 +99,11 @@ python3 -m trendkept.cli manage --confirm  # do it (raise stops / exit breaks)
 ```
 
 **4. Log the day (2 min).** One row, even (especially) for "nothing" days —
-the no-action count is the launch post's headline finding. Keep it in a
-file called `paper_log.md`:
+the no-action count is the launch post's headline finding. **The official
+log is the spreadsheet `business/paper_log.csv`** (opens in Excel; GitHub
+shows it as a table in the browser). You don't have to type into it
+yourself: photograph your dashboard/Alpaca screen, send the photo to your
+Claude session, and the row gets entered for you. The columns:
 
 ```markdown
 | Date | Action | Symbol | Signal | Entry | Stop | Shares | Exit/R | Followed rules? | Note |

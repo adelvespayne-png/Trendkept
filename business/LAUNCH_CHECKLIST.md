@@ -10,12 +10,14 @@ sprints.**
 
 - [ ] Name search: UK IPO trademark search + Companies House name check for
       "Trendkept". Decide once, move on.
-- [ ] **Buy `trendkept.com`** (~£10) at Cloudflare Registrar or Namecheap —
+- [x] **Buy `trendkept.com`** (~£10) at Cloudflare Registrar or Namecheap —
       the name is decided; the registrar's availability search is the final
       word.
-- [ ] Deploy `site/index.html` (Cloudflare Pages — free) with the waitlist.
-- [ ] Create the newsletter list ("The Trend Check") on Buttondown free
-      tier; wire the landing-page form to it.
+- [x] Deploy `site/index.html` (Cloudflare Pages — free) with the waitlist.
+- [x] Create the newsletter list ("The Trend Check") on Buttondown free
+      tier; wire the landing-page form to it. **Done: live at
+      trendkept.com, sending domain news.trendkept.com verified,
+      subscribe flow tested end-to-end (subscriber #1: the owner).**
 - [ ] Set up the domain email (hello@ / you@ / news@ — see START_HERE
       Step 2; iCloud+ custom domain or Zoho free tier).
 - [ ] Dogfood from day one: open an Alpaca paper account, run the daily
