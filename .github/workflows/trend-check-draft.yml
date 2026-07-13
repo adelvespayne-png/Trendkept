@@ -27,6 +27,13 @@ jobs:
           python-version: "3.12"
 
       - name: Generate the verdict table
+        # The free data providers refuse requests from cloud servers, so
+        # the run uses the owner's Alpaca *paper* data keys, stored as
+        # repository Actions secrets (market-data reads only — this
+        # workflow never places orders).
+        env:
+          APCA_API_KEY_ID: ${{ secrets.APCA_API_KEY_ID }}
+          APCA_API_SECRET_KEY: ${{ secrets.APCA_API_SECRET_KEY }}
         run: |
           python business/launch/trend_check.py --default > /tmp/table.md
           cat /tmp/table.md

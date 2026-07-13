@@ -3,9 +3,12 @@
     python business/launch/trend_check.py AAPL MSFT NVDA GOOGL AMZN
     python business/launch/trend_check.py --default   # the standard 20
 
-Fetches daily history for each ticker (free, no API key) and prints a
-markdown table of the engine's verdict — paste it straight into the
-newsletter. Needs a network connection.
+Fetches daily history for each ticker and prints a markdown table of the
+engine's verdict — paste it straight into the newsletter. Needs a network
+connection. Uses your Alpaca data feed when APCA_API_KEY_ID /
+APCA_API_SECRET_KEY are set (the free providers often refuse requests
+from cloud servers, e.g. GitHub Actions); otherwise falls back to the
+free providers.
 """
 
 from __future__ import annotations
@@ -18,10 +21,10 @@ from typing import List, Optional
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", ".."))
 
-from trendkept.data import parse_csv_text            # noqa: E402
-from trendkept.fetch import fetch_csv, FetchError    # noqa: E402
+from trendkept.fetch import FetchError               # noqa: E402
 from trendkept.strategy import (                     # noqa: E402
     Signal, StrategyConfig, TrendFollowingStrategy)
+from trendkept.web import _fetch_symbol              # noqa: E402
 
 DEFAULT_TICKERS = [
     "AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA", "AVGO",
@@ -32,7 +35,7 @@ DEFAULT_TICKERS = [
 
 def verdict(symbol: str, strat: TrendFollowingStrategy) -> str:
     try:
-        bars = parse_csv_text(fetch_csv(symbol))
+        bars, _ = _fetch_symbol(symbol)
     except (FetchError, ValueError, OSError) as exc:
         return f"| {symbol} | – | data unavailable ({exc}) |"
     if len(bars) < strat.config.slow_ma + 1:
