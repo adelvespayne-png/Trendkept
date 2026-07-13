@@ -65,7 +65,11 @@ important into committed files — the repo is the memory between sessions.
   broke once), sending domain news.trendkept.com verified, signup tested
   end-to-end; subscriber #1 is the owner. The day-30 validation clock is
   running. Owner is ~day 3 of the 4-week paper-trading log.
+- **The official paper-trading log is `business/paper_log.csv`.** Workflow:
+  the owner sends photos of what they ran; the session transcribes them
+  into rows (one row per trading day, even "none" days — and never invent
+  or backfill rows the owner hasn't evidenced). Sunday auto-draft Action
+  shipped: `.github/workflows/trend-check-draft.yml` (active once merged
+  to `main`; PR #4).
 - Next build candidates: trade journal (roadmap month 2, the retention
-  hook), Sunday auto-draft GitHub Action for the newsletter, SEO calculator
-  pages for the site, wiring the Buttondown form once the owner supplies
-  the URL.
+  hook), SEO calculator pages for the site.
