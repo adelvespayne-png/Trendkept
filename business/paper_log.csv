@@ -1,2 +1,3 @@
 Date,Day #,Action,Symbol,Signal,Entry,Stop,Shares,Exit / R,Followed rules? (Y/N),Note
 2026-07-13,1,none,,no entries across 20 tickers,,,,,Y,Outdated (Trendrail-era) copy showed a UNH pullback; updated copy + trade command both said no entry — no order placed. UNH/V/AMD in confirmed uptrends; watching.
+2026-07-14,2,signal,NVDA,pullback,211.21,190.19,,,Y,Real signal on current copy + live Alpaca data. Dashboard sized 0 sh (account box said 1000; £10 risk < £21/share stop distance) — sizing to be redone from real paper equity via the trade command; placement pending. UNH/V/AMD uptrends, no entry.
