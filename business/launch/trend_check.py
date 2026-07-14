@@ -115,10 +115,54 @@ with your own account is always your decision):
 - **Trend broken** — a close below the 50-day average, or a lower low. This
   is the condition the ruleset treats as the end of an uptrend."""
 
+# The first month's lessons, written in advance so the Sunday draft needs
+# no writing at all. From issue 5 the lesson comes from the week's real
+# paper-log experience — drafted in a Claude session, reviewed by the owner.
+LESSONS = {
+    1: ("R-multiples", """\
+The only score that matters in this system is the R-multiple: profit
+measured in units of what you risked. Risk £10 on a trade (that's entry
+minus stop, times shares) and make £30 — that's +3R. Get stopped — that's
+−1R.
+
+Here's the maths that surprises everyone: at +3R average winners, you can be
+wrong 60% of the time and still grow the account. Win rate is a vanity
+metric; R-expectancy is the business model. Next week: why the stop goes in
+*with* the order, not after."""),
+    2: ("the stop goes in with the order", """\
+When this system buys, the protective stop is part of the same order — the
+broker holds both from second one. There is never a moment where a position
+exists and its exit doesn't.
+
+Why so strict? Because "I'll put the stop in if it drops a bit" is not a
+risk plan, it's a mood. The version of you that placed the trade is calm and
+rational; the version watching it fall is neither. Sending them both to the
+broker together means the calm one decides. Willpower is not a
+risk-management system — order types are. Next week: position sizing."""),
+    3: ("position sizing has no conviction knob", """\
+Shares = (account × risk%) ÷ (entry − stop). That's the whole formula, and
+notice what's missing: how much you *like* the trade.
+
+Two worked examples at 1% of a £10,000 account (£100 of risk). Tight stop:
+entry 50, stop 48 → £2 a share → 50 shares. Wide stop: entry 50, stop 42 →
+£8 a share → 12 shares. The scarier trade automatically gets smaller. No
+gut feel, no doubling down on favourites — the distance to the stop sets
+the size, every time. Next week: why doing nothing is a position."""),
+    4: ("doing nothing is a position", """\
+Count the "nothing confirmed" rows across the last four boards and you'll
+notice the system's loudest opinion is silence. Most tickers, most weeks,
+meet no condition — so the rules define no action, and no action is taken.
+
+That's not the system being lazy; it's the edge. Every forced trade in a
+sideways chop is paid for in stops and fees. A ruleset that mostly says
+"not today" is doing the hardest job in trading: keeping you out of the
+trades you'd have talked yourself into."""),
+}
+
 FOOTER = """\
 That's it for this week — same time next Sunday.
 
-— [YOUR NAME]
+— Archie
 
 The ruleset, the code, and the free dashboard live at
 [trendkept.com](https://trendkept.com).
@@ -129,9 +173,27 @@ involves risk of loss; past and backtested performance do not predict future
 results. Unsubscribe below — no hard feelings.*"""
 
 
+def next_issue_number(today=None) -> int:
+    """Issue #1 sends Sunday 2026-07-19; one a week after that."""
+    import datetime
+
+    today = today or datetime.date.today()
+    days = (today - datetime.date(2026, 7, 19)).days
+    return max(1, days // 7 + 1 + (1 if days % 7 else 0)) if days > 0 \
+        else 1
+
+
 def build_draft(rows: List[str], keys: List[str], issue_no: str = "[N]") -> str:
-    """The whole issue, paste-ready except the bracketed spots."""
+    """The whole issue, paste-ready; brackets remain only when no
+    pre-written lesson exists for this issue number."""
     table = "\n".join([TABLE_HEADER, *rows])
+    try:
+        title, body = LESSONS[int(issue_no)]
+    except (KeyError, ValueError):
+        title = ("[THIS WEEK'S LESSON — draft it from the week's paper log "
+                 "in a Claude session]")
+        body = ("[Two or three short paragraphs, written fresh from what "
+                "the log actually showed this week.]")
     return "\n".join([
         f"Subject: **The Trend Check #{issue_no} — what the rules say "
         "this week**",
@@ -156,12 +218,9 @@ def build_draft(rows: List[str], keys: List[str], issue_no: str = "[N]") -> str:
         "",
         STATES_LEGEND,
         "",
-        "## One honest lesson: [THIS WEEK'S LESSON — skeletons in "
-        "business/launch/trend_check_001.md]",
+        f"## One honest lesson: {title}",
         "",
-        "[Two or three short paragraphs. Week 1: R-multiples. Week 2: the "
-        "stop goes in with the order. Week 3: position sizing has no "
-        "conviction knob. Week 4: doing nothing is a position.]",
+        body,
         "",
         FOOTER,
     ])
@@ -175,8 +234,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--draft", action="store_true",
                         help="print the whole paste-ready issue, not just "
                              "the table")
-    parser.add_argument("--issue", default="[N]",
-                        help="issue number for the subject line")
+    parser.add_argument("--issue", default="auto",
+                        help="issue number for the subject line; 'auto' "
+                             "computes it from the calendar")
     args = parser.parse_args(argv)
 
     tickers = DEFAULT_TICKERS if args.default or not args.tickers \
@@ -190,7 +250,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         keys.append(key)
 
     if args.draft:
-        print(build_draft(rows, keys, issue_no=args.issue))
+        issue = str(next_issue_number()) if args.issue == "auto" \
+            else args.issue
+        print(build_draft(rows, keys, issue_no=issue))
     else:
         print(TABLE_HEADER)
         for row in rows:

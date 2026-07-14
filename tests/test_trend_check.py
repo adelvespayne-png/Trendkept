@@ -38,11 +38,26 @@ class TestBuildDraft(unittest.TestCase):
         self.assertIn("Subject: **The Trend Check #1", draft)
         self.assertIn("This week's board", draft)
         self.assertIn("| NVDA | 211.22 |", draft)
-        self.assertIn("One honest lesson", draft)
+        self.assertIn("One honest lesson: R-multiples", draft)
+        self.assertIn("R-expectancy", draft)  # week-1 lesson filled in
+        self.assertNotIn("[THIS WEEK", draft)  # no brackets left
         self.assertIn("not investment advice", draft)
         # Compliance: broadcast copy must describe, never instruct.
         for banned in ("buy now", "sell now", "get out", "you should buy"):
             self.assertNotIn(banned, draft.lower())
+
+    def test_unwritten_lesson_leaves_a_bracket(self):
+        draft = trend_check.build_draft([], [], issue_no="9")
+        self.assertIn("[THIS WEEK'S LESSON", draft)
+
+    def test_issue_number_from_calendar(self):
+        import datetime
+
+        d = datetime.date
+        self.assertEqual(trend_check.next_issue_number(d(2026, 7, 14)), 1)
+        self.assertEqual(trend_check.next_issue_number(d(2026, 7, 19)), 1)
+        self.assertEqual(trend_check.next_issue_number(d(2026, 7, 26)), 2)
+        self.assertEqual(trend_check.next_issue_number(d(2026, 8, 2)), 3)
 
 
 if __name__ == "__main__":
