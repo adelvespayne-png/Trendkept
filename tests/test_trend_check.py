@@ -15,16 +15,16 @@ class TestSummarize(unittest.TestCase):
                 + [trend_check.BREAK] * 12 + [trend_check.NONE] * 3
                 + [trend_check.ERROR] * 1)
         line = trend_check.summarize(keys)
-        self.assertIn("4 of 20 in a confirmed uptrend", line)
-        self.assertIn("1 meeting the ruleset's entry conditions", line)
-        self.assertIn("12 where the trend filter is no longer met", line)
-        self.assertIn("3 with no confirmed uptrend", line)
-        self.assertIn("1 unavailable (data error)", line)
+        self.assertIn("4 of the 20 are in a confirmed uptrend", line)
+        self.assertIn("1 meeting the entry conditions", line)
+        self.assertIn("12 have broken their trend", line)
+        self.assertIn("3 show nothing confirmed either way", line)
+        self.assertIn("1 couldn't be checked (data error)", line)
 
     def test_quiet_board_stays_short(self):
         line = trend_check.summarize([trend_check.NONE] * 20)
-        self.assertIn("0 of 20 in a confirmed uptrend", line)
-        self.assertIn("20 with no confirmed uptrend", line)
+        self.assertIn("0 of the 20 are in a confirmed uptrend", line)
+        self.assertIn("20 show nothing confirmed either way", line)
         self.assertNotIn("data error", line)
         self.assertNotIn("entry conditions", line)
 

@@ -57,39 +57,41 @@ def verdict(symbol: str, strat: TrendFollowingStrategy) -> Tuple[str, str]:
     # (LEGAL.md §2: descriptive, never imperative, in broadcast copy).
     i = len(bars) - 1
     close = bars[i].close
-    # The coloured dot categorises the state at a glance; the words stay
-    # descriptive, never imperative (LEGAL.md §2).
+    # Short states keep the table calm and readable; the legend below the
+    # table carries the precise definitions once, instead of every row
+    # repeating them. Wording stays descriptive, never imperative
+    # (LEGAL.md §2).
     if strat.entry_signal(bars, i) in (Signal.ENTER_PULLBACK,
                                        Signal.ENTER_BREAKOUT):
-        state, key = ("🟢 **uptrend confirmed — the ruleset's entry "
-                      "conditions are met**"), ENTRY
+        state, key = "**in an uptrend — entry conditions met**", ENTRY
     elif strat.is_uptrend(bars, i):
-        state, key = ("🟢 uptrend confirmed — no entry condition met "
-                      "today"), UPTREND
+        state, key = "in an uptrend — no entry today", UPTREND
     elif strat.exit_on_trend_break(bars, i):
-        state, key = ("🔴 trend filter no longer met — close below the "
-                      "50-day average or a lower low"), BREAK
+        state, key = "trend broken", BREAK
     else:
-        state, key = "⚪ no confirmed uptrend", NONE
+        state, key = "nothing confirmed", NONE
     return f"| {symbol} | {close:,.2f} | {state} |", key
 
 
 def summarize(keys: List[str]) -> str:
-    """One plain-English sentence describing the board, from state keys."""
+    """One friendly plain-English sentence describing the board."""
     total = len(keys)
     up = keys.count(UPTREND) + keys.count(ENTRY)
-    parts = [f"{up} of {total} in a confirmed uptrend"]
+    first = f"{up} of the {total} are in a confirmed uptrend"
     if keys.count(ENTRY):
-        parts[0] += (f" ({keys.count(ENTRY)} meeting the ruleset's entry "
-                     "conditions)")
+        first += f" ({keys.count(ENTRY)} meeting the entry conditions)"
+    parts = [first]
     if keys.count(BREAK):
-        parts.append(f"{keys.count(BREAK)} where the trend filter is no "
-                     "longer met")
+        parts.append(f"{keys.count(BREAK)} have broken their trend")
     if keys.count(NONE):
-        parts.append(f"{keys.count(NONE)} with no confirmed uptrend")
+        parts.append(f"{keys.count(NONE)} show nothing confirmed either way")
     if keys.count(ERROR):
-        parts.append(f"{keys.count(ERROR)} unavailable (data error)")
-    return "This week's board: " + "; ".join(parts) + "."
+        parts.append(f"{keys.count(ERROR)} couldn't be checked (data error)")
+    if len(parts) > 1:
+        body = ", ".join(parts[:-1]) + " and " + parts[-1]
+    else:
+        body = parts[0]
+    return "The short version: " + body + "."
 
 
 TABLE_HEADER = "| Ticker | Close | The rules say |\n|---|---|---|"
@@ -100,19 +102,22 @@ TABLE_FOOTNOTE = (
     "advice, and not a prediction.*")
 
 STATES_LEGEND = """\
-A quick reminder of what the states mean (they describe the data — what you
-do with your own account is always your decision):
+What the states mean, in plain English (they describe the data — what you do
+with your own account is always your decision):
 
-- **Uptrend confirmed** — price above the 50- and 200-day averages, averages
-  aligned, structure making higher highs and lows. The ruleset only defines
-  entries here, and only on a pullback or breakout that isn't over-extended.
-- **No confirmed uptrend** — the ruleset's conditions aren't met, so it
-  defines no action. In a mechanical system, "no action" is the most common
-  state — that's a feature, not a gap.
-- **Trend filter no longer met** — a close below the 50-day average or a
-  lower low. This is the condition the ruleset treats as a trend break."""
+- **In an uptrend** — price above its 50- and 200-day averages, the averages
+  aligned, and the chart making higher highs and lows. The ruleset only
+  defines entries here, and only on a pullback or breakout that isn't
+  over-extended.
+- **Nothing confirmed** — the conditions aren't met, so the ruleset defines
+  no action. Most weeks, most tickers sit here. That's not the system being
+  lazy — it's the discipline doing its job.
+- **Trend broken** — a close below the 50-day average, or a lower low. This
+  is the condition the ruleset treats as the end of an uptrend."""
 
 FOOTER = """\
+That's it for this week — same time next Sunday.
+
 — [YOUR NAME]
 
 The ruleset, the code, and the free dashboard live at
@@ -133,11 +138,13 @@ def build_draft(rows: List[str], keys: List[str], issue_no: str = "[N]") -> str:
         "",
         "---",
         "",
-        "Every Sunday, this email does one boring, useful thing: it runs a "
-        "written trend-following ruleset over ~20 liquid tickers and "
-        "reports what the rules say — uptrend confirmed, no entry, or "
-        "trend broken. No predictions. No hot takes. The ruleset is public "
-        "and the code that produces this table is open source.",
+        "Hi — thanks for reading The Trend Check.",
+        "",
+        "Every Sunday this email does one small, honest job: a written "
+        "trend-following ruleset runs over 20 well-known tickers, and I "
+        "report what it says — in an uptrend, nothing confirmed, or trend "
+        "broken. No predictions, no hot takes. The ruleset is public and "
+        "the code behind this table is open source.",
         "",
         summarize(keys),
         "",
