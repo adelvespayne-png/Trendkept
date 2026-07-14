@@ -57,20 +57,19 @@ jobs:
           APCA_API_KEY_ID: ${{ secrets.APCA_API_KEY_ID }}
           APCA_API_SECRET_KEY: ${{ secrets.APCA_API_SECRET_KEY }}
         run: |
-          python business/launch/trend_check.py --default > /tmp/table.md
-          cat /tmp/table.md
+          python business/launch/trend_check.py --default --draft > /tmp/draft.md
+          cat /tmp/draft.md
 
       - name: Assemble the draft issue body
         run: |
           {
-            echo "Paste-ready draft for this Sunday's issue. Template and"
-            echo "lesson skeletons: \`business/launch/trend_check_001.md\`."
+            echo "Paste-ready draft for this Sunday's issue — copy from the"
+            echo "Subject line down into Buttondown, fill the [BRACKETED]"
+            echo "spots (issue number, lesson, your name), press Send."
             echo
             echo "---"
             echo
-            echo "## This week's board"
-            echo
-            cat /tmp/table.md
+            cat /tmp/draft.md
             echo
             echo "---"
             echo
