@@ -63,6 +63,19 @@ class TestDecideManagement(unittest.TestCase):
         action = decide_management(self.strat, bars, current_stop=1e9, symbol="X")
         self.assertIn(action.kind, ("hold", "exit"))
 
+    def test_sub_penny_raise_is_a_hold(self):
+        # Stops go to the broker rounded to the penny; a fraction-of-a-cent
+        # "raise" would replace the order with an identical price, which
+        # Alpaca rejects (HTTP 422). It must be reported as a hold.
+        bars = uptrend_bars()
+        probe = decide_management(self.strat, bars, current_stop=1.0,
+                                  symbol="X")
+        self.assertEqual(probe.kind, "raise_stop")  # sanity: a raise exists
+        just_below = probe.new_stop - 0.004
+        action = decide_management(self.strat, bars, current_stop=just_below,
+                                   symbol="X")
+        self.assertEqual(action.kind, "hold")
+
 
 class TestActionDescribe(unittest.TestCase):
     def test_describe_variants(self):

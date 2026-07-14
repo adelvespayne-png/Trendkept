@@ -449,7 +449,10 @@ def decide_management(
         )
 
     new_stop = strategy.trail_stop(bars, i, current_stop)
-    if new_stop > current_stop + 1e-6:
+    # Stops are submitted to the broker rounded to the penny, so a raise of
+    # less than a cent is a no-op — and Alpaca rejects a replace that leaves
+    # the price unchanged (HTTP 422). Only act on a full-penny improvement.
+    if new_stop - current_stop >= 0.01 - 1e-9:
         return ManagementAction(
             "raise_stop", "higher swing low formed",
             symbol=symbol, new_stop=new_stop, current_stop=current_stop,

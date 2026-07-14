@@ -26,6 +26,28 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Check the data keys are configured
+        # Prints presence and a live-connection verdict only — never the
+        # key values themselves.
+        env:
+          APCA_API_KEY_ID: ${{ secrets.APCA_API_KEY_ID }}
+          APCA_API_SECRET_KEY: ${{ secrets.APCA_API_SECRET_KEY }}
+        run: |
+          python - <<'EOF'
+          import os
+          kid = os.environ.get("APCA_API_KEY_ID") or ""
+          sec = os.environ.get("APCA_API_SECRET_KEY") or ""
+          print(f"APCA_API_KEY_ID secret: {'present, %d chars' % len(kid) if kid else 'MISSING'}")
+          print(f"APCA_API_SECRET_KEY secret: {'present, %d chars' % len(sec) if sec else 'MISSING'}")
+          if kid and sec:
+              from trendkept.alpaca import AlpacaClient
+              try:
+                  bars = AlpacaClient(paper=True, feed="iex").daily_bars("AAPL", timeframe="1Day")
+                  print(f"Alpaca data check: OK, {len(bars)} AAPL bars")
+              except Exception as exc:
+                  print(f"Alpaca data check FAILED: {exc}")
+          EOF
+
       - name: Generate the verdict table
         # The free data providers refuse requests from cloud servers, so
         # the run uses the owner's Alpaca *paper* data keys, stored as
