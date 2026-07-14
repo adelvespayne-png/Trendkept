@@ -57,17 +57,20 @@ def verdict(symbol: str, strat: TrendFollowingStrategy) -> Tuple[str, str]:
     # (LEGAL.md §2: descriptive, never imperative, in broadcast copy).
     i = len(bars) - 1
     close = bars[i].close
+    # The coloured dot categorises the state at a glance; the words stay
+    # descriptive, never imperative (LEGAL.md §2).
     if strat.entry_signal(bars, i) in (Signal.ENTER_PULLBACK,
                                        Signal.ENTER_BREAKOUT):
-        state, key = ("**uptrend confirmed — the ruleset's entry conditions "
-                      "are met**"), ENTRY
+        state, key = ("🟢 **uptrend confirmed — the ruleset's entry "
+                      "conditions are met**"), ENTRY
     elif strat.is_uptrend(bars, i):
-        state, key = "uptrend confirmed — no entry condition met today", UPTREND
+        state, key = ("🟢 uptrend confirmed — no entry condition met "
+                      "today"), UPTREND
     elif strat.exit_on_trend_break(bars, i):
-        state, key = ("trend filter no longer met — close below the 50-day "
-                      "average or a lower low"), BREAK
+        state, key = ("🔴 trend filter no longer met — close below the "
+                      "50-day average or a lower low"), BREAK
     else:
-        state, key = "no confirmed uptrend", NONE
+        state, key = "⚪ no confirmed uptrend", NONE
     return f"| {symbol} | {close:,.2f} | {state} |", key
 
 
@@ -111,6 +114,9 @@ do with your own account is always your decision):
 
 FOOTER = """\
 — [YOUR NAME]
+
+The ruleset, the code, and the free dashboard live at
+[trendkept.com](https://trendkept.com).
 
 *Trendkept is analysis software and education, not investment advice. This
 table is the mechanical output of a published ruleset on public data. Trading
