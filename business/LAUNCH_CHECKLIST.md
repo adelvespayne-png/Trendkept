@@ -9,7 +9,10 @@ sprints.**
 ## Week 1 — validate first (~£10 total)
 
 - [ ] Name search: UK IPO trademark search + Companies House name check for
-      "Trendkept". Decide once, move on.
+      "Trendkept". Decide once, move on. **IPO half done (2026-07-14): no
+      "Trendkept" mark on the register; nearest is "Trendpet", a different
+      word in unrelated classes (12/18/20/21/28) — no conflict. Companies
+      House check still to do.**
 - [x] **Buy `trendkept.com`** (~£10) at Cloudflare Registrar or Namecheap —
       the name is decided; the registrar's availability search is the final
       word.
