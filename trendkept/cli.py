@@ -287,18 +287,26 @@ def _manage_one(client, strat, position: dict, args) -> None:
     if not args.confirm or action.kind == "hold":
         return
 
-    if action.kind == "exit":
-        if stop_order:
-            client.cancel_order(stop_order["id"])
-        client.close_position(symbol)
-        print(f"    -> position closed at market; stop order cancelled.")
-    elif action.kind == "raise_stop" and stop_order:
-        client.replace_order(stop_order["id"], action.new_stop)
-        print(f"    -> stop raised to {action.new_stop:.2f}.")
-    elif action.kind in ("set_stop", "raise_stop"):
-        # No existing stop order to amend: place a fresh protective sell-stop.
-        client.submit_stop_sell(symbol, qty, action.new_stop)
-        print(f"    -> protective stop placed at {action.new_stop:.2f}.")
+    try:
+        if action.kind == "exit":
+            if stop_order:
+                client.cancel_order(stop_order["id"])
+            client.close_position(symbol)
+            print(f"    -> position closed at market; stop order cancelled.")
+        elif action.kind == "raise_stop" and stop_order:
+            client.replace_order(stop_order["id"], action.new_stop)
+            print(f"    -> stop raised to {action.new_stop:.2f}.")
+        elif action.kind in ("set_stop", "raise_stop"):
+            # No existing stop order to amend: place a fresh protective
+            # sell-stop.
+            client.submit_stop_sell(symbol, qty, action.new_stop)
+            print(f"    -> protective stop placed at {action.new_stop:.2f}.")
+    except AlpacaError as exc:
+        # One symbol failing must not crash the whole management pass; the
+        # existing stop order stays in force either way.
+        print(f"    -> broker refused the change ({exc}); the current stop "
+              "is still in place. Re-run manage tomorrow or raise it by "
+              "hand in the Alpaca dashboard.")
 
 
 def _cmd_manage(args: argparse.Namespace) -> int:
