@@ -1,15 +1,17 @@
-# Every Sunday morning, draft The Trend Check automatically:
+# Every Saturday evening, draft The Trend Check automatically:
 # run the engine's verdict table over the standard tickers and open a
-# GitHub issue containing the ready-to-paste newsletter draft. GitHub
-# emails the issue to the owner — the Sunday job becomes: open email,
-# paste into Buttondown, press Send.
+# GitHub issue containing the ready-to-paste newsletter draft. (The US
+# market closes Friday night, so Saturday's data equals Sunday's.)
+# GitHub emails the issue to the owner, who pastes it into Buttondown
+# and schedules it for Sunday morning — the send itself then happens
+# with nobody awake.
 #
 # Scheduled workflows only run from the default branch (main).
 name: Sunday Trend Check draft
 
 on:
   schedule:
-    - cron: "0 7 * * 0" # Sundays 07:00 UTC (~8am UK)
+    - cron: "0 17 * * 6" # Saturdays 17:00 UTC (~6pm UK)
   workflow_dispatch: {} # and on demand, via the Actions tab
 
 permissions:
