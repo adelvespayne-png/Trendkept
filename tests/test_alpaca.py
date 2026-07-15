@@ -84,6 +84,22 @@ def _uptrend_bars():
     return bars
 
 
+class TestEntryOrderShape(unittest.TestCase):
+    def test_entry_with_stop_defaults_to_gtc(self):
+        # A "day" OTO expires the protective stop at the close of the fill
+        # day, leaving the position naked overnight (happened live on the
+        # owner's second trading day). The group must default to GTC.
+        captured = {}
+        client = AlpacaClient.__new__(AlpacaClient)
+        client.trading_host = "https://example.invalid"
+        client._request = lambda method, url, body=None: captured.update(
+            body or {}) or {}
+        client.submit_entry_with_stop("NVDA", 47, 190.19, limit_price=212.0)
+        self.assertEqual(captured["time_in_force"], "gtc")
+        self.assertEqual(captured["order_class"], "oto")
+        self.assertEqual(captured["stop_loss"], {"stop_price": "190.19"})
+
+
 class TestPlanTrade(unittest.TestCase):
     def test_no_plan_when_no_signal(self):
         flat = [Bar(f"f{i:04d}", 100, 100.1, 99.9, 100) for i in range(260)]
