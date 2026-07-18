@@ -268,12 +268,20 @@ class AlpacaClient:
         qty: int,
         stop_price: float,
         limit_price: Optional[float] = None,
-        tif: str = "day",
+        tif: str = "gtc",
     ) -> dict:
         """Buy ``qty`` shares with a protective stop attached (OTO order).
 
         ``limit_price`` makes the entry a limit order (recommended — avoids
         chasing a gap); omit for a market entry.
+
+        Good-till-cancelled by construction: Alpaca applies one
+        time-in-force to the whole OTO group, and a "day" group expires the
+        protective stop at the close of the entry's fill day — leaving the
+        position naked overnight (found live on the owner's second trading
+        day). GTC keeps the stop standing until it fires or is cancelled;
+        the trade-off is that an unfilled entry limit also stays working,
+        so cancel stale entries rather than assume they lapsed.
         """
         order: Dict[str, object] = {
             "symbol": symbol,

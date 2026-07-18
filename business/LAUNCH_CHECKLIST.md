@@ -8,8 +8,11 @@ sprints.**
 
 ## Week 1 — validate first (~£10 total)
 
-- [ ] Name search: UK IPO trademark search + Companies House name check for
-      "Trendkept". Decide once, move on.
+- [x] Name search: UK IPO trademark search + Companies House name check for
+      "Trendkept". **Done (2026-07-14), both clear: no "Trendkept" mark on
+      the IPO register (nearest is "Trendpet", a different word in
+      unrelated classes 12/18/20/21/28 — no conflict) and Companies House
+      returns no results for the name.**
 - [x] **Buy `trendkept.com`** (~£10) at Cloudflare Registrar or Namecheap —
       the name is decided; the registrar's availability search is the final
       word.
@@ -18,11 +21,13 @@ sprints.**
       tier; wire the landing-page form to it. **Done: live at
       trendkept.com, sending domain news.trendkept.com verified,
       subscribe flow tested end-to-end (subscriber #1: the owner).**
-- [ ] Set up the domain email (hello@ / you@ / news@ — see START_HERE
-      Step 2; iCloud+ custom domain or Zoho free tier).
-- [ ] Dogfood from day one: open an Alpaca paper account, run the daily
+- [x] Set up the domain email — **done via iCloud+ custom domain:
+      archie@ / news@ / hello@trendkept.com (July 2026).**
+- [x] Dogfood from day one: open an Alpaca paper account, run the daily
       cadence. **The r/swingtrading post is blocked until you have 4+ weeks
-      of real logs** — start the clock now.
+      of real logs** — clock started; the official log is
+      `business/paper_log.csv` (day 1: 2026-07-13). First rules-based
+      paper trade: NVDA, 2026-07-14.
 
 ## Week 2 — make the free tier shine (it's the top of the funnel)
 

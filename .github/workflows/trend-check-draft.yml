@@ -1,15 +1,17 @@
-# Every Sunday morning, draft The Trend Check automatically:
+# Every Saturday evening, draft The Trend Check automatically:
 # run the engine's verdict table over the standard tickers and open a
-# GitHub issue containing the ready-to-paste newsletter draft. GitHub
-# emails the issue to the owner — the Sunday job becomes: open email,
-# paste into Buttondown, press Send.
+# GitHub issue containing the ready-to-paste newsletter draft. (The US
+# market closes Friday night, so Saturday's data equals Sunday's.)
+# GitHub emails the issue to the owner, who pastes it into Buttondown
+# and schedules it for Sunday morning — the send itself then happens
+# with nobody awake.
 #
 # Scheduled workflows only run from the default branch (main).
 name: Sunday Trend Check draft
 
 on:
   schedule:
-    - cron: "0 7 * * 0" # Sundays 07:00 UTC (~8am UK)
+    - cron: "0 17 * * 6" # Saturdays 17:00 UTC (~6pm UK)
   workflow_dispatch: {} # and on demand, via the Actions tab
 
 permissions:
@@ -57,20 +59,19 @@ jobs:
           APCA_API_KEY_ID: ${{ secrets.APCA_API_KEY_ID }}
           APCA_API_SECRET_KEY: ${{ secrets.APCA_API_SECRET_KEY }}
         run: |
-          python business/launch/trend_check.py --default > /tmp/table.md
-          cat /tmp/table.md
+          python business/launch/trend_check.py --default --draft > /tmp/draft.md
+          cat /tmp/draft.md
 
       - name: Assemble the draft issue body
         run: |
           {
-            echo "Paste-ready draft for this Sunday's issue. Template and"
-            echo "lesson skeletons: \`business/launch/trend_check_001.md\`."
+            echo "Paste-ready draft for this Sunday's issue — copy from the"
+            echo "Subject line down into Buttondown, fill the [BRACKETED]"
+            echo "spots (issue number, lesson, your name), press Send."
             echo
             echo "---"
             echo
-            echo "## This week's board"
-            echo
-            cat /tmp/table.md
+            cat /tmp/draft.md
             echo
             echo "---"
             echo
