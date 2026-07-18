@@ -44,9 +44,10 @@ sprints.**
       (Tue–Thu ~14:00 UTC; clear the whole day for comments).
 - [ ] r/algotrading value-post — `business/launch/reddit_algotrading.md`
       (all claims about the code; postable as-is).
-- [ ] Send "The Trend Check" #1 — template + table generator ready in
-      `business/launch/trend_check_001.md` and `business/launch/trend_check.py`. Weekly from
-      now on, no matter what — the streak is the asset.
+- [x] Send "The Trend Check" #1 — **done, 2026-07-18 (ahead of schedule):
+      drafted end-to-end by the Saturday robot, sent via Buttondown,
+      delivery verified in the owner's inbox.** Weekly from now on, no
+      matter what — the streak is the asset.
 - [ ] **Day-30 validation read:** waitlist + stars vs the curves
       (GO_TO_MARKET.md §6). A pulse → proceed to incorporation below. Dead
       silence after a messaging retry → stop here, ~£10 spent, lesson cheap.
