@@ -39,6 +39,18 @@ sprints.**
 
 ## Weeks 3–4 — first public swings (the validation data arrives)
 
+- [ ] **The three-warm-yeses test** (from the July "council" review — its
+      cheapest good idea): in direct, personal conversations (DMs, replies,
+      the one real subscriber — never spam posts), ask ~10 traders who fit
+      the profile one question: *"Would you pay £12/month for a tool that
+      enforces this written ruleset on your own account — sizing, stop
+      attached to the entry, trailed daily, no predictions?"* Log every
+      answer in `business/metrics.csv` notes. Three sincere yeses = a pulse
+      on top of the day-30 numbers; blank stares = a messaging finding.
+      (The council's r/Daytrading version is rejected: wrong audience for
+      an anti-daytrading brand, and results posts stay gated on the
+      matured log.)
+
 - [ ] Publish content pieces 1 & 2 (calendar in GO_TO_MARKET.md §4).
 - [ ] **Show HN** — draft ready to paste in `business/launch/show_hn.md`
       (Tue–Thu ~14:00 UTC; clear the whole day for comments).
