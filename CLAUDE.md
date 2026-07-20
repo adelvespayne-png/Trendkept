@@ -80,6 +80,14 @@ important into committed files — the repo is the memory between sessions.
 - Next build candidates: journal v2 (discipline score per rule, owner
   notes per trade + broker-agnostic CSV import), SEO calculator pages,
   one-click Windows installer, "Open in TradingView" links on symbols.
+- Owner asked (July 2026) for prediction + per-trade self-improving
+  strategy. Settled answer: NO to prediction (the brand's literal
+  anti-promise) and NO to per-trade auto-tuning (overfitting noise on
+  tiny samples). The honest versions, roadmapped: (a) backtest variant
+  comparison — same ruleset, different parameters, decades of data,
+  out-of-sample split — so rule changes are evidence-gated; (b) journal
+  insights once ~20+ real trades exist (expectancy by signal type,
+  symbol class, hold time). Review cadence: monthly, never per-trade.
 - **Owner's stated end-state vision (July 2026): TradingView webhook
   alerts flowing into Trendkept** — the user charts/alerts in
   TradingView (paid TV plans can fire webhooks), a local Trendkept
