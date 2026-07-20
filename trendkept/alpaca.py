@@ -60,12 +60,21 @@ class TradePlan:
     account_equity: float
 
     def describe(self) -> str:
+        # The R-ladder shows what the planned risk buys if the trend runs;
+        # they are reference marks, not orders — the exit is the trailing
+        # stop or a trend break, never a fixed profit cap.
+        r = self.risk_per_share
+        ladder = ", ".join(
+            f"+{n}R = {self.entry_price + n * r:.2f}" for n in (1, 2, 3))
         return (
-            f"{self.signal.upper()} {self.symbol}: buy {self.quantity} @ "
-            f"~{self.entry_price:.2f}, stop {self.stop_price:.2f} "
+            f"{self.signal.upper()} {self.symbol}: LONG buy "
+            f"{self.quantity} @ ~{self.entry_price:.2f}, "
+            f"stop-loss {self.stop_price:.2f} "
             f"(risk {self.risk_per_share:.2f}/sh, total {self.dollar_risk:.2f} "
             f"= {self.dollar_risk / self.account_equity * 100:.2f}% of "
-            f"{self.account_equity:,.2f})"
+            f"{self.account_equity:,.2f})\n"
+            f"  If the trend runs: {ladder} (no profit cap — the stop "
+            "trails up behind a winner)"
         )
 
 

@@ -1598,12 +1598,16 @@ def _watchlist_view(items: List[str], account: float, risk: float,
             per_share = bar.close - stop
             shares = (int(account * risk // per_share)
                       if per_share > 0 else 0)
+            targets = " &middot; ".join(
+                f"+{n}R {bar.close + n * per_share:,.2f}" for n in (1, 2, 3))
             rows.append(
                 f'<tr class="hit">{name_cell}'
                 f"<td>{_esc(bar.date)}</td><td>{bar.close:,.2f}</td>"
                 f'<td class="ok">YES</td>'
-                f'<td class="ok">{_esc(signal.value.replace("enter_", "").upper())}</td>'
-                f"<td>{stop:,.2f}</td><td>{shares} sh</td></tr>")
+                f'<td class="ok">LONG '
+                f'{_esc(signal.value.replace("enter_", "").upper())}</td>'
+                f"<td>{stop:,.2f}</td><td>{shares} sh &middot; {targets}"
+                "</td></tr>")
         else:
             note = ("no entry today" if uptrend
                     else "trend not confirmed — stay out")
@@ -1626,7 +1630,11 @@ def _watchlist_view(items: List[str], account: float, risk: float,
         "<th>Signal</th><th>Stop</th><th>Size / note</th></tr>"
         + "".join(rows) + "</table></div>"
         f'<p class="note">Sizing risks {risk * 100:.1f}% of '
-        f"{account:,.2f} per trade. Stops go in with the order — rule #3.</p>"
+        f"{account:,.2f} per trade. Stops go in with the order — rule #3. "
+        "All entries are LONG (profit when price rises); the +1R/+2R/+3R "
+        "marks show where the planned risk doubles and triples if the "
+        "trend runs — reference points, not orders. There is no profit "
+        "cap: the stop trails up behind a winner.</p>"
     )
 
 
