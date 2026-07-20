@@ -1,0 +1,64 @@
+# Every trading day after the US close, fly one full pass of the rules
+# over the owner's PAPER account: trail stops, exit broken trends, take
+# at most one new cash-limited entry with its stop attached (GTC).
+# Orders placed after hours execute at the next open — the normal rhythm
+# of a daily-bar system. When the pass does anything (or fails), it
+# opens an issue so the owner gets an email; quiet days stay quiet.
+#
+# PAPER ONLY: the autopilot command has no live mode, by construction.
+# Scheduled workflows only run from the default branch (main).
+name: Paper autopilot
+
+on:
+  schedule:
+    - cron: "30 21 * * 1-5" # Mon-Fri 21:30 UTC — after the US close, year-round
+  workflow_dispatch: {} # and on demand, via the Actions tab
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  fly:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run the daily pass
+        env:
+          APCA_API_KEY_ID: ${{ secrets.APCA_API_KEY_ID }}
+          APCA_API_SECRET_KEY: ${{ secrets.APCA_API_SECRET_KEY }}
+        run: |
+          set -o pipefail
+          python -m trendkept.cli autopilot --risk 0.01 --confirm \
+            | tee /tmp/pass.txt
+
+      - name: Report when something happened
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ ! -f /tmp/pass.txt ]; then
+            echo "The autopilot pass failed before producing output." > /tmp/pass.txt
+          fi
+          if grep -qE "submitted|EXIT|RAISE STOP|SET STOP|failed|error" /tmp/pass.txt; then
+            {
+              echo "The rules acted on the paper account today. Full pass:"
+              echo
+              echo '```'
+              cat /tmp/pass.txt
+              echo '```'
+              echo
+              echo "_Paper only. Review the positions and the log row._"
+            } > /tmp/issue.md
+            gh issue create \
+              --title "Paper autopilot — $(date -u +%Y-%m-%d)" \
+              --body-file /tmp/issue.md \
+              --repo "$GITHUB_REPOSITORY"
+          else
+            echo "Quiet pass — no issue opened."
+          fi

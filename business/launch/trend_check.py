@@ -32,11 +32,9 @@ from trendkept.strategy import (                     # noqa: E402
     Signal, StrategyConfig, TrendFollowingStrategy)
 from trendkept.web import _fetch_symbol              # noqa: E402
 
-DEFAULT_TICKERS = [
-    "AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA", "AVGO",
-    "JPM", "V", "UNH", "XOM", "COST", "PG", "HD", "NFLX", "AMD",
-    "SPY", "QQQ", "IWM",
-]
+from trendkept.cli import STANDARD_TICKERS  # noqa: E402
+
+DEFAULT_TICKERS = STANDARD_TICKERS  # one board: newsletter == autopilot
 
 # State keys returned alongside each table row, for the summary line.
 ENTRY, UPTREND, BREAK, NONE, ERROR = (

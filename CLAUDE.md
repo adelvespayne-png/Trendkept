@@ -71,5 +71,19 @@ important into committed files — the repo is the memory between sessions.
   or backfill rows the owner hasn't evidenced). Sunday auto-draft Action
   shipped: `.github/workflows/trend-check-draft.yml` (active once merged
   to `main`; PR #4).
-- Next build candidates: trade journal (roadmap month 2, the retention
-  hook), SEO calculator pages for the site.
+- Trade journal v1 shipped (July 2026, ~6 weeks ahead of roadmap):
+  `trendkept/journal.py` pairs broker fills into round trips FIFO,
+  scores them in R-multiples against the standing stop from order
+  history; `python -m trendkept.cli journal` + dashboard `/journal`
+  page (needs Alpaca keys). Account/risk boxes now remember the last
+  typed value per browser (the 1000-default kept sizing plans at 0 sh).
+- Next build candidates: journal v2 (discipline score per rule, owner
+  notes per trade + broker-agnostic CSV import), SEO calculator pages,
+  one-click Windows installer, "Open in TradingView" links on symbols.
+- **Owner's stated end-state vision (July 2026): TradingView webhook
+  alerts flowing into Trendkept** — the user charts/alerts in
+  TradingView (paid TV plans can fire webhooks), a local Trendkept
+  listener sizes the trade by the ruleset, places it with the stop
+  attached via the user's broker keys (local-first, keys never leave
+  the machine), and journals it. "TradingView thinks, Trendkept
+  disciplines." Pro-tier scope, after month-3 monetisation switches on.

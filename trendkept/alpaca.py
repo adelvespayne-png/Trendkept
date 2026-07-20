@@ -60,12 +60,21 @@ class TradePlan:
     account_equity: float
 
     def describe(self) -> str:
+        # The R-ladder shows what the planned risk buys if the trend runs;
+        # they are reference marks, not orders — the exit is the trailing
+        # stop or a trend break, never a fixed profit cap.
+        r = self.risk_per_share
+        ladder = ", ".join(
+            f"+{n}R = {self.entry_price + n * r:.2f}" for n in (1, 2, 3))
         return (
-            f"{self.signal.upper()} {self.symbol}: buy {self.quantity} @ "
-            f"~{self.entry_price:.2f}, stop {self.stop_price:.2f} "
+            f"{self.signal.upper()} {self.symbol}: LONG buy "
+            f"{self.quantity} @ ~{self.entry_price:.2f}, "
+            f"stop-loss {self.stop_price:.2f} "
             f"(risk {self.risk_per_share:.2f}/sh, total {self.dollar_risk:.2f} "
             f"= {self.dollar_risk / self.account_equity * 100:.2f}% of "
-            f"{self.account_equity:,.2f})"
+            f"{self.account_equity:,.2f})\n"
+            f"  If the trend runs: {ladder} (no profit cap — the stop "
+            "trails up behind a winner)"
         )
 
 
@@ -247,6 +256,10 @@ class AlpacaClient:
     def equity(self) -> float:
         return float(self.account()["equity"])
 
+    def cash(self) -> float:
+        """Settled cash — the autopilot's hard ceiling (no margin)."""
+        return float(self.account().get("cash") or 0.0)
+
     def positions(self) -> List[dict]:
         result = self._request("GET", f"{self.trading_host}/v2/positions")
         return result if isinstance(result, list) else []
@@ -319,6 +332,30 @@ class AlpacaClient:
         url = f"{self.trading_host}/v2/orders?status={status}&limit=100"
         result = self._request("GET", url)
         return result if isinstance(result, list) else []
+
+    def fills(self) -> List[dict]:
+        """Trade fills (account activities), newest first — journal fuel."""
+        url = (f"{self.trading_host}/v2/account/activities/FILL"
+               "?page_size=100")
+        result = self._request("GET", url)
+        return result if isinstance(result, list) else []
+
+    def stop_order_history(self) -> List[dict]:
+        """Every sell-stop the account has seen, as journal stop evidence."""
+        out = []
+        for status in ("open", "closed"):
+            for o in self.list_orders(status=status):
+                for candidate in [o, *(o.get("legs") or [])]:
+                    if (candidate.get("side") == "sell"
+                            and "stop" in (candidate.get("type") or "")
+                            and candidate.get("stop_price")):
+                        out.append({
+                            "symbol": candidate.get("symbol", ""),
+                            "stop_price": candidate["stop_price"],
+                            "submitted_at": candidate.get("submitted_at")
+                            or o.get("submitted_at") or "",
+                        })
+        return out
 
     def replace_order(self, order_id: str, stop_price: float) -> dict:
         """Raise a protective stop (trailing) by replacing the order."""
