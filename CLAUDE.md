@@ -78,4 +78,12 @@ important into committed files — the repo is the memory between sessions.
   page (needs Alpaca keys). Account/risk boxes now remember the last
   typed value per browser (the 1000-default kept sizing plans at 0 sh).
 - Next build candidates: journal v2 (discipline score per rule, owner
-  notes per trade), SEO calculator pages, one-click Windows installer.
+  notes per trade + broker-agnostic CSV import), SEO calculator pages,
+  one-click Windows installer, "Open in TradingView" links on symbols.
+- **Owner's stated end-state vision (July 2026): TradingView webhook
+  alerts flowing into Trendkept** — the user charts/alerts in
+  TradingView (paid TV plans can fire webhooks), a local Trendkept
+  listener sizes the trade by the ruleset, places it with the stop
+  attached via the user's broker keys (local-first, keys never leave
+  the machine), and journals it. "TradingView thinks, Trendkept
+  disciplines." Pro-tier scope, after month-3 monetisation switches on.
