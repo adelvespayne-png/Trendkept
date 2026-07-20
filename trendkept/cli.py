@@ -341,6 +341,93 @@ def _cmd_manage(args: argparse.Namespace) -> int:
     return 0
 
 
+# The standard board: the tickers the newsletter reports and the
+# autopilot trades. One list, one truth.
+STANDARD_TICKERS = [
+    "AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA", "AVGO",
+    "JPM", "V", "UNH", "XOM", "COST", "PG", "HD", "NFLX", "AMD",
+    "SPY", "QQQ", "IWM",
+]
+
+_AUTOPILOT_MAX_POSITIONS = 4  # concentration rail: never more open trades
+
+
+def _cmd_autopilot(args: argparse.Namespace) -> int:
+    """One full daily pass of the rules over the paper account.
+
+    PAPER ONLY, by construction — there is deliberately no --live flag.
+    Manage existing positions first (trail stops, exit broken trends),
+    then take at most one new rules-based entry, cash-limited (no
+    margin), stop attached, GTC.
+    """
+    from .alpaca import AlpacaClient, AlpacaError, plan_trade
+    from .strategy import StrategyConfig, TrendFollowingStrategy
+
+    try:
+        client = AlpacaClient(paper=True)
+        positions = client.positions()
+    except AlpacaError as exc:
+        print(f"Alpaca error: {exc}", file=sys.stderr)
+        return 1
+
+    actions: List[str] = []
+    strat = TrendFollowingStrategy(StrategyConfig())
+    args_ns = argparse.Namespace(confirm=args.confirm)
+
+    print(f"Autopilot pass (paper) — {len(positions)} open position(s)"
+          + ("" if args.confirm else "  [DRY RUN]"))
+    held = set()
+    for pos in positions:
+        held.add(pos.get("symbol", "").upper())
+        _manage_one(client, strat, pos, args_ns)
+
+    slots = _AUTOPILOT_MAX_POSITIONS - len(held)
+    if slots <= 0:
+        print(f"  position cap ({_AUTOPILOT_MAX_POSITIONS}) reached — "
+              "no new entries considered.")
+        return 0
+
+    for symbol in STANDARD_TICKERS:
+        if slots <= 0:
+            break
+        if symbol.upper() in held:
+            continue
+        try:
+            bars = client.daily_bars(symbol)
+            plan = plan_trade(client, strat, symbol, bars, args.risk)
+        except AlpacaError as exc:
+            print(f"  {symbol}: skipped ({exc})")
+            continue
+        if plan is None:
+            continue
+        cost = plan.quantity * plan.entry_price
+        try:
+            available = client.cash()
+        except AlpacaError:
+            available = 0.0
+        if cost > available:
+            print(f"  {symbol}: signal, but cost {cost:,.0f} exceeds "
+                  f"cash {available:,.0f} — skipped (no margin, ever).")
+            actions.append(f"skipped {symbol} (insufficient cash)")
+            continue
+        print(f"  {plan.describe()}")
+        if args.confirm:
+            limit = plan.entry_price * 1.005
+            order = client.submit_entry_with_stop(
+                plan.symbol, plan.quantity, plan.stop_price,
+                limit_price=limit)
+            print(f"  -> submitted: {order.get('status')} "
+                  f"(buy {plan.quantity} {plan.symbol}, "
+                  f"stop {plan.stop_price:.2f})")
+            actions.append(f"entered {plan.symbol}")
+            held.add(plan.symbol.upper())
+            slots -= 1
+
+    if not actions:
+        print("  no new entries — the rules say sit tight.")
+    return 0
+
+
 def _cmd_journal(args: argparse.Namespace) -> int:
     from .alpaca import AlpacaClient, AlpacaError
     from .journal import (attach_stops, journal_stats, normalize_fill,
@@ -484,6 +571,16 @@ def build_parser() -> argparse.ArgumentParser:
                     dest="i_understand_live",
                     help="required acknowledgement to act on LIVE positions")
     mp.set_defaults(func=_cmd_manage)
+
+    ap2 = sub.add_parser("autopilot",
+                         help="one full daily pass of the rules over the "
+                              "PAPER account (manage + entries); no live "
+                              "mode exists")
+    ap2.add_argument("--risk", type=float, default=0.01,
+                     help="risk per trade as a fraction (default 0.01)")
+    ap2.add_argument("--confirm", action="store_true",
+                     help="actually place orders (otherwise dry run)")
+    ap2.set_defaults(func=_cmd_autopilot)
 
     jp = sub.add_parser("journal",
                         help="score completed paper trades in R-multiples "

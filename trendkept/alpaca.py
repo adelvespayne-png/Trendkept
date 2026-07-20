@@ -256,6 +256,10 @@ class AlpacaClient:
     def equity(self) -> float:
         return float(self.account()["equity"])
 
+    def cash(self) -> float:
+        """Settled cash — the autopilot's hard ceiling (no margin)."""
+        return float(self.account().get("cash") or 0.0)
+
     def positions(self) -> List[dict]:
         result = self._request("GET", f"{self.trading_host}/v2/positions")
         return result if isinstance(result, list) else []
