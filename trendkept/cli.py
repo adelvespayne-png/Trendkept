@@ -341,6 +341,57 @@ def _cmd_manage(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_journal(args: argparse.Namespace) -> int:
+    from .alpaca import AlpacaClient, AlpacaError
+    from .journal import (attach_stops, journal_stats, normalize_fill,
+                          pair_fills)
+
+    try:
+        client = AlpacaClient(paper=not args.live)
+        fills = [f for f in map(normalize_fill, client.fills()) if f]
+        stops = client.stop_order_history()
+    except AlpacaError as exc:
+        print(f"Alpaca error: {exc}", file=sys.stderr)
+        return 1
+
+    trips, open_lots = pair_fills(fills)
+    attach_stops(trips, open_lots, stops)
+
+    mode = "LIVE" if args.live else "paper"
+    if not trips and not open_lots:
+        print(f"No fills on the {mode} account yet. The journal starts "
+              "with your first trade.")
+        return 0
+
+    if trips:
+        print(f"Completed trades ({mode}):")
+        print("  entry date  symbol   qty     entry      exit       P/L"
+              "        R")
+        for t in trips:
+            r = f"{t.r_multiple:+.2f}R" if t.r_multiple is not None else "  —  "
+            print(f"  {t.entry_at[:10]}  {t.symbol:<6} {t.qty:>5.0f} "
+                  f"{t.entry_price:>9.2f} {t.exit_price:>9.2f} "
+                  f"{t.pnl:>+9.2f}  {r:>7}")
+    if open_lots:
+        print("Open positions:")
+        for lot in open_lots:
+            stop = (f"stop {lot.planned_stop:.2f}"
+                    if lot.planned_stop is not None else "stop unknown")
+            print(f"  {lot.entry_at[:10]}  {lot.symbol:<6} {lot.qty:>5.0f} "
+                  f"@ {lot.entry_price:.2f}  ({stop})")
+
+    s = journal_stats(trips)
+    if s["trades"]:
+        win = f"{s['win_rate'] * 100:.0f}%" if s["win_rate"] is not None else "—"
+        avg = f"{s['avg_r']:+.2f}R" if s["avg_r"] is not None else "—"
+        print(f"\nScoreboard: {s['trades']} trades, {win} winners, "
+              f"total {s['total_pnl']:+.2f}, average {avg} "
+              f"({s['scored']}/{s['trades']} scored against a known stop).")
+        print("Expectancy in R is the number that matters — win rate is "
+              "a vanity metric.")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="trendkept",
@@ -433,6 +484,13 @@ def build_parser() -> argparse.ArgumentParser:
                     dest="i_understand_live",
                     help="required acknowledgement to act on LIVE positions")
     mp.set_defaults(func=_cmd_manage)
+
+    jp = sub.add_parser("journal",
+                        help="score completed paper trades in R-multiples "
+                             "from the broker's fill history")
+    jp.add_argument("--live", action="store_true",
+                    help="read the LIVE account instead of paper")
+    jp.set_defaults(func=_cmd_journal)
 
     return parser
 

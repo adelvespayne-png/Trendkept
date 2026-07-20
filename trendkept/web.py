@@ -444,8 +444,37 @@ _NAV = """
   <a class="home" href="/">Trendkept <small>disciplined
   trend-following</small></a>
   <a class="btn ghost" href="/">Home</a>
+  <a class="btn ghost" href="/journal">Journal</a>
   <a class="btn" href="/ruleset">My Trading Diagram</a>
 </nav>"""
+
+# The account/risk boxes remember what you last typed (per browser), so a
+# fresh page never silently reverts to the tiny example account and sizes
+# every plan at 0 shares.
+_FORM_MEMORY_JS = """
+(function () {
+  var KEYS = ["account", "risk"];
+  var DEFAULTS = {account: "1000.0", risk: "0.01"};
+  function store(k) { return "trendkept-form-" + k; }
+  document.addEventListener("DOMContentLoaded", function () {
+    KEYS.forEach(function (k) {
+      var saved = null;
+      try { saved = localStorage.getItem(store(k)); } catch (e) {}
+      document.querySelectorAll('input[name="' + k + '"]').forEach(
+        function (input) {
+          if (saved && (input.value === DEFAULTS[k]
+                        || input.value === "" )) {
+            input.value = saved;
+          }
+          input.addEventListener("change", function () {
+            try { localStorage.setItem(store(k), input.value); }
+            catch (e) {}
+          });
+        });
+    });
+  });
+})();
+"""
 
 
 def _page(title: str, body: str) -> str:
@@ -462,7 +491,8 @@ def _page(title: str, body: str) -> str:
         "slip, and surprise.</footer>"
         f"</main><script>{_HOVER_JS}</script>"
         f"<script>{_APPEARANCE_JS}</script>"
-        f"<script>{_RULESET_JS}</script></body></html>"
+        f"<script>{_RULESET_JS}</script>"
+        f"<script>{_FORM_MEMORY_JS}</script></body></html>"
     )
 
 
@@ -1600,6 +1630,61 @@ def _watchlist_view(items: List[str], account: float, risk: float,
     )
 
 
+def _journal_view(trips, open_lots, stats) -> str:
+    """The journal page body, from already-computed journal data."""
+    def fmt_r(r):
+        return f"{r:+.2f}R" if r is not None else "&mdash;"
+
+    cards = ""
+    if stats["trades"]:
+        win = (f"{stats['win_rate'] * 100:.0f}%"
+               if stats["win_rate"] is not None else "&mdash;")
+        avg = fmt_r(stats["avg_r"])
+        cards = (
+            '<div class="card"><h2>Scoreboard</h2><p>'
+            f"<b>{stats['trades']}</b> completed trades &middot; "
+            f"<b>{win}</b> winners &middot; total "
+            f"<b>{stats['total_pnl']:+,.2f}</b> &middot; average "
+            f"<b>{avg}</b> ({stats['scored']} of {stats['trades']} scored "
+            "against a known stop)</p>"
+            '<p class="note">The average R is the number that matters: at '
+            "+3R winners you can be wrong more often than right and still "
+            "grow. Win rate is a vanity metric.</p></div>")
+
+    rows = "".join(
+        f"<tr><td>{_esc(t.entry_at[:10])}</td><td>{_esc(t.symbol)}</td>"
+        f"<td>{t.qty:.0f}</td><td>{t.entry_price:,.2f}</td>"
+        f"<td>{_esc(t.exit_at[:10])}</td><td>{t.exit_price:,.2f}</td>"
+        f"<td>{t.pnl:+,.2f}</td><td>{fmt_r(t.r_multiple)}</td></tr>"
+        for t in trips)
+    trades_table = (
+        '<div class="card"><h2>Completed trades</h2><table>'
+        "<tr><th>Entered</th><th>Symbol</th><th>Qty</th><th>Entry</th>"
+        "<th>Exited</th><th>Exit</th><th>P/L</th><th>R</th></tr>"
+        f"{rows}</table></div>" if trips else
+        '<div class="card"><p>No completed trades yet — the journal '
+        "fills itself as the rules close positions.</p></div>")
+
+    lot_rows = "".join(
+        f"<tr><td>{_esc(l.entry_at[:10])}</td><td>{_esc(l.symbol)}</td>"
+        f"<td>{l.qty:.0f}</td><td>{l.entry_price:,.2f}</td>"
+        f"<td>{('%.2f' % l.planned_stop) if l.planned_stop is not None else '&mdash;'}"
+        "</td></tr>"
+        for l in open_lots)
+    lots_table = (
+        '<div class="card"><h2>Open positions</h2><table>'
+        "<tr><th>Entered</th><th>Symbol</th><th>Qty</th><th>Entry</th>"
+        "<th>Planned stop</th></tr>"
+        f"{lot_rows}</table></div>" if open_lots else "")
+
+    return (
+        "<h1>Trade journal</h1>"
+        '<p class="note">Built automatically from your broker\'s fill '
+        "history — every completed round trip, scored in R-multiples "
+        "(profit measured in units of what the stop said you were "
+        "risking).</p>" + cards + trades_table + lots_table)
+
+
 def route(path: str, params: Dict[str, List[str]]) -> Tuple[int, str]:
     """Pure request router: (path, query params) -> (status, html page).
 
@@ -1615,6 +1700,32 @@ def route(path: str, params: Dict[str, List[str]]) -> Tuple[int, str]:
         return 200, _page("Trendkept",
                           title + note + _form({}) + _watchlist_form({})
                           + _chart_form({}))
+
+    if path == "/journal":
+        if not (os.environ.get("APCA_API_KEY_ID")
+                and os.environ.get("APCA_API_SECRET_KEY")):
+            return 200, _page("Trendkept", title + "<h1>Trade journal</h1>"
+                              '<div class="card warn">The journal reads '
+                              "your fill history from Alpaca, so it needs "
+                              "your paper API keys set (the same "
+                              "APCA_API_KEY_ID / APCA_API_SECRET_KEY the "
+                              "trade and manage commands use).</div>")
+        try:
+            from .alpaca import AlpacaClient
+            from .journal import (attach_stops, journal_stats,
+                                  normalize_fill, pair_fills)
+
+            client = AlpacaClient(paper=True)
+            fills = [f for f in map(normalize_fill, client.fills()) if f]
+            stops = client.stop_order_history()
+            trips, open_lots = pair_fills(fills)
+            attach_stops(trips, open_lots, stops)
+            body = _journal_view(trips, open_lots, journal_stats(trips))
+        except Exception as exc:
+            body = ("<h1>Trade journal</h1>"
+                    '<div class="card warn">Could not load the journal: '
+                    f"{_esc(str(exc))}</div>")
+        return 200, _page("Trendkept", title + body)
 
     if path == "/ruleset":
         described = _first(params, "describe")

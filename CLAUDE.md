@@ -71,5 +71,11 @@ important into committed files — the repo is the memory between sessions.
   or backfill rows the owner hasn't evidenced). Sunday auto-draft Action
   shipped: `.github/workflows/trend-check-draft.yml` (active once merged
   to `main`; PR #4).
-- Next build candidates: trade journal (roadmap month 2, the retention
-  hook), SEO calculator pages for the site.
+- Trade journal v1 shipped (July 2026, ~6 weeks ahead of roadmap):
+  `trendkept/journal.py` pairs broker fills into round trips FIFO,
+  scores them in R-multiples against the standing stop from order
+  history; `python -m trendkept.cli journal` + dashboard `/journal`
+  page (needs Alpaca keys). Account/risk boxes now remember the last
+  typed value per browser (the 1000-default kept sizing plans at 0 sh).
+- Next build candidates: journal v2 (discipline score per rule, owner
+  notes per trade), SEO calculator pages, one-click Windows installer.

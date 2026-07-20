@@ -320,6 +320,30 @@ class AlpacaClient:
         result = self._request("GET", url)
         return result if isinstance(result, list) else []
 
+    def fills(self) -> List[dict]:
+        """Trade fills (account activities), newest first — journal fuel."""
+        url = (f"{self.trading_host}/v2/account/activities/FILL"
+               "?page_size=100")
+        result = self._request("GET", url)
+        return result if isinstance(result, list) else []
+
+    def stop_order_history(self) -> List[dict]:
+        """Every sell-stop the account has seen, as journal stop evidence."""
+        out = []
+        for status in ("open", "closed"):
+            for o in self.list_orders(status=status):
+                for candidate in [o, *(o.get("legs") or [])]:
+                    if (candidate.get("side") == "sell"
+                            and "stop" in (candidate.get("type") or "")
+                            and candidate.get("stop_price")):
+                        out.append({
+                            "symbol": candidate.get("symbol", ""),
+                            "stop_price": candidate["stop_price"],
+                            "submitted_at": candidate.get("submitted_at")
+                            or o.get("submitted_at") or "",
+                        })
+        return out
+
     def replace_order(self, order_id: str, stop_price: float) -> dict:
         """Raise a protective stop (trailing) by replacing the order."""
         return self._request(
