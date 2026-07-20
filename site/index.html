@@ -9,6 +9,10 @@
       content="Trendkept doesn't predict markets. It makes you follow your own
 trend-following rules — backtested honestly, with the stop enforced by your
 broker instead of your nerves.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;650;750&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet">
 <script>
   /* Apply the visitor's saved look before first paint (no theme flash). */
   (function () {
@@ -25,195 +29,269 @@ broker instead of your nerves.">
 </script>
 <style>
   :root {
-    --accent-l: #2a78d6; --accent-d: #3987e5;   /* blue (default) */
+    --accent-l: #2a78d6; --accent-d: #4a90e8;   /* blue (default) */
     --fs: 16px;
   }
-  :root[data-accent="aqua"]    { --accent-l: #1baf7a; --accent-d: #199e70; }
+  :root[data-accent="aqua"]    { --accent-l: #1baf7a; --accent-d: #2cc98f; }
   :root[data-accent="violet"]  { --accent-l: #4a3aa7; --accent-d: #9085e9; }
-  :root[data-accent="orange"]  { --accent-l: #eb6834; --accent-d: #d95926; }
-  :root[data-accent="magenta"] { --accent-l: #e87ba4; --accent-d: #d55181; }
+  :root[data-accent="orange"]  { --accent-l: #eb6834; --accent-d: #f0824f; }
+  :root[data-accent="magenta"] { --accent-l: #e87ba4; --accent-d: #ef92b4; }
   :root[data-font="small"] { --fs: 14px; }
   :root[data-font="large"] { --fs: 18px; }
   :root {
-    --surface: #ffffff; --page: #f7f8fa; --chip: #eef1f5;
-    --ink: #101215; --ink-2: #4c5561; --muted: #8a93a0;
-    --ring: rgba(16,18,21,0.10); --accent: var(--accent-l);
-    --ok: #1a9b6c; --bad: #c65563;
-    --shadow: 0 1px 2px rgba(16,18,21,.05), 0 8px 28px rgba(16,18,21,.07);
+    --surface: #ffffff; --page: #f6f7f9; --chip: #edf0f4;
+    --ink: #0e1116; --ink-2: #49525e; --muted: #8a93a0;
+    --ring: rgba(14,17,22,0.10); --accent: var(--accent-l);
+    --ok: #158a60; --bad: #c04f5e;
+    --glow: color-mix(in srgb, var(--accent) 14%, transparent);
+    --shadow: 0 1px 2px rgba(14,17,22,.05), 0 12px 36px rgba(14,17,22,.08);
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --surface: #16181c; --page: #0c0d10; --chip: #1e2126;
-      --ink: #f4f5f7; --ink-2: #b9bfc9; --muted: #7d8592;
-      --ring: rgba(255,255,255,0.10); --accent: var(--accent-d);
-      --ok: #34c08b; --bad: #e0798a;
-      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+      --surface: #14161b; --page: #0a0c10; --chip: #1d2027;
+      --ink: #f3f5f8; --ink-2: #b6bdc8; --muted: #79818e;
+      --ring: rgba(255,255,255,0.09); --accent: var(--accent-d);
+      --ok: #35c28c; --bad: #e0798a;
+      --glow: color-mix(in srgb, var(--accent) 17%, transparent);
+      --shadow: 0 1px 2px rgba(0,0,0,.45), 0 14px 40px rgba(0,0,0,.4);
     }
   }
   :root[data-theme="dark"] {
-    --surface: #16181c; --page: #0c0d10; --chip: #1e2126;
-    --ink: #f4f5f7; --ink-2: #b9bfc9; --muted: #7d8592;
-    --ring: rgba(255,255,255,0.10); --accent: var(--accent-d);
-    --ok: #34c08b; --bad: #e0798a;
-    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+    --surface: #14161b; --page: #0a0c10; --chip: #1d2027;
+    --ink: #f3f5f8; --ink-2: #b6bdc8; --muted: #79818e;
+    --ring: rgba(255,255,255,0.09); --accent: var(--accent-d);
+    --ok: #35c28c; --bad: #e0798a;
+    --glow: color-mix(in srgb, var(--accent) 17%, transparent);
+    --shadow: 0 1px 2px rgba(0,0,0,.45), 0 14px 40px rgba(0,0,0,.4);
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
   body { margin: 0; background: var(--page); color: var(--ink);
-    font: var(--fs)/1.65 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    font: var(--fs)/1.65 Inter, system-ui, -apple-system, sans-serif;
+    position: relative; }
+  h1, h2, .price, .stat b { font-family: "Space Grotesk", Inter, system-ui,
+    sans-serif; }
+
+  /* ---------- motion ---------- */
+  .rv { opacity: 0; transform: translateY(18px);
+    transition: opacity .6s ease, transform .6s ease; }
+  .rv.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .rv { opacity: 1; transform: none; transition: none; }
+    .tape-in { animation: none !important; }
+    .draw { animation: none !important; stroke-dasharray: none !important; }
+  }
 
   /* ---------- top nav ---------- */
   .nav { position: sticky; top: 0; z-index: 50;
-    background: color-mix(in srgb, var(--page) 82%, transparent);
-    backdrop-filter: blur(10px); border-bottom: 1px solid var(--ring); }
-  .nav-in { max-width: 1060px; margin: 0 auto; padding: 10px 20px;
+    background: color-mix(in srgb, var(--page) 80%, transparent);
+    backdrop-filter: blur(12px); border-bottom: 1px solid var(--ring); }
+  .nav-in { max-width: 1100px; margin: 0 auto; padding: 11px 20px;
     display: flex; align-items: center; gap: 18px; }
   .nav .mark { display: flex; align-items: center; gap: 10px;
     font-weight: 750; text-decoration: none; color: var(--ink);
-    letter-spacing: -0.01em; }
+    letter-spacing: -0.01em; font-family: "Space Grotesk", sans-serif; }
   .nav .mark img { width: 28px; height: 28px; border-radius: 7px; }
-  .nav .links { margin-left: auto; display: flex; gap: 4px; align-items: center;
+  .nav .links { margin-left: auto; display: flex; gap: 2px; align-items: center;
     flex-wrap: wrap; }
   .nav .links a { color: var(--ink-2); text-decoration: none; font-size: 14.5px;
     padding: 7px 11px; border-radius: 8px; }
   .nav .links a:hover { background: var(--chip); color: var(--ink); }
-  .nav .links a.cta { color: #fff; background: var(--accent); font-weight: 650; }
-  .nav .links a.cta:hover { filter: brightness(1.07); }
+  .nav .links a.cta { color: #fff; background: var(--accent); font-weight: 650;
+    margin-left: 6px; }
+  .nav .links a.cta:hover { filter: brightness(1.08); }
 
-  main { max-width: 1060px; margin: 0 auto; padding: 0 20px 90px; }
-  section { padding-top: 26px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 0 20px 90px; }
 
   /* ---------- hero ---------- */
-  .hero { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 44px;
-    align-items: center; padding: 64px 0 30px; }
-  @media (max-width: 900px) { .hero { grid-template-columns: 1fr;
-    padding-top: 40px; } }
-  .hero::before { content: ""; position: absolute; inset: 0 0 auto 0;
-    height: 520px; z-index: -1; pointer-events: none;
+  .heroWrap { position: relative; }
+  .heroWrap::before { content: ""; position: absolute; inset: -80px -40vw auto;
+    height: 640px; z-index: -1; pointer-events: none;
     background:
-      radial-gradient(700px 340px at 18% 0%,
-        color-mix(in srgb, var(--accent) 13%, transparent), transparent 70%),
-      radial-gradient(560px 300px at 95% 10%,
-        color-mix(in srgb, var(--accent) 8%, transparent), transparent 70%);
+      radial-gradient(760px 380px at 22% 8%, var(--glow), transparent 70%),
+      radial-gradient(600px 320px at 88% 2%,
+        color-mix(in srgb, var(--accent) 9%, transparent), transparent 70%);
   }
-  body { position: relative; }
+  .hero { display: grid; grid-template-columns: 1fr 0.95fr; gap: 48px;
+    align-items: center; padding: 72px 0 26px; }
+  @media (max-width: 940px) { .hero { grid-template-columns: 1fr;
+    padding-top: 44px; gap: 36px; } }
   .kicker { display: inline-flex; align-items: center; gap: 8px;
     font-size: 13px; font-weight: 650; color: var(--accent);
-    background: color-mix(in srgb, var(--accent) 11%, transparent);
-    border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
-    padding: 5px 12px; border-radius: 999px; }
-  h1 { font-size: clamp(34px, 5vw, 50px); line-height: 1.08;
-    margin: 18px 0 14px; letter-spacing: -0.025em; }
-  .sub { font-size: 19px; color: var(--ink-2); max-width: 34em; margin: 0; }
-  .hero-ctas { margin-top: 26px; display: flex; gap: 12px; flex-wrap: wrap; }
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+    padding: 6px 14px; border-radius: 999px; }
+  h1 { font-size: clamp(38px, 5.6vw, 58px); line-height: 1.04;
+    margin: 20px 0 16px; letter-spacing: -0.03em; font-weight: 700; }
+  h1 em { font-style: normal; color: var(--accent); }
+  .sub { font-size: 18.5px; color: var(--ink-2); max-width: 32em; margin: 0; }
+  .hero-ctas { margin-top: 28px; display: flex; gap: 12px; flex-wrap: wrap; }
   .cta, button.cta { display: inline-block; background: var(--accent);
     color: #fff; font-weight: 650; text-decoration: none; border: 0;
-    border-radius: 10px; padding: 13px 24px; font-size: 16px; cursor: pointer;
-    transition: filter .15s, transform .15s; }
-  .cta:hover { filter: brightness(1.07); transform: translateY(-1px); }
+    border-radius: 11px; padding: 14px 26px; font-size: 16px; cursor: pointer;
+    transition: filter .15s, transform .15s, box-shadow .15s;
+    box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent); }
+  .cta:hover { filter: brightness(1.08); transform: translateY(-1px); }
   .cta.ghost { background: transparent; color: var(--accent);
-    border: 1.5px solid var(--accent); }
-  .badges { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 26px; }
-  .badge { font-size: 13px; color: var(--ink-2); background: var(--surface);
-    border: 1px solid var(--ring); padding: 6px 12px; border-radius: 999px;
-    display: inline-flex; align-items: center; gap: 7px; }
-  .badge .dot { width: 7px; height: 7px; border-radius: 50%;
-    background: var(--accent); }
+    border: 1.5px solid var(--accent); box-shadow: none; }
+  .heroNote { margin-top: 18px; font-size: 13.5px; color: var(--muted); }
 
-  /* hero product mock */
-  .mock { background: var(--surface); border: 1px solid var(--ring);
+  /* layered product cards */
+  .stack { position: relative; min-height: 430px; }
+  .panel { background: var(--surface); border: 1px solid var(--ring);
     border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; }
-  .mock .bar { display: flex; gap: 6px; padding: 11px 14px;
+  .panel .bar { display: flex; gap: 6px; padding: 10px 14px;
     border-bottom: 1px solid var(--ring); align-items: center; }
-  .mock .bar i { width: 10px; height: 10px; border-radius: 50%;
+  .panel .bar i { width: 9px; height: 9px; border-radius: 50%;
     background: var(--chip); display: block; }
-  .mock .bar span { margin-left: 8px; font-size: 12.5px; color: var(--muted); }
-  .mock .body { padding: 14px 16px 16px; }
-  .mock table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-  .mock th { text-align: left; font-size: 11px; text-transform: uppercase;
-    letter-spacing: .06em; color: var(--muted); padding: 4px 8px; }
-  .mock td { padding: 7px 8px; border-top: 1px solid var(--ring); }
-  .mock .ok { color: var(--ok); font-weight: 600; }
-  .mock .bad { color: var(--bad); }
-  .mock .quiet { color: var(--muted); }
-  .mock svg { width: 100%; height: auto; display: block; margin-top: 10px; }
-  .mock .cap { font-size: 12px; color: var(--muted); margin: 10px 2px 0; }
+  .panel .bar span { margin-left: 8px; font-size: 12px; color: var(--muted); }
+  .p-back { position: absolute; top: 0; right: 6px; left: 40px;
+    transform: rotate(2.2deg); opacity: .85; }
+  .p-front { position: relative; margin-top: 62px; max-width: 92%;
+    transform: rotate(-1.3deg); }
+  @media (max-width: 940px) { .p-front { max-width: 100%; } }
+  .panel .body { padding: 14px 16px 16px; }
+  .panel table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .panel th { text-align: left; font-size: 10.5px; text-transform: uppercase;
+    letter-spacing: .07em; color: var(--muted); padding: 3px 8px; }
+  .panel td { padding: 7px 8px; border-top: 1px solid var(--ring); }
+  .panel .ok { color: var(--ok); font-weight: 600; }
+  .panel .bad { color: var(--bad); }
+  .panel .quiet { color: var(--muted); }
+  .panel svg { width: 100%; height: auto; display: block; margin-top: 8px; }
+  .draw { stroke-dasharray: 1400; stroke-dashoffset: 1400;
+    animation: draw 1.8s ease-out .3s forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  .jrow { display: flex; justify-content: space-between; font-size: 13px;
+    padding: 7px 8px; border-top: 1px solid var(--ring); }
+  .jrow:first-of-type { border-top: 0; }
+  .jrow .r-neg { color: var(--bad); font-weight: 650; }
+  .jrow .r-open { color: var(--muted); }
+
+  /* ---------- ticker tape ---------- */
+  .tape { overflow: hidden; border-block: 1px solid var(--ring);
+    margin-top: 30px; -webkit-mask-image: linear-gradient(90deg, transparent,
+    #000 6%, #000 94%, transparent); mask-image: linear-gradient(90deg,
+    transparent, #000 6%, #000 94%, transparent); }
+  .tape-in { display: flex; gap: 34px; width: max-content;
+    padding: 12px 0; animation: tape 46s linear infinite; }
+  @keyframes tape { to { transform: translateX(-50%); } }
+  .t { display: inline-flex; gap: 8px; align-items: baseline;
+    font-size: 13.5px; white-space: nowrap; }
+  .t b { font-weight: 700; }
+  .t .s-ok { color: var(--ok); }
+  .t .s-bad { color: var(--bad); }
+  .t .s-q { color: var(--muted); }
+  .tapeCap { text-align: center; font-size: 12px; color: var(--muted);
+    margin-top: 8px; }
+
+  /* ---------- stat band ---------- */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit,
+    minmax(150px, 1fr)); gap: 14px; margin: 44px 0 0; }
+  .stat { background: var(--surface); border: 1px solid var(--ring);
+    border-radius: 14px; padding: 18px 20px; text-align: center;
+    box-shadow: var(--shadow); }
+  .stat b { display: block; font-size: 32px; letter-spacing: -0.02em;
+    color: var(--accent); }
+  .stat span { font-size: 13px; color: var(--ink-2); }
 
   /* ---------- shared ---------- */
-  h2 { font-size: clamp(24px, 3vw, 30px); letter-spacing: -0.015em;
-    margin: 64px 0 6px; }
+  section { padding-top: 8px; }
+  .eyebrow { font-size: 12.5px; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--accent); margin: 72px 0 4px; }
+  h2 { font-size: clamp(26px, 3.2vw, 34px); letter-spacing: -0.02em;
+    margin: 0 0 8px; font-weight: 700; }
   .lead { color: var(--ink-2); max-width: 46em; margin-top: 4px; }
   .card { background: var(--surface); border: 1px solid var(--ring);
-    border-radius: 14px; padding: 22px 24px; margin: 18px 0;
+    border-radius: 16px; padding: 24px 26px; margin: 18px 0;
     box-shadow: var(--shadow); }
   .grid3 { display: grid; gap: 16px;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
   .step { background: var(--surface); border: 1px solid var(--ring);
-    border-radius: 14px; padding: 20px; box-shadow: var(--shadow); }
-  .step .ico { width: 40px; height: 40px; border-radius: 10px;
+    border-radius: 16px; padding: 22px; box-shadow: var(--shadow);
+    transition: transform .2s, border-color .2s; }
+  .step:hover { transform: translateY(-3px); border-color:
+    color-mix(in srgb, var(--accent) 40%, var(--ring)); }
+  .step .ico { width: 42px; height: 42px; border-radius: 11px;
     background: color-mix(in srgb, var(--accent) 12%, transparent);
     color: var(--accent); display: flex; align-items: center;
-    justify-content: center; margin-bottom: 12px; }
+    justify-content: center; margin-bottom: 13px; }
   .step b { font-size: 16.5px; }
   .step p { color: var(--ink-2); font-size: 14.5px; margin: 6px 0 0; }
 
   .rules { padding: 0; list-style: none; counter-reset: rule; display: grid;
-    gap: 12px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    gap: 12px; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    margin-top: 18px; }
   .rules li { counter-increment: rule; background: var(--surface);
-    border: 1px solid var(--ring); border-radius: 14px; padding: 18px 18px
-    18px 60px; position: relative; box-shadow: var(--shadow); }
-  .rules li::before { content: counter(rule); position: absolute; left: 18px;
-    top: 18px; width: 30px; height: 30px; border-radius: 10px;
+    border: 1px solid var(--ring); border-radius: 16px; padding: 20px 20px
+    20px 64px; position: relative; box-shadow: var(--shadow); }
+  .rules li::before { content: counter(rule); position: absolute; left: 20px;
+    top: 20px; width: 30px; height: 30px; border-radius: 10px;
     background: var(--accent); color: #fff; font-weight: 750; font-size: 15px;
-    display: flex; align-items: center; justify-content: center; }
+    display: flex; align-items: center; justify-content: center;
+    font-family: "Space Grotesk", sans-serif; }
   .rules b { display: block; margin-bottom: 2px; }
   .rules li p { margin: 0; color: var(--ink-2); font-size: 14.5px; }
 
   pre { background: var(--surface); border: 1px solid var(--ring);
     border-radius: 14px; padding: 18px; overflow-x: auto; font-size: 13.5px;
-    line-height: 1.55; box-shadow: var(--shadow); }
+    line-height: 1.55; }
   code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
-  .honest { border-left: 3px solid var(--accent); padding-left: 16px;
+  .honest { border-left: 3px solid var(--accent); padding-left: 18px;
     color: var(--ink-2); }
 
+  /* build log */
+  .log { list-style: none; padding: 0; margin: 18px 0 0; position: relative; }
+  .log::before { content: ""; position: absolute; left: 7px; top: 6px;
+    bottom: 6px; width: 2px; background: var(--ring); }
+  .log li { position: relative; padding: 0 0 18px 32px; color: var(--ink-2);
+    font-size: 15px; }
+  .log li::before { content: ""; position: absolute; left: 0; top: 6px;
+    width: 12px; height: 12px; border-radius: 50%; background: var(--accent);
+    border: 3px solid var(--page); }
+  .log b { color: var(--ink); }
+  .log time { display: block; font-size: 12px; color: var(--muted);
+    letter-spacing: .04em; text-transform: uppercase; }
+
   .tiers { display: grid; gap: 16px; margin-top: 18px;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
   .tier { background: var(--surface); border: 1px solid var(--ring);
-    border-radius: 16px; padding: 24px; display: flex; flex-direction: column;
+    border-radius: 18px; padding: 26px; display: flex; flex-direction: column;
     box-shadow: var(--shadow); }
   .tier.featured { border-color: var(--accent); border-width: 2px;
     position: relative; }
   .tier.featured::before { content: "Coming — join the list";
-    position: absolute; top: -11px; left: 20px; background: var(--accent);
-    color: #fff; font-size: 11.5px; font-weight: 700; padding: 3px 10px;
+    position: absolute; top: -11px; left: 22px; background: var(--accent);
+    color: #fff; font-size: 11.5px; font-weight: 700; padding: 3px 11px;
     border-radius: 999px; letter-spacing: .03em; }
   .tier .name { font-weight: 750; }
-  .tier .price { font-size: 30px; font-weight: 780; margin: 8px 0 2px; }
+  .tier .price { font-size: 34px; font-weight: 700; margin: 8px 0 2px;
+    letter-spacing: -0.02em; }
   .tier .per { color: var(--muted); font-size: 13px; }
-  .tier ul { padding-left: 18px; margin: 14px 0 18px; color: var(--ink-2);
+  .tier ul { padding-left: 18px; margin: 14px 0 20px; color: var(--ink-2);
     font-size: 14.5px; flex: 1; }
-  .tier li { margin: 5px 0; }
+  .tier li { margin: 6px 0; }
 
   form.signup { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
-  form.signup input { flex: 1; min-width: 220px; padding: 13px 15px;
-    font: inherit; border: 1px solid var(--ring); border-radius: 10px;
+  form.signup input { flex: 1; min-width: 220px; padding: 14px 16px;
+    font: inherit; border: 1px solid var(--ring); border-radius: 11px;
     background: var(--page); color: var(--ink); }
   .fine { color: var(--muted); font-size: 13px; }
 
   details.faq { background: var(--surface); border: 1px solid var(--ring);
-    border-radius: 12px; padding: 14px 18px; margin: 10px 0; }
+    border-radius: 13px; padding: 15px 19px; margin: 10px 0; }
   details.faq summary { cursor: pointer; font-weight: 650; }
   details.faq p { color: var(--ink-2); margin: 10px 0 2px; font-size: 15px; }
 
-  footer { margin-top: 84px; padding-top: 26px;
+  footer { margin-top: 88px; padding-top: 26px;
     border-top: 1px solid var(--ring); color: var(--muted); font-size: 13px; }
   footer .cols { display: flex; gap: 24px; flex-wrap: wrap;
     justify-content: space-between; margin-bottom: 14px; }
   a { color: var(--accent); }
 
   .appearance { display: flex; flex-wrap: wrap; gap: 12px; align-items: end;
-    margin: 40px 0 0; padding: 14px 16px; background: var(--surface);
-    border: 1px solid var(--ring); border-radius: 12px; }
+    margin: 44px 0 0; padding: 14px 16px; background: var(--surface);
+    border: 1px solid var(--ring); border-radius: 13px; }
   .appearance label { display: flex; flex-direction: column; gap: 4px;
     font-size: 12px; color: var(--ink-2); }
   .appearance select { background: var(--page); color: var(--ink);
@@ -241,79 +319,144 @@ broker instead of your nerves.">
 
 <main id="top">
 
+  <div class="heroWrap">
   <section class="hero">
     <div>
-      <span class="kicker">No predictions. Ever. That's the point.</span>
-      <h1>Trade the trend.<br>Follow the rules.</h1>
+      <span class="kicker">⛔ No predictions. Ever. That's the point.</span>
+      <h1>Trade the trend.<br><em>Follow the rules.</em></h1>
       <p class="sub">Most traders don't lose because they lack predictions —
       they lose because rules are hard to follow when money is moving.
       Trendkept turns your written trend-following rules into software:
-      sized by risk, stop-loss sent with every entry, scored honestly
-      in R-multiples.</p>
+      sized by risk, stop-loss sent with every entry, scored honestly in
+      R-multiples.</p>
       <div class="hero-ctas">
         <a class="cta" href="#signup">Get the weekly Trend Check — free</a>
         <a class="cta ghost"
            href="https://github.com/adelvespayne-png/Trendkept">
-          Star the open-source core</a>
+          Star the open core</a>
       </div>
-      <div class="badges">
-        <span class="badge"><span class="dot"></span> Open source, MIT</span>
-        <span class="badge"><span class="dot"></span> Runs on your computer</span>
-        <span class="badge"><span class="dot"></span> Broker keys never leave
-          your machine</span>
-      </div>
+      <p class="heroNote">Open source · runs on your computer · broker keys
+      never leave your machine</p>
     </div>
 
-    <div class="mock" aria-label="Product preview">
-      <div class="bar"><i></i><i></i><i></i>
-        <span>Trendkept — today's watchlist</span></div>
-      <div class="body">
-        <table>
-          <tr><th>Symbol</th><th>Close</th><th>What the rules say</th></tr>
-          <tr><td><b>NVDA</b></td><td>211.35</td>
-            <td class="ok">LONG entry — pullback · stop 190.19 · 47 sh</td></tr>
-          <tr><td>V</td><td>356.73</td>
-            <td>in an uptrend — no entry today</td></tr>
-          <tr><td>AAPL</td><td>314.95</td>
-            <td class="bad">trend broken</td></tr>
-          <tr><td>SPY</td><td>752.20</td>
-            <td class="quiet">nothing confirmed — stay out</td></tr>
-        </table>
-        <svg viewBox="0 0 520 150" role="img"
-             aria-label="Price with moving averages and a stop-loss line">
-          <path d="M0 118 C60 112, 90 120, 140 108 S240 96, 300 84 S430 62, 520 44"
-                fill="none" stroke="var(--muted)" stroke-width="1.6"
-                stroke-dasharray="1 0" opacity=".55"/>
-          <path d="M0 128 C70 124, 120 126, 180 118 S300 104, 380 92 S470 76, 520 66"
-                fill="none" stroke="var(--muted)" stroke-width="1.6" opacity=".35"/>
-          <path d="M0 112 L30 104 L55 110 L85 94 L110 100 L140 84 L170 92
-                   L205 72 L235 80 L270 60 L305 70 L340 48 L375 58 L410 38
-                   L450 46 L490 26 L520 32"
-                fill="none" stroke="var(--accent)" stroke-width="2.6"
-                stroke-linejoin="round" stroke-linecap="round"/>
-          <line x1="300" y1="96" x2="520" y2="96" stroke="var(--bad)"
-                stroke-width="1.8" stroke-dasharray="6 5"/>
-          <rect x="304" y="100" width="86" height="20" rx="5"
-                fill="color-mix(in srgb, var(--bad) 12%, transparent)"/>
-          <text x="312" y="114" font-size="11.5" fill="var(--bad)"
-                font-family="system-ui">stop-loss 735.85</text>
-          <circle cx="270" cy="60" r="4.5" fill="var(--accent)"/>
-          <rect x="212" y="30" width="96" height="20" rx="5"
-                fill="color-mix(in srgb, var(--accent) 12%, transparent)"/>
-          <text x="220" y="44" font-size="11.5" fill="var(--accent)"
-                font-family="system-ui">entry — pullback</text>
-        </svg>
-        <p class="cap">The dashboard: scan, chart, backtest and journal —
-        every screen runs your own written ruleset.</p>
+    <div class="stack" aria-label="Product preview">
+      <div class="panel p-back">
+        <div class="bar"><i></i><i></i><i></i><span>Trade journal — scored
+          in R</span></div>
+        <div class="body">
+          <div class="jrow"><span><b>NVDA</b> · 3 days</span>
+            <span class="r-neg">−0.44R</span></div>
+          <div class="jrow"><span><b>V</b> · open</span>
+            <span class="r-open">stop 342.80 standing</span></div>
+          <div class="jrow"><span><b>SPY</b> · open</span>
+            <span class="r-open">stop 735.85 standing</span></div>
+        </div>
+      </div>
+      <div class="panel p-front">
+        <div class="bar"><i></i><i></i><i></i><span>Today's watchlist</span></div>
+        <div class="body">
+          <table>
+            <tr><th>Symbol</th><th>Close</th><th>What the rules say</th></tr>
+            <tr><td><b>NVDA</b></td><td>211.35</td>
+              <td class="ok">LONG entry — pullback · stop 190.19</td></tr>
+            <tr><td>V</td><td>356.73</td>
+              <td>in an uptrend — no entry today</td></tr>
+            <tr><td>AAPL</td><td>314.95</td>
+              <td class="bad">trend broken</td></tr>
+          </table>
+          <svg viewBox="0 0 520 140" role="img"
+               aria-label="Price with moving averages and stop-loss">
+            <path d="M0 112 C60 106, 90 114, 140 102 S240 90, 300 78 S430 56, 520 38"
+                  fill="none" stroke="var(--muted)" stroke-width="1.5" opacity=".5"/>
+            <path d="M0 122 C70 118, 120 120, 180 112 S300 98, 380 86 S470 70, 520 60"
+                  fill="none" stroke="var(--muted)" stroke-width="1.5" opacity=".3"/>
+            <path class="draw"
+                  d="M0 106 L30 98 L55 104 L85 88 L110 94 L140 78 L170 86
+                     L205 66 L235 74 L270 54 L305 64 L340 42 L375 52 L410 32
+                     L450 40 L490 20 L520 26"
+                  fill="none" stroke="var(--accent)" stroke-width="2.6"
+                  stroke-linejoin="round" stroke-linecap="round"/>
+            <line x1="300" y1="90" x2="520" y2="90" stroke="var(--bad)"
+                  stroke-width="1.8" stroke-dasharray="6 5"/>
+            <rect x="304" y="94" width="86" height="20" rx="5"
+                  fill="color-mix(in srgb, var(--bad) 12%, transparent)"/>
+            <text x="312" y="108" font-size="11.5" fill="var(--bad)"
+                  font-family="Inter, system-ui">stop-loss 735.85</text>
+            <circle cx="270" cy="54" r="4.5" fill="var(--accent)"/>
+            <rect x="212" y="24" width="96" height="20" rx="5"
+                  fill="color-mix(in srgb, var(--accent) 12%, transparent)"/>
+            <text x="220" y="38" font-size="11.5" fill="var(--accent)"
+                  font-family="Inter, system-ui">entry — pullback</text>
+          </svg>
+        </div>
       </div>
     </div>
   </section>
 
+  <div class="tape" aria-hidden="true">
+    <div class="tape-in">
+      <span class="t"><b>AAPL</b><span class="s-bad">trend broken</span></span>
+      <span class="t"><b>MSFT</b><span class="s-bad">trend broken</span></span>
+      <span class="t"><b>NVDA</b><span class="s-bad">trend broken</span></span>
+      <span class="t"><b>GOOGL</b><span class="s-bad">trend broken</span></span>
+      <span class="t"><b>AMZN</b><span class="s-bad">trend broken</span></span>
+      <span class="t"><b>META</b><span class="s-q">nothing confirmed</span></span>
+      <span class="t"><b>TSLA</b><span class="s-bad">trend broken</span></span>
+      <span class="t"><b>AVGO</b><span class="s-bad">trend broken</span></span>
+      <span class="t"><b>JPM</b><span class="s-bad">trend broken</span></span>
+      <span class="t"><b>V</b><span class="s-ok">in an uptrend</span></span>
+      <span class="t"><b>UNH</b><span class="s-ok">in an uptrend</span></span>
+      <span class="t"><b>XOM</b><span class="s-bad">trend broken</span></span>
+      <span class="t"><b>COST</b><span class="s-bad">trend broken</span></span>
+      <span class="t"><b>PG</b><span class="s-bad">trend broken</span></span>
+      <span class="t"><b>HD</b><span class="s-q">nothing confirmed</span></span>
+      <span class="t"><b>NFLX</b><span class="s-bad">trend broken</span></span>
+      <span class="t"><b>AMD</b><span class="s-bad">trend broken</span></span>
+      <span class="t"><b>SPY</b><span class="s-q">nothing confirmed</span></span>
+      <span class="t"><b>QQQ</b><span class="s-bad">trend broken</span></span>
+      <span class="t"><b>IWM</b><span class="s-bad">trend broken</span></span>
+      <span class="t"><b>AAPL</b><span class="s-bad">trend broken</span></span>
+      <span class="t"><b>MSFT</b><span class="s-bad">trend broken</span></span>
+      <span class="t"><b>NVDA</b><span class="s-bad">trend broken</span></span>
+      <span class="t"><b>GOOGL</b><span class="s-bad">trend broken</span></span>
+      <span class="t"><b>AMZN</b><span class="s-bad">trend broken</span></span>
+      <span class="t"><b>META</b><span class="s-q">nothing confirmed</span></span>
+      <span class="t"><b>TSLA</b><span class="s-bad">trend broken</span></span>
+      <span class="t"><b>AVGO</b><span class="s-bad">trend broken</span></span>
+      <span class="t"><b>JPM</b><span class="s-bad">trend broken</span></span>
+      <span class="t"><b>V</b><span class="s-ok">in an uptrend</span></span>
+      <span class="t"><b>UNH</b><span class="s-ok">in an uptrend</span></span>
+      <span class="t"><b>XOM</b><span class="s-bad">trend broken</span></span>
+      <span class="t"><b>COST</b><span class="s-bad">trend broken</span></span>
+      <span class="t"><b>PG</b><span class="s-bad">trend broken</span></span>
+      <span class="t"><b>HD</b><span class="s-q">nothing confirmed</span></span>
+      <span class="t"><b>NFLX</b><span class="s-bad">trend broken</span></span>
+      <span class="t"><b>AMD</b><span class="s-bad">trend broken</span></span>
+      <span class="t"><b>SPY</b><span class="s-q">nothing confirmed</span></span>
+      <span class="t"><b>QQQ</b><span class="s-bad">trend broken</span></span>
+      <span class="t"><b>IWM</b><span class="s-bad">trend broken</span></span>
+    </div>
+  </div>
+  <p class="tapeCap">The board from Friday 18 July 2026 — what the rules said,
+  ticker by ticker. Descriptions of data, not advice.</p>
+  </div>
+
+  <div class="stats rv">
+    <div class="stat"><b>5</b><span>rules, written down,
+      no exceptions</span></div>
+    <div class="stat"><b>1%</b><span>max risk per trade,
+      sized automatically</span></div>
+    <div class="stat"><b>20</b><span>tickers scanned
+      every trading day</span></div>
+    <div class="stat"><b>0</b><span>predictions —
+      by design, forever</span></div>
+  </div>
+
   <section id="how">
-    <h2>How it works</h2>
-    <p class="lead">Three parts, one loop — and the hard part (doing it every
-    day, without exceptions) is the part the software carries.</p>
-    <div class="grid3" style="margin-top:18px">
+    <p class="eyebrow">How it works</p>
+    <h2 class="rv">Three parts. One loop.<br>The software carries the hard
+      part.</h2>
+    <div class="grid3 rv" style="margin-top:20px">
       <div class="step">
         <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24"
           fill="none" stroke="currentColor" stroke-width="2"
@@ -348,10 +491,11 @@ broker instead of your nerves.">
   </section>
 
   <section id="rules">
-    <h2>The five rules <span style="color:var(--muted);font-size:.6em;
-      font-weight:500">(free forever — the whole point is following
-      them)</span></h2>
-    <ol class="rules" style="margin-top:18px">
+    <p class="eyebrow">The system</p>
+    <h2 class="rv">The five rules <span style="color:var(--muted);
+      font-size:.55em;font-weight:500">(free forever — the whole point is
+      following them)</span></h2>
+    <ol class="rules rv">
       <li><b>Trade only a confirmed uptrend.</b><p>Price above the 50- and
         200-day averages, averages aligned, higher highs and lows.
         Otherwise: stay out. No exceptions.</p></li>
@@ -366,7 +510,7 @@ broker instead of your nerves.">
       <li><b>Let winners run; cut the break.</b><p>Trail the stop up under
         each higher low. Exit completely when the trend breaks.</p></li>
     </ol>
-    <div class="card honest">
+    <div class="card honest rv">
       <b>The honest part.</b> You can be wrong more than half the time and
       still come out ahead — because each loss is capped small and winners
       run. That only works if you follow the rules <i>every time</i>.
@@ -375,10 +519,12 @@ broker instead of your nerves.">
   </section>
 
   <section id="proof">
-    <h2>Proof, not promises</h2>
-    <p class="lead">Two kinds of evidence, both public: backtests that refuse
-    to cheat, and the rules trading a paper account in the open.</p>
-    <div class="card">
+    <p class="eyebrow">Receipts</p>
+    <h2 class="rv">Proof, not promises</h2>
+    <p class="lead rv">Two kinds of evidence, both public: backtests that
+    refuse to cheat, and the rules trading a real paper account in the
+    open — wins, losses and boring days on the record.</p>
+    <div class="card rv">
       <b>Backtests that can't peek.</b>
       <p style="color:var(--ink-2)">Every Trendkept backtest is causal: a
       signal at bar <i>i</i> uses only data up to bar <i>i</i>. Backtests
@@ -395,23 +541,34 @@ Expectancy       : +7.13R per trade</code></pre>
       ceiling, not a promise. Past and backtested performance do not predict
       future results.</p>
     </div>
-    <div class="card">
-      <b>The rules trade in public.</b>
-      <p style="color:var(--ink-2)">Every trading day, the exact ruleset on
-      this page runs a real <i>paper</i> (practice-money) account — managing
-      stops, taking entries, sitting out most days — and every action it
-      takes is published automatically to
-      <a href="https://github.com/adelvespayne-png/Trendkept/issues">the
-      open project log</a>. No cherry-picking, no screenshots of winners
-      only: the wins, the losses and the boring days, all on the record.</p>
+    <div class="card rv">
+      <b>Built in public — the log so far.</b>
+      <ul class="log">
+        <li><time>July 2026</time><b>The rules fly a paper account
+          nightly.</b> Every trading day the exact ruleset on this page
+          manages a practice-money account — stops trailed, entries taken,
+          most days sat out — and publishes every action to
+          <a href="https://github.com/adelvespayne-png/Trendkept/issues">the
+          open project log</a>.</li>
+        <li><time>July 2026</time><b>First trades, honestly scored.</b> The
+          first completed trade lost 0.44R — logged, published, and smaller
+          than the planned risk. That's the system working.</li>
+        <li><time>July 2026</time><b>The Trend Check #1 shipped.</b> The
+          weekly email now writes itself from the same engine and goes out
+          every Sunday.</li>
+        <li><time>July 2026</time><b>Open-source core released</b> — the
+          full engine, dashboard, backtester and journal, MIT-licensed,
+          zero dependencies.</li>
+      </ul>
     </div>
   </section>
 
   <section id="pricing">
-    <h2>Pricing</h2>
-    <p class="lead">The core is free forever. Pro arrives only after our
-    public validation period — we'd rather earn the right to charge.</p>
-    <div class="tiers">
+    <p class="eyebrow">Pricing</p>
+    <h2 class="rv">Free core. Pro when it's earned.</h2>
+    <p class="lead rv">The toolkit is free forever. Pro arrives only after
+    our public validation period — we'd rather earn the right to charge.</p>
+    <div class="tiers rv">
       <div class="tier">
         <div class="name">Open core</div>
         <div class="price">Free</div>
@@ -443,8 +600,9 @@ Expectancy       : +7.13R per trade</code></pre>
   </section>
 
   <section id="signup">
-    <h2>The Trend Check — free, every Sunday</h2>
-    <div class="card">
+    <p class="eyebrow">The weekly</p>
+    <h2 class="rv">The Trend Check — free, every Sunday</h2>
+    <div class="card rv">
       <p style="margin-top:0">The engine's verdict on 20 well-known tickers —
       in an uptrend, nothing confirmed, or trend broken — plus one honest
       lesson in risk. Written like a person, not a terminal. No predictions,
@@ -464,35 +622,36 @@ Expectancy       : +7.13R per trade</code></pre>
   </section>
 
   <section id="faq">
-    <h2>Fair questions</h2>
-    <details class="faq">
+    <p class="eyebrow">Fair questions</p>
+    <h2 class="rv">Asked and answered — honestly</h2>
+    <details class="faq rv">
       <summary>Does Trendkept predict which way a market will go?</summary>
       <p>No — and we'd be suspicious of anyone who says they can. Trendkept
       <i>reacts</i>: it identifies confirmed trends, defines entries and
       stop-losses in advance, caps every loss by position sizing, and lets
       winners run. The edge is behaviour, not prophecy.</p>
     </details>
-    <details class="faq">
+    <details class="faq rv">
       <summary>Do I need a broker account to use it?</summary>
       <p>No. Scanning, charts, backtesting and the watchlist work out of the
       box with free public data. If you want it to place paper trades and
       fill in the journal automatically, connect a free Alpaca paper account
       (10 minutes, no deposit) — your API keys stay on your machine.</p>
     </details>
-    <details class="faq">
+    <details class="faq rv">
       <summary>Is my money or data ever in Trendkept's hands?</summary>
       <p>Never. The software runs on your computer; broker keys never leave
       it; we can't touch your account and don't want to. Trendkept is
       analysis and education software, not a broker and not an advisor.</p>
     </details>
-    <details class="faq">
+    <details class="faq rv">
       <summary>What does it cost?</summary>
       <p>The core toolkit is free and open source, forever. Pro (the
       effortless version — one-click install, licensed data, journal
       insights) will be £12/month when it launches, and the waiting list
       gets the founding price of £79/year, locked for life.</p>
     </details>
-    <details class="faq">
+    <details class="faq rv">
       <summary>Will following these rules make me money?</summary>
       <p>Honestly: nobody can promise that, and we won't. What the rules do
       is cap what any single mistake can cost and keep you out of most bad
@@ -573,6 +732,23 @@ Expectancy       : +7.13R per trade</code></pre>
         apply(settings);
       });
     });
+  })();
+
+  /* Reveal-on-scroll (respects reduced motion via CSS). */
+  (function () {
+    if (!('IntersectionObserver' in window)) {
+      document.querySelectorAll('.rv').forEach(function (el) {
+        el.classList.add('in');
+      });
+      return;
+    }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add('in');
+          io.unobserve(e.target); }
+      });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.rv').forEach(function (el) { io.observe(el); });
   })();
 </script>
 </body>
