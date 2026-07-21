@@ -289,6 +289,17 @@ def _manage_one(client, strat, position: dict, args) -> None:
 
     try:
         if action.kind == "exit":
+            # An exit ordered after hours sits queued until the next open;
+            # a second pass must not stack another sell on top of it.
+            pending_sell = any(
+                o.get("symbol", "").upper() == symbol.upper()
+                and o.get("side") == "sell"
+                and "stop" not in (o.get("type") or "")
+                for o in client.list_orders(status="open"))
+            if pending_sell:
+                print("    -> exit already on its way (sell order pending "
+                      "fill); nothing more to do.")
+                return
             if stop_order:
                 client.cancel_order(stop_order["id"])
             client.close_position(symbol)
