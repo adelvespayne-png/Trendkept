@@ -436,6 +436,23 @@ def _cmd_autopilot(args: argparse.Namespace) -> int:
 
     if not actions:
         print("  no new entries — the rules say sit tight.")
+
+    # Safety roll-call: every open position must have a standing stop.
+    # (Entries carry stops by construction and manage heals gaps, so this
+    # should always pass — printing it makes the guarantee auditable.)
+    try:
+        open_positions = client.positions()
+        naked = [p.get("symbol", "?") for p in open_positions
+                 if not client.find_stop_order(p.get("symbol", ""))]
+        if naked:
+            print(f"  UNPROTECTED POSITION(S): {', '.join(naked)} — "
+                  "no standing stop found; next manage pass will install "
+                  "one, or add it by hand in Alpaca now.")
+        else:
+            print(f"  Safety check: {len(open_positions)} open position(s), "
+                  "every one protected by a standing stop-loss.")
+    except AlpacaError as exc:
+        print(f"  Safety check skipped (broker unreachable: {exc})")
     return 0
 
 
