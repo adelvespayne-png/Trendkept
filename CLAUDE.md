@@ -24,6 +24,23 @@ important into committed files — the repo is the memory between sessions.
 - Tests: `python -m unittest discover -s tests` (all must pass; don't quote
   a hardcoded count in docs — it drifts).
 
+## Installed skills (`.claude/skills/`, July 2026)
+
+33 business skills the owner supplied, flattened to the discoverable
+layout so future Claude Code sessions auto-load them. They are expert
+playbooks — apply their methodology when doing that kind of work
+(you don't need the Skill tool to follow a SKILL.md checklist). Map to
+this business: marketing (`cro`, `seo-audit`, `programmatic-seo`,
+`ai-seo`, `ad-creative`, `mktg-psychology`), content (`copywriting`,
+`content-strategy`, `email-sequences`, `pillar-content`, `social`,
+`video`), finance (`pricing`, `pitch-deck`, `3-statements`,
+`comps-analysis`; `dcf-model`/`lbo-model` are overkill for a bootstrap
+SaaS), design (`web-artifacts`, `ui-ux-pro-max`), ops (`launch-runbook`,
+`sop-builder`, `incident-postmortem`), legal (`compliance`,
+`contract-review`, `legal-risk` — cross-check against LEGAL.md, never
+replace a real solicitor). Compliance skill must respect the FCA
+bright line + descriptive-never-imperative rule already settled.
+
 ## Hard rules settled in prior sessions (do not relax)
 
 1. **Honesty in all public content.** Every claim in marketing/posts must be
