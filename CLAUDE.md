@@ -144,6 +144,18 @@ bright line + descriptive-never-imperative rule already settled.
   out-of-sample split — so rule changes are evidence-gated; (b) journal
   insights once ~20+ real trades exist (expectancy by signal type,
   symbol class, hold time). Review cadence: monthly, never per-trade.
+- Trading-style landscape analysed (`business/TRADING_STYLES.md`,
+  July 2026): systematic vs discretionary families. My Trading Diagram
+  interpreter now recognises named methods and answers HONESTLY —
+  ICT/TJR/SMC/order-blocks/Wyckoff/Elliott get a 'we're a mechanical
+  trend-follower, can't reproduce that; nearest is a breakout-of-
+  structure entry' note; mean-reversion/fade gets a 'we only buy
+  confirmed uptrends' note; breakout/pullback leans acknowledged.
+  Clickable style examples on the /ruleset page. Never fakes an ICT
+  mode — that would break the no-predictions moat. Genuinely-different
+  strategy modules stay roadmap, gated on strict out-of-sample
+  backtests; the TradingView-alerts vision is the honest way to serve
+  discretionary traders (their entry, our discipline).
 - **Owner's stated end-state vision (July 2026): TradingView webhook
   alerts flowing into Trendkept** — the user charts/alerts in
   TradingView (paid TV plans can fire webhooks), a local Trendkept

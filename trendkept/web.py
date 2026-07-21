@@ -685,6 +685,69 @@ def interpret_description(text: str) -> Tuple[Dict[str, str], List[str]]:
         notes.append("Chase-prone: tightened the never-chase limit to 8% "
                      "above the fast average.")
 
+    # Named methods people ask for by brand. Trendkept is a mechanical,
+    # backtestable trend-follower — it does NOT replicate discretionary
+    # intraday smart-money methods. Be honest rather than pretend, and
+    # point to the nearest thing the engine genuinely does.
+    discretionary = {
+        "ict": "ICT / Inner Circle Trader concepts",
+        "inner circle": "ICT / Inner Circle Trader concepts",
+        "smart money": "smart-money concepts (SMC)",
+        " smc ": "smart-money concepts (SMC)",
+        "order block": "order blocks",
+        "fair value gap": "fair-value gaps",
+        " fvg ": "fair-value gaps",
+        "liquidity grab": "liquidity grabs",
+        "liquidity sweep": "liquidity sweeps",
+        "judas": "the ICT 'Judas swing'",
+        " tjr ": "TJR-style smart-money setups",
+        "wyckoff": "Wyckoff accumulation/distribution",
+        "elliott": "Elliott Wave",
+        "harmonic": "harmonic patterns",
+        "supply and demand": "supply & demand zones",
+        "supply/demand": "supply & demand zones",
+    }
+    for key, label in discretionary.items():
+        if key in t:
+            notes.append(
+                f"You mentioned {label}. Honest heads-up: Trendkept is a "
+                "mechanical, backtestable trend-follower — not a "
+                f"discretionary tool, so it can't faithfully reproduce "
+                f"{label} (those are drawn by eye and rarely survive a "
+                "strict, no-peeking backtest). The nearest thing the engine "
+                "genuinely does is enter on a confirmed breakout of "
+                "structure — a breakout entry, with the stop attached. Your "
+                "dials stay on that honest footing; use the rest as chart "
+                "study, not signals.")
+            break
+
+    # Counter-trend / mean-reversion: the engine only ever buys a confirmed
+    # uptrend, never fades one.
+    revert_words = ("mean revert", "mean-revert", "reversion", "fade the",
+                    "short the top", "buy oversold", "oversold bounce",
+                    "falling knife", "counter-trend", "countertrend",
+                    "catch the bottom", "buy the crash")
+    if any(w in t for w in revert_words):
+        notes.append(
+            "That's a counter-trend / mean-reversion idea. Trendkept only "
+            "buys a *confirmed uptrend* — it won't fade a move or catch a "
+            "falling knife (uncapped risk, wrong tool for it). The nearest "
+            "honest version it does is buying a pullback *within* an "
+            "uptrend; the with-the-trend rules stay in place.")
+
+    # Entry lean: breakout vs pullback (same engine, honest framing).
+    if any(w in t for w in ("breakout", "break out", "break of structure",
+                            "momentum", "52 week high", "new high",
+                            "all time high")):
+        notes.append("Breakout/momentum lean noted — the engine already "
+                     "takes breakout entries in a confirmed uptrend (it "
+                     "keeps taking pullbacks too; it doesn't disable one).")
+    elif any(w in t for w in ("pullback", "buy the dip", "retrace",
+                              "dip within", "pull back")):
+        notes.append("Pullback lean noted — the engine buys pullbacks that "
+                     "resume inside a confirmed uptrend (it keeps taking "
+                     "breakouts too).")
+
     return values, notes
 
 
@@ -709,6 +772,27 @@ def _ruleset_page(values: Optional[Dict[str, str]] = None,
             "mind-reading — check the numbers below, then backtest):"
             f"<ul>{items}</ul></div>")
 
+    from urllib.parse import urlencode
+    _examples = [
+        ("Patient trend follower",
+         "I'm a patient trend follower who holds winners for weeks"),
+        ("Breakout trader", "I trade breakouts to new highs"),
+        ("Pullback buyer", "I buy pullbacks within an uptrend"),
+        ("Cautious beginner",
+         "I'm a cautious beginner with a small account"),
+        ("Active / faster", "I like faster swing trades with more action"),
+        ("“I trade ICT / smart money”",
+         "I trade ICT smart money concepts and order blocks"),
+    ]
+    style_chips = ('<p class="note" style="margin-top:-4px">Not sure how to '
+                   'describe it? Click one and see how it reads: '
+                   + " ".join(
+                       f'<a class="btn ghost" style="padding:4px 10px;'
+                       f'font-size:13px;margin:2px" '
+                       f'href="/ruleset?{urlencode({"describe": ph})}">'
+                       f'{_esc(lbl)}</a>' for lbl, ph in _examples)
+                   + "</p>")
+
     skip = ' data-skip-restore="1"' if readback else ""
     return f"""
 <h2>My Trading Diagram &mdash; how do you trade?</h2>
@@ -724,7 +808,7 @@ and risk-based sizing.</p>
       placeholder="e.g. I'm a cautious beginner with a £5,000 account — I want to hold winners for weeks and I know I have a habit of chasing.">{_esc(described)}</textarea>
   </label>
   <button>Fill in my Diagram from this</button>
-</form></div>
+</form>{style_chips}</div>
 {readback_html}
 <div class="card"><form class="controls" id="ruleset-form" method="get"
      action="/run"{skip}>
