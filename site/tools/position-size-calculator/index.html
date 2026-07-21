@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Position Size Calculator — risk-based share sizing | Trendkept</title>
+<meta name="description" content="Free position size calculator: enter your account, risk %, entry and stop-loss to get exactly how many shares to buy so a losing trade costs no more than you decided. No sign-up.">
+<link rel="canonical" href="https://trendkept.com/tools/position-size-calculator/">
+<link rel="icon" type="image/svg+xml" href="/logo.svg">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Position Size Calculator | Trendkept">
+<meta property="og:description" content="How many shares to buy so a losing trade costs no more than you decided. Free, no sign-up.">
+<meta property="og:url" content="https://trendkept.com/tools/position-size-calculator/">
+<meta property="og:image" content="https://trendkept.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://trendkept.com/og.png">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","name":"Position Size Calculator","applicationCategory":"FinanceApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"GBP"},"url":"https://trendkept.com/tools/position-size-calculator/"}
+</script>
+<style>
+  :root{--accent:#2a78d6;--surface:#fff;--page:#f6f7f9;--chip:#eef1f5;--ink:#0e1116;--ink2:#49525e;--muted:#8a93a0;--ring:rgba(14,17,22,.1);--ok:#158a60;--bad:#c04f5e;--shadow:0 1px 2px rgba(14,17,22,.05),0 12px 36px rgba(14,17,22,.08)}
+  @media(prefers-color-scheme:dark){:root{--accent:#4a90e8;--surface:#14161b;--page:#0a0c10;--chip:#1d2027;--ink:#f3f5f8;--ink2:#b6bdc8;--muted:#79818e;--ring:rgba(255,255,255,.09);--ok:#35c28c;--bad:#e0798a;--shadow:0 1px 2px rgba(0,0,0,.45),0 14px 40px rgba(0,0,0,.4)}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink);font:16px/1.65 Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+  a{color:var(--accent)}
+  .wrap{max-width:760px;margin:0 auto;padding:0 20px 80px}
+  .nav{border-bottom:1px solid var(--ring);margin-bottom:8px}
+  .nav .in{max-width:760px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:10px}
+  .nav a{display:flex;align-items:center;gap:9px;font-weight:750;text-decoration:none;color:var(--ink)}
+  .nav img{width:26px;height:26px;border-radius:7px}
+  .crumb{font-size:13px;color:var(--muted);margin:22px 0 0}
+  h1{font-size:clamp(28px,5vw,38px);letter-spacing:-.02em;margin:6px 0 8px}
+  .lead{color:var(--ink2);font-size:18px;margin:0 0 8px}
+  .card{background:var(--surface);border:1px solid var(--ring);border-radius:16px;padding:22px;margin:22px 0;box-shadow:var(--shadow)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:520px){.grid{grid-template-columns:1fr}}
+  label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--ink2);font-weight:600}
+  .ig{display:flex;align-items:center;border:1px solid var(--ring);border-radius:10px;background:var(--page);overflow:hidden}
+  .ig span{padding:0 10px;color:var(--muted);font-size:15px}
+  .ig input{border:0;background:transparent;color:var(--ink);font:inherit;font-size:16px;padding:12px 12px 12px 0;width:100%;outline:none}
+  .out{margin-top:6px;border-top:1px solid var(--ring);padding-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .stat{background:var(--chip);border-radius:12px;padding:14px 16px}
+  .stat .k{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  .stat .v{font-size:26px;font-weight:750;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+  .stat.hero .v{color:var(--accent)}
+  .warn{color:var(--bad);font-weight:600;margin-top:12px;font-size:14px}
+  .ladder{font-size:14px;color:var(--ink2);margin-top:14px}
+  h2{font-size:22px;letter-spacing:-.01em;margin:36px 0 6px}
+  p{color:var(--ink2)}
+  .cta{display:inline-block;background:var(--accent);color:#fff;font-weight:650;text-decoration:none;border-radius:10px;padding:13px 22px;margin-top:8px}
+  .related{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+  .related a{background:var(--surface);border:1px solid var(--ring);border-radius:999px;padding:8px 14px;text-decoration:none;font-size:14px}
+  .fine{color:var(--muted);font-size:13px;border-top:1px solid var(--ring);margin-top:40px;padding-top:20px}
+  code{font-family:ui-monospace,Menlo,Consolas,monospace;background:var(--chip);padding:2px 6px;border-radius:6px;font-size:14px}
+</style>
+</head>
+<body>
+<nav class="nav"><div class="in"><a href="/"><img src="/logo.svg" alt="">Trendkept</a></div></nav>
+<div class="wrap">
+  <p class="crumb"><a href="/">Home</a> › Free tools › Position size calculator</p>
+  <h1>Position Size Calculator</h1>
+  <p class="lead">How many shares to buy so that if your stop-loss is hit,
+  you lose no more than you decided in advance. That's the whole game.</p>
+
+  <div class="card">
+    <div class="grid">
+      <label>Account size
+        <span class="ig"><span>£</span><input id="acct" type="number" inputmode="decimal" value="10000"></span></label>
+      <label>Risk per trade
+        <span class="ig"><input id="risk" type="number" inputmode="decimal" value="1" step="0.1"><span>%</span></span></label>
+      <label>Entry price
+        <span class="ig"><span>£</span><input id="entry" type="number" inputmode="decimal" value="50"></span></label>
+      <label>Stop-loss price
+        <span class="ig"><span>£</span><input id="stop" type="number" inputmode="decimal" value="47"></span></label>
+    </div>
+    <div id="err" class="warn" hidden></div>
+    <div class="out" id="out">
+      <div class="stat hero"><div class="k">Shares to buy</div><div class="v" id="shares">—</div></div>
+      <div class="stat"><div class="k">Actually at risk</div><div class="v" id="atrisk">—</div></div>
+      <div class="stat"><div class="k">Position value</div><div class="v" id="posval">—</div></div>
+      <div class="stat"><div class="k">Risk as % of account</div><div class="v" id="pct">—</div></div>
+    </div>
+    <div class="ladder" id="ladder"></div>
+  </div>
+
+  <p><a class="cta" href="/#signup">Get Trendkept free — it does this on every trade →</a></p>
+
+  <h2>How position sizing works</h2>
+  <p>The formula has no opinion and no conviction knob:</p>
+  <p><code>shares = (account × risk%) ÷ (entry − stop)</code></p>
+  <p>You decide two things in advance: how big your account is, and the
+  most you're willing to lose on any single trade (usually 1–2%). The
+  distance between your entry and your stop-loss then sets the size —
+  automatically. A tighter stop means more shares for the same risk; a
+  wider stop means fewer. The scary trade gets smaller by itself.</p>
+
+  <h2>Why it matters more than picking winners</h2>
+  <p>You can be wrong on more than half your trades and still come out
+  ahead — <em>if</em> every loss is capped small and your winners are
+  allowed to run. Position sizing is the mechanism that caps the loss.
+  Skip it, size by gut, and one oversized trade can undo months of
+  discipline. This is the single habit that separates traders who last
+  from those who blow up.</p>
+
+  <h2>The catch: doing it every single time</h2>
+  <p>Knowing the formula is easy. Running it on every trade, when the
+  market's moving and you're excited, is the hard part —
+  <a href="/">Trendkept</a> is the free tool that does it for you and
+  sends the stop-loss to your broker with the order, so the plan exists
+  before the trade does.</p>
+
+  <h2>Related calculators</h2>
+  <div class="related">
+    <a href="/tools/risk-per-trade-calculator/">Risk per trade calculator</a>
+    <a href="/tools/stop-loss-calculator/">Stop-loss calculator</a>
+    <a href="/tools/r-multiple-calculator/">R-multiple calculator</a>
+  </div>
+
+  <p class="fine">Educational tool, not investment advice. Trendkept makes
+  no personal recommendations. Trading involves risk of loss. Long
+  positions only; figures assume you sell if the stop is reached.
+  © Trendkept.</p>
+</div>
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  function money(n){return "£"+n.toLocaleString(undefined,{maximumFractionDigits:2})}
+  function calc(){
+    var acct=parseFloat($('acct').value),risk=parseFloat($('risk').value),
+        entry=parseFloat($('entry').value),stop=parseFloat($('stop').value);
+    var err=$('err'),out=$('out'),ladder=$('ladder');
+    function bad(m){err.hidden=false;err.textContent=m;out.style.opacity=.35;ladder.textContent="";}
+    if([acct,risk,entry,stop].some(function(x){return isNaN(x)||x<=0})) return bad("Fill in all four boxes with positive numbers.");
+    if(stop>=entry) return bad("Your stop-loss must be below your entry (this is a long position).");
+    err.hidden=true;out.style.opacity=1;
+    var budget=acct*risk/100, perShare=entry-stop, shares=Math.floor(budget/perShare);
+    var atRisk=shares*perShare, posVal=shares*entry, pct=acct?atRisk/acct*100:0;
+    $('shares').textContent=shares.toLocaleString();
+    $('atrisk').textContent=money(atRisk);
+    $('posval').textContent=money(posVal);
+    $('pct').textContent=pct.toFixed(2)+"%";
+    if(shares<1){ladder.innerHTML="<b>0 shares:</b> your risk budget ("+money(budget)+") is smaller than the "+money(perShare)+" per-share stop distance. Widen the account, raise the risk %, or choose a trade with a tighter stop.";return;}
+    ladder.innerHTML="If the trend runs: <b>+1R</b> = "+money(entry+perShare)+" · <b>+2R</b> = "+money(entry+2*perShare)+" · <b>+3R</b> = "+money(entry+3*perShare)+" &nbsp;<span style='color:var(--muted)'>(reference marks, not a target — the stop trails up behind a winner)</span>";
+  }
+  ['acct','risk','entry','stop'].forEach(function(id){$(id).addEventListener('input',calc)});
+  calc();
+})();
+</script>
+</body>
+</html>

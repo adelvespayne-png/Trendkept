@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>R-Multiple Calculator — score trades by risk | Trendkept</title>
+<meta name="description" content="Free R-multiple calculator: enter your entry, stop and exit to score a trade in R — profit measured in units of what you risked. The only score that matters. No sign-up.">
+<link rel="canonical" href="https://trendkept.com/tools/r-multiple-calculator/">
+<link rel="icon" type="image/svg+xml" href="/logo.svg">
+<meta property="og:type" content="website">
+<meta property="og:title" content="R-Multiple Calculator | Trendkept">
+<meta property="og:description" content="Score a trade in R — profit in units of what you risked. Free, no sign-up.">
+<meta property="og:url" content="https://trendkept.com/tools/r-multiple-calculator/">
+<meta property="og:image" content="https://trendkept.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://trendkept.com/og.png">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","name":"R-Multiple Calculator","applicationCategory":"FinanceApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"GBP"},"url":"https://trendkept.com/tools/r-multiple-calculator/"}
+</script>
+<style>
+  :root{--accent:#2a78d6;--surface:#fff;--page:#f6f7f9;--chip:#eef1f5;--ink:#0e1116;--ink2:#49525e;--muted:#8a93a0;--ring:rgba(14,17,22,.1);--ok:#158a60;--bad:#c04f5e;--shadow:0 1px 2px rgba(14,17,22,.05),0 12px 36px rgba(14,17,22,.08)}
+  @media(prefers-color-scheme:dark){:root{--accent:#4a90e8;--surface:#14161b;--page:#0a0c10;--chip:#1d2027;--ink:#f3f5f8;--ink2:#b6bdc8;--muted:#79818e;--ring:rgba(255,255,255,.09);--ok:#35c28c;--bad:#e0798a;--shadow:0 1px 2px rgba(0,0,0,.45),0 14px 40px rgba(0,0,0,.4)}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink);font:16px/1.65 Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+  a{color:var(--accent)}
+  .wrap{max-width:760px;margin:0 auto;padding:0 20px 80px}
+  .nav{border-bottom:1px solid var(--ring)}.nav .in{max-width:760px;margin:0 auto;padding:14px 20px}
+  .nav a{display:flex;align-items:center;gap:9px;font-weight:750;text-decoration:none;color:var(--ink)}.nav img{width:26px;height:26px;border-radius:7px}
+  .crumb{font-size:13px;color:var(--muted);margin:22px 0 0}
+  h1{font-size:clamp(28px,5vw,38px);letter-spacing:-.02em;margin:6px 0 8px}
+  .lead{color:var(--ink2);font-size:18px;margin:0 0 8px}
+  .card{background:var(--surface);border:1px solid var(--ring);border-radius:16px;padding:22px;margin:22px 0;box-shadow:var(--shadow)}
+  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}@media(max-width:520px){.grid{grid-template-columns:1fr}}
+  label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--ink2);font-weight:600}
+  .ig{display:flex;align-items:center;border:1px solid var(--ring);border-radius:10px;background:var(--page);overflow:hidden}
+  .ig span{padding:0 10px;color:var(--muted);font-size:15px}.ig input{border:0;background:transparent;color:var(--ink);font:inherit;font-size:16px;padding:12px 12px 12px 0;width:100%;outline:none}
+  .big{margin-top:18px;border-top:1px solid var(--ring);padding-top:18px;text-align:center}
+  .big .k{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  .big .v{font-size:44px;font-weight:750;font-variant-numeric:tabular-nums}
+  .warn{color:var(--bad);font-weight:600;margin-top:12px;font-size:14px}
+  h2{font-size:22px;letter-spacing:-.01em;margin:36px 0 6px}p{color:var(--ink2)}
+  .cta{display:inline-block;background:var(--accent);color:#fff;font-weight:650;text-decoration:none;border-radius:10px;padding:13px 22px;margin-top:8px}
+  .related{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}.related a{background:var(--surface);border:1px solid var(--ring);border-radius:999px;padding:8px 14px;text-decoration:none;font-size:14px}
+  .fine{color:var(--muted);font-size:13px;border-top:1px solid var(--ring);margin-top:40px;padding-top:20px}
+  code{font-family:ui-monospace,Menlo,Consolas,monospace;background:var(--chip);padding:2px 6px;border-radius:6px;font-size:14px}
+</style>
+</head>
+<body>
+<nav class="nav"><div class="in"><a href="/"><img src="/logo.svg" alt="">Trendkept</a></div></nav>
+<div class="wrap">
+  <p class="crumb"><a href="/">Home</a> › Free tools › R-multiple calculator</p>
+  <h1>R-Multiple Calculator</h1>
+  <p class="lead">Score any trade in "R" — your profit or loss measured in
+  units of what you put at risk. It's the only score that actually tells
+  you if your trading has an edge.</p>
+
+  <div class="card">
+    <div class="grid">
+      <label>Entry price
+        <span class="ig"><span>£</span><input id="entry" type="number" inputmode="decimal" value="50"></span></label>
+      <label>Stop-loss price
+        <span class="ig"><span>£</span><input id="stop" type="number" inputmode="decimal" value="47"></span></label>
+      <label>Exit price
+        <span class="ig"><span>£</span><input id="exit" type="number" inputmode="decimal" value="59"></span></label>
+    </div>
+    <div id="err" class="warn" hidden></div>
+    <div class="big"><div class="k">Result</div><div class="v" id="r">—</div></div>
+  </div>
+
+  <p><a class="cta" href="/#signup">Get Trendkept free — it scores every trade in R automatically →</a></p>
+
+  <h2>What is an R-multiple?</h2>
+  <p>One "R" is the amount you risked — the distance from your entry to
+  your stop-loss. If you risk £3 a share and the trade makes £9, that's
+  <b>+3R</b>. If it hits your stop, that's <b>−1R</b>. Measuring in R
+  instead of pounds lets you compare a trade on a £5 stock with one on a
+  £500 stock fairly, because both are scored against their own risk.</p>
+  <p><code>R = (exit − entry) ÷ (entry − stop)</code></p>
+
+  <h2>Why win rate is a vanity metric</h2>
+  <p>Here's the maths that surprises everyone: if your average winner is
+  +3R and your average loss is −1R, you can be <em>wrong 60% of the
+  time</em> and still grow your account steadily. Traders obsess over how
+  often they're right; the professionals track expectancy in R. Win rate
+  feels good; R-expectancy pays the bills.</p>
+
+  <h2>Keep the score honestly</h2>
+  <p>The catch is measuring every trade the same way, without flattering
+  yourself. <a href="/">Trendkept</a> builds your R-multiple journal
+  automatically from your broker's own fill history — you can't fool a
+  scorecard that fills itself in.</p>
+
+  <h2>Related calculators</h2>
+  <div class="related">
+    <a href="/tools/position-size-calculator/">Position size calculator</a>
+    <a href="/tools/risk-per-trade-calculator/">Risk per trade calculator</a>
+    <a href="/tools/stop-loss-calculator/">Stop-loss calculator</a>
+  </div>
+  <p class="fine">Educational tool, not investment advice. Trading involves
+  risk of loss. © Trendkept.</p>
+</div>
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  function calc(){
+    var entry=parseFloat($('entry').value),stop=parseFloat($('stop').value),exit=parseFloat($('exit').value);
+    var err=$('err'),r=$('r');
+    if([entry,stop,exit].some(function(x){return isNaN(x)||x<=0})){err.hidden=false;err.textContent="Fill in entry, stop and exit with positive numbers.";r.textContent="—";r.style.color="var(--ink)";return;}
+    if(stop>=entry){err.hidden=false;err.textContent="Stop-loss must be below entry (long position).";r.textContent="—";r.style.color="var(--ink)";return;}
+    err.hidden=true;
+    var val=(exit-entry)/(entry-stop);
+    r.textContent=(val>=0?"+":"")+val.toFixed(2)+"R";
+    r.style.color=val>=0?"var(--ok)":"var(--bad)";
+  }
+  ['entry','stop','exit'].forEach(function(id){$(id).addEventListener('input',calc)});
+  calc();
+})();
+</script>
+</body>
+</html>

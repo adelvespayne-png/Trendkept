@@ -1,0 +1,32 @@
+# Trendkept
+
+> Open-source trend-following toolkit that enforces a written trading
+> ruleset. It does not predict markets — it makes traders follow their own
+> rules: risk-based position sizing, a stop-loss attached to every order,
+> honest (causal, no look-ahead) backtesting, and an R-multiple trade
+> journal. Local-first: broker API keys never leave the user's machine.
+
+## What it is
+- A free, MIT-licensed Python engine + local dashboard (scan, chart,
+  backtest, watchlist, journal).
+- A planned paid tier (Trendkept Pro, ~£12/month) for one-click install,
+  licensed market data, and journal insights.
+- A weekly email, "The Trend Check", reporting what a published ruleset
+  says about 20 well-known tickers. Descriptive, never advice.
+
+## Core principles
+- No predictions. The edge is behaviour (discipline), not forecasting.
+- The stop-loss goes in with the entry order, enforced by the broker.
+- Position size = (account x risk%) / (entry - stop). No conviction knob.
+- Losses capped small; winners allowed to run; expectancy measured in R.
+- Long-only. Not investment advice; the user connects their own broker.
+
+## Free tools
+- Position size calculator: https://trendkept.com/tools/position-size-calculator/
+- Risk per trade calculator: https://trendkept.com/tools/risk-per-trade-calculator/
+- R-multiple calculator: https://trendkept.com/tools/r-multiple-calculator/
+- Stop-loss calculator: https://trendkept.com/tools/stop-loss-calculator/
+
+## Links
+- Site: https://trendkept.com/
+- Source: https://github.com/adelvespayne-png/Trendkept
