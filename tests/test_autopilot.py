@@ -30,3 +30,44 @@ class TestAutopilotSafety(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestExitDeduplication(unittest.TestCase):
+    def test_second_pass_skips_when_exit_already_pending(self):
+        # Reproduces the 07-20 double-exit: the 21:17 pass queued the SPY
+        # market sell; the 22:30 pass must notice and not stack another.
+        import argparse
+
+        from trendkept.cli import _manage_one
+        from trendkept.strategy import StrategyConfig, TrendFollowingStrategy
+        from trendkept.data import Bar
+
+        bars = []
+        price = 100.0
+        for i in range(260):
+            price += 0.5
+            bars.append(Bar(f"d{i:04d}", price - 0.2, price + 0.3,
+                            price - 0.4, price))
+        bars.append(Bar("crash", price, price, 10, 10))  # trend break
+
+        class FakeClient:
+            closed = False
+
+            def daily_bars(self, symbol):
+                return bars
+
+            def find_stop_order(self, symbol):
+                return None
+
+            def list_orders(self, status="open"):
+                return [{"symbol": "SPY", "side": "sell", "type": "market",
+                         "qty": "104", "status": "accepted"}]
+
+            def close_position(self, symbol):
+                FakeClient.closed = True
+
+        args = argparse.Namespace(confirm=True)
+        strat = TrendFollowingStrategy(StrategyConfig())
+        _manage_one(FakeClient(), strat,
+                    {"symbol": "SPY", "qty": "104"}, args)
+        self.assertFalse(FakeClient.closed)

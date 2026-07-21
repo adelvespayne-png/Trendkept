@@ -134,7 +134,15 @@ broker instead of your nerves.">
   .cta:hover { filter: brightness(1.08); transform: translateY(-1px); }
   .cta.ghost { background: transparent; color: var(--accent);
     border: 1.5px solid var(--accent); box-shadow: none; }
-  .heroNote { margin-top: 18px; font-size: 13.5px; color: var(--muted); }
+  .badges { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 22px; }
+  .badge { font-size: 13px; color: var(--ink-2); background: var(--surface);
+    border: 1px solid var(--ring); padding: 6px 12px; border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 7px; }
+  .badge.lock { color: var(--accent); font-weight: 650;
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--ring));
+    background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+  .heroNote { margin-top: 16px; font-size: 13.5px; color: var(--muted);
+    max-width: 36em; }
 
   /* layered product cards */
   .stack { position: relative; min-height: 430px; }
@@ -331,12 +339,21 @@ broker instead of your nerves.">
       R-multiples.</p>
       <div class="hero-ctas">
         <a class="cta" href="#signup">Get the weekly Trend Check — free</a>
-        <a class="cta ghost"
-           href="https://github.com/adelvespayne-png/Trendkept">
-          Star the open core</a>
       </div>
-      <p class="heroNote">Open source · runs on your computer · broker keys
-      never leave your machine</p>
+      <div class="badges">
+        <span class="badge lock"><svg width="13" height="13"
+          viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.4" stroke-linecap="round"><rect x="4" y="11"
+          width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/>
+          </svg> Broker keys never leave your machine</span>
+        <span class="badge">Open source (MIT)</span>
+        <span class="badge">Runs on your computer</span>
+      </div>
+      <p class="heroNote">The free toolkit is for traders comfortable with a
+      terminal (Python&nbsp;+&nbsp;GitHub —
+      <a href="https://github.com/adelvespayne-png/Trendkept">get it
+      here</a>). Pro, coming soon, is one-click for everyone else — the
+      weekly email is where we'll announce it.</p>
     </div>
 
     <div class="stack" aria-label="Product preview">
@@ -388,6 +405,9 @@ broker instead of your nerves.">
             <text x="220" y="38" font-size="11.5" fill="var(--accent)"
                   font-family="Inter, system-ui">entry — pullback</text>
           </svg>
+          <p style="font-size:12px;color:var(--muted);margin:10px 2px 0">
+          Most rows, most days, say "not today" — the rules trade rarely,
+          on purpose.</p>
         </div>
       </div>
     </div>
@@ -437,8 +457,9 @@ broker instead of your nerves.">
       <span class="t"><b>IWM</b><span class="s-bad">trend broken</span></span>
     </div>
   </div>
-  <p class="tapeCap">The board from Friday 18 July 2026 — what the rules said,
-  ticker by ticker. Descriptions of data, not advice.</p>
+  <p class="tapeCap"><b>Most days, the answer is "do nothing." That's the
+  discipline part.</b> The board from Friday 18 July 2026 — what the rules
+  said, ticker by ticker. Descriptions of data, not advice.</p>
   </div>
 
   <div class="stats rv">
@@ -552,21 +573,23 @@ broker instead of your nerves.">
     refuse to cheat, and the rules trading a real paper account in the
     open — wins, losses and boring days on the record.</p>
     <div class="card rv">
-      <b>Backtests that can't peek.</b>
-      <p style="color:var(--ink-2)">Every Trendkept backtest is causal: a
-      signal at bar <i>i</i> uses only data up to bar <i>i</i>. Backtests
-      that peek at the future look brilliant and trade terribly; Trendkept
-      refuses to peek, and says so in the results.</p>
+      <b>Backtests that can't peek — this is the report, not a pitch.</b>
+      <p style="color:var(--ink-2)">We show you this to demonstrate what an
+      honest backtest <i>refuses to do</i>: it can't peek at the future (a
+      signal at bar <i>i</i> uses only data up to bar <i>i</i>), it puts the
+      drawdown on the same line as the return, and it labels its own fills
+      as idealized. Backtests that peek look brilliant and trade terribly.
+      Run it yourself on any symbol — the number that comes out is
+      <i>yours</i>, not our marketing.</p>
 <pre><code>$ python -m trendkept.cli backtest --symbol AAPL --account 1000 --risk 0.02
 
 Starting equity  : 1,000.00
-Ending equity    : 1,252.00
-Total return     : +25.20%
-Max drawdown     : -2.28%
-Expectancy       : +7.13R per trade</code></pre>
-      <p class="fine">Real bundled example. Idealized fills — an optimistic
-      ceiling, not a promise. Past and backtested performance do not predict
-      future results.</p>
+Ending equity    : 1,252.00      &lt;- one bundled sample, not a promise
+Max drawdown     : -2.28%        &lt;- shown as prominently as the gain
+Expectancy       : +7.13R/trade  &lt;- idealized fills; reality slips</code></pre>
+      <p class="fine">Past and backtested performance do not predict future
+      results — which is why the strategy reacts to trends instead of
+      predicting them.</p>
     </div>
     <div class="card rv">
       <b>Built in public — the log so far.</b>

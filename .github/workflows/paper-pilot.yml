@@ -45,7 +45,7 @@ jobs:
           if [ ! -f /tmp/pass.txt ]; then
             echo "The autopilot pass failed before producing output." > /tmp/pass.txt
           fi
-          if grep -qE "submitted|EXIT|RAISE STOP|SET STOP|failed|error" /tmp/pass.txt; then
+          if grep -qE "submitted|EXIT|RAISE STOP|SET STOP|UNPROTECTED|failed|error" /tmp/pass.txt; then
             {
               echo "The rules acted on the paper account today. Full pass:"
               echo

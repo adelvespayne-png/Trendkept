@@ -80,6 +80,11 @@ important into committed files — the repo is the memory between sessions.
 - Next build candidates: journal v2 (discipline score per rule, owner
   notes per trade + broker-agnostic CSV import), SEO calculator pages,
   one-click Windows installer, "Open in TradingView" links on symbols.
+- Owner decision (July 2026): the repo stays FULLY PUBLIC — code,
+  paper log, autopilot reports, and the business docs (plan, financials,
+  checklist). Build-in-public is the strategy, chosen eyes-open after the
+  privacy trade-offs were laid out. Control stays owner-only (merges,
+  secrets, accounts); nothing secret lives in the repo.
 - Second external critique ("the council", July 2026) processed:
   ADOPTED — put the wedge on the website (journals score after the fact /
   brackets are one static rule / Trendkept enforces before+during+after;
@@ -90,6 +95,17 @@ important into committed files — the repo is the memory between sessions.
   version, not secrets; same as every open-core company). NOTED — the
   investor's verdict "come back on day 30 with the log" matches our own
   gate exactly.
+- Third critique round (website, July 2026) processed: ADOPTED — backtest
+  block reframed as "the report, not a pitch" (annotated output, drawdown
+  co-equal, run-it-yourself); "most days = do nothing, that's the
+  discipline" framing added to the hero board and tape; CTAs consolidated
+  to one primary (weekly email; GitHub demoted to text link + contextual
+  pricing button); audience honesty line in the hero (free = terminal
+  people, Pro = one-click, announced via the weekly); keys-never-leave
+  promise elevated to a lock badge by the CTAs. DEFERRED — third-party
+  proof (a real user's log beside ours) awaits actual users, priority
+  once a handful exist; visual differentiation from navy/blue fintech
+  default noted for a future brand pass, not urgent.
 - Owner asked (July 2026) for prediction + per-trade self-improving
   strategy. Settled answer: NO to prediction (the brand's literal
   anti-promise) and NO to per-trade auto-tuning (overfitting noise on

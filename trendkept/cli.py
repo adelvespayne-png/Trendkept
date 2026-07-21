@@ -289,6 +289,17 @@ def _manage_one(client, strat, position: dict, args) -> None:
 
     try:
         if action.kind == "exit":
+            # An exit ordered after hours sits queued until the next open;
+            # a second pass must not stack another sell on top of it.
+            pending_sell = any(
+                o.get("symbol", "").upper() == symbol.upper()
+                and o.get("side") == "sell"
+                and "stop" not in (o.get("type") or "")
+                for o in client.list_orders(status="open"))
+            if pending_sell:
+                print("    -> exit already on its way (sell order pending "
+                      "fill); nothing more to do.")
+                return
             if stop_order:
                 client.cancel_order(stop_order["id"])
             client.close_position(symbol)
@@ -425,6 +436,23 @@ def _cmd_autopilot(args: argparse.Namespace) -> int:
 
     if not actions:
         print("  no new entries — the rules say sit tight.")
+
+    # Safety roll-call: every open position must have a standing stop.
+    # (Entries carry stops by construction and manage heals gaps, so this
+    # should always pass — printing it makes the guarantee auditable.)
+    try:
+        open_positions = client.positions()
+        naked = [p.get("symbol", "?") for p in open_positions
+                 if not client.find_stop_order(p.get("symbol", ""))]
+        if naked:
+            print(f"  UNPROTECTED POSITION(S): {', '.join(naked)} — "
+                  "no standing stop found; next manage pass will install "
+                  "one, or add it by hand in Alpaca now.")
+        else:
+            print(f"  Safety check: {len(open_positions)} open position(s), "
+                  "every one protected by a standing stop-loss.")
+    except AlpacaError as exc:
+        print(f"  Safety check skipped (broker unreachable: {exc})")
     return 0
 
 
