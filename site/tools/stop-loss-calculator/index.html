@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stop-Loss Calculator — distance and £ at risk | Trendkept</title>
+<meta name="description" content="Free stop-loss calculator: enter your entry, stop and share count to see how far your stop is (in £ and %) and exactly how much money is at risk. No sign-up.">
+<link rel="canonical" href="https://trendkept.com/tools/stop-loss-calculator/">
+<link rel="icon" type="image/svg+xml" href="/logo.svg">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Stop-Loss Calculator | Trendkept">
+<meta property="og:description" content="How far your stop-loss is and how much money is at risk. Free, no sign-up.">
+<meta property="og:url" content="https://trendkept.com/tools/stop-loss-calculator/">
+<meta property="og:image" content="https://trendkept.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://trendkept.com/og.png">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","name":"Stop-Loss Calculator","applicationCategory":"FinanceApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"GBP"},"url":"https://trendkept.com/tools/stop-loss-calculator/"}
+</script>
+<style>
+  :root{--accent:#2a78d6;--surface:#fff;--page:#f6f7f9;--chip:#eef1f5;--ink:#0e1116;--ink2:#49525e;--muted:#8a93a0;--ring:rgba(14,17,22,.1);--ok:#158a60;--bad:#c04f5e;--shadow:0 1px 2px rgba(14,17,22,.05),0 12px 36px rgba(14,17,22,.08)}
+  @media(prefers-color-scheme:dark){:root{--accent:#4a90e8;--surface:#14161b;--page:#0a0c10;--chip:#1d2027;--ink:#f3f5f8;--ink2:#b6bdc8;--muted:#79818e;--ring:rgba(255,255,255,.09);--ok:#35c28c;--bad:#e0798a;--shadow:0 1px 2px rgba(0,0,0,.45),0 14px 40px rgba(0,0,0,.4)}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink);font:16px/1.65 Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+  a{color:var(--accent)}
+  .wrap{max-width:760px;margin:0 auto;padding:0 20px 80px}
+  .nav{border-bottom:1px solid var(--ring)}.nav .in{max-width:760px;margin:0 auto;padding:14px 20px}
+  .nav a{display:flex;align-items:center;gap:9px;font-weight:750;text-decoration:none;color:var(--ink)}.nav img{width:26px;height:26px;border-radius:7px}
+  .crumb{font-size:13px;color:var(--muted);margin:22px 0 0}
+  h1{font-size:clamp(28px,5vw,38px);letter-spacing:-.02em;margin:6px 0 8px}
+  .lead{color:var(--ink2);font-size:18px;margin:0 0 8px}
+  .card{background:var(--surface);border:1px solid var(--ring);border-radius:16px;padding:22px;margin:22px 0;box-shadow:var(--shadow)}
+  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}@media(max-width:520px){.grid{grid-template-columns:1fr}}
+  label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--ink2);font-weight:600}
+  .ig{display:flex;align-items:center;border:1px solid var(--ring);border-radius:10px;background:var(--page);overflow:hidden}
+  .ig span{padding:0 10px;color:var(--muted);font-size:15px}.ig input{border:0;background:transparent;color:var(--ink);font:inherit;font-size:16px;padding:12px 12px 12px 0;width:100%;outline:none}
+  .out{margin-top:6px;border-top:1px solid var(--ring);padding-top:18px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}@media(max-width:520px){.out{grid-template-columns:1fr}}
+  .stat{background:var(--chip);border-radius:12px;padding:14px 16px}.stat .k{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}.stat .v{font-size:24px;font-weight:750;font-variant-numeric:tabular-nums}.stat.hero .v{color:var(--accent)}
+  .warn{color:var(--bad);font-weight:600;margin-top:12px;font-size:14px}
+  h2{font-size:22px;letter-spacing:-.01em;margin:36px 0 6px}p{color:var(--ink2)}
+  .cta{display:inline-block;background:var(--accent);color:#fff;font-weight:650;text-decoration:none;border-radius:10px;padding:13px 22px;margin-top:8px}
+  .related{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}.related a{background:var(--surface);border:1px solid var(--ring);border-radius:999px;padding:8px 14px;text-decoration:none;font-size:14px}
+  .fine{color:var(--muted);font-size:13px;border-top:1px solid var(--ring);margin-top:40px;padding-top:20px}
+</style>
+</head>
+<body>
+<nav class="nav"><div class="in"><a href="/"><img src="/logo.svg" alt="">Trendkept</a></div></nav>
+<div class="wrap">
+  <p class="crumb"><a href="/">Home</a> › Free tools › Stop-loss calculator</p>
+  <h1>Stop-Loss Calculator</h1>
+  <p class="lead">See how far your stop-loss sits from your entry — in
+  pounds and as a percentage — and exactly how much money is on the line.</p>
+
+  <div class="card">
+    <div class="grid">
+      <label>Entry price
+        <span class="ig"><span>£</span><input id="entry" type="number" inputmode="decimal" value="50"></span></label>
+      <label>Stop-loss price
+        <span class="ig"><span>£</span><input id="stop" type="number" inputmode="decimal" value="47"></span></label>
+      <label>Shares held
+        <span class="ig"><input id="sh" type="number" inputmode="decimal" value="100"></span></label>
+    </div>
+    <div id="err" class="warn" hidden></div>
+    <div class="out" id="out">
+      <div class="stat hero"><div class="k">Money at risk</div><div class="v" id="risk">—</div></div>
+      <div class="stat"><div class="k">Stop distance</div><div class="v" id="dist">—</div></div>
+      <div class="stat"><div class="k">Distance %</div><div class="v" id="pct">—</div></div>
+    </div>
+  </div>
+
+  <p><a class="cta" href="/#signup">Get Trendkept free — the stop goes in with the order →</a></p>
+
+  <h2>Where should a stop-loss go?</h2>
+  <p>A stop-loss is the price at which you admit the trade was wrong and
+  get out — decided <em>before</em> you enter, not in the heat of a
+  drawdown. Trend traders usually place it just below the most recent
+  swing low: close enough to keep the loss small, far enough that normal
+  wobble doesn't shake you out. The exact spot matters less than the
+  discipline of having one and honouring it.</p>
+
+  <h2>The stop only works if it's actually there</h2>
+  <p>A "mental stop" is not a stop — it's an intention, and intentions
+  crumble when the screen turns red. The fix is a bracket/OCO order that
+  sends the stop to your broker <em>at the same time</em> as the entry, so
+  your calm self makes the decision, not your panicking one.
+  <a href="/">Trendkept</a> does exactly this on every trade, and trails
+  the stop up as the trend climbs.</p>
+
+  <h2>Related calculators</h2>
+  <div class="related">
+    <a href="/tools/position-size-calculator/">Position size calculator</a>
+    <a href="/tools/risk-per-trade-calculator/">Risk per trade calculator</a>
+    <a href="/tools/r-multiple-calculator/">R-multiple calculator</a>
+  </div>
+  <p class="fine">Educational tool, not investment advice. Trading involves
+  risk of loss. Long positions only. © Trendkept.</p>
+</div>
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  function money(n){return "£"+n.toLocaleString(undefined,{maximumFractionDigits:2})}
+  function calc(){
+    var entry=parseFloat($('entry').value),stop=parseFloat($('stop').value),sh=parseFloat($('sh').value);
+    var err=$('err'),out=$('out');
+    if([entry,stop,sh].some(function(x){return isNaN(x)||x<=0})){err.hidden=false;err.textContent="Fill in all three boxes with positive numbers.";out.style.opacity=.35;return;}
+    if(stop>=entry){err.hidden=false;err.textContent="Stop-loss must be below entry (long position).";out.style.opacity=.35;return;}
+    err.hidden=true;out.style.opacity=1;
+    var per=entry-stop;
+    $('risk').textContent=money(per*sh);
+    $('dist').textContent=money(per)+"/sh";
+    $('pct').textContent=(per/entry*100).toFixed(2)+"%";
+  }
+  ['entry','stop','sh'].forEach(function(id){$(id).addEventListener('input',calc)});
+  calc();
+})();
+</script>
+</body>
+</html>

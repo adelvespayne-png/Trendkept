@@ -94,9 +94,22 @@ bright line + descriptive-never-imperative rule already settled.
   history; `python -m trendkept.cli journal` + dashboard `/journal`
   page (needs Alpaca keys). Account/risk boxes now remember the last
   typed value per browser (the 1000-default kept sizing plans at 0 sh).
+- SEO/distribution layer shipped (July 2026, overnight batch): 4
+  interactive no-signup calculator pages (`site/tools/`: position-size,
+  risk-per-trade, r-multiple, stop-loss) each with OG + WebApplication
+  JSON-LD, cross-linked and funnelling to signup; homepage "Free tools"
+  section + nav link; branded OG share image (`site/og.png`) + Open
+  Graph/Twitter/JSON-LD on the homepage; `robots.txt`, `sitemap.xml`,
+  `llm.txt`. CRO: inline hero email capture + double-opt-in expectation
+  microcopy (two of the owner's own signups were "unactivated"). Content
+  drafts ready to post (compliance-safe, gate-respecting) in
+  `business/launch/`: essay_moving_stops.md, essay_lookahead_bias.md,
+  welcome_email.md. Plans: `business/CONTENT_STRATEGY.md`,
+  `business/CRO_AUDIT.md`.
 - Next build candidates: journal v2 (discipline score per rule, owner
-  notes per trade + broker-agnostic CSV import), SEO calculator pages,
-  one-click Windows installer, "Open in TradingView" links on symbols.
+  notes per trade + broker-agnostic CSV import), one-click Windows
+  installer, "Open in TradingView" links on symbols, more cluster
+  content from CONTENT_STRATEGY.md.
 - Owner decision (July 2026): the repo stays FULLY PUBLIC — code,
   paper log, autopilot reports, and the business docs (plan, financials,
   checklist). Build-in-public is the strategy, chosen eyes-open after the
@@ -131,6 +144,18 @@ bright line + descriptive-never-imperative rule already settled.
   out-of-sample split — so rule changes are evidence-gated; (b) journal
   insights once ~20+ real trades exist (expectancy by signal type,
   symbol class, hold time). Review cadence: monthly, never per-trade.
+- Trading-style landscape analysed (`business/TRADING_STYLES.md`,
+  July 2026): systematic vs discretionary families. My Trading Diagram
+  interpreter now recognises named methods and answers HONESTLY —
+  ICT/TJR/SMC/order-blocks/Wyckoff/Elliott get a 'we're a mechanical
+  trend-follower, can't reproduce that; nearest is a breakout-of-
+  structure entry' note; mean-reversion/fade gets a 'we only buy
+  confirmed uptrends' note; breakout/pullback leans acknowledged.
+  Clickable style examples on the /ruleset page. Never fakes an ICT
+  mode — that would break the no-predictions moat. Genuinely-different
+  strategy modules stay roadmap, gated on strict out-of-sample
+  backtests; the TradingView-alerts vision is the honest way to serve
+  discretionary traders (their entry, our discipline).
 - **Owner's stated end-state vision (July 2026): TradingView webhook
   alerts flowing into Trendkept** — the user charts/alerts in
   TradingView (paid TV plans can fire webhooks), a local Trendkept

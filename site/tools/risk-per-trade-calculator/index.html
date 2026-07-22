@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Risk Per Trade Calculator — the 1% rule | Trendkept</title>
+<meta name="description" content="Free risk-per-trade calculator: see exactly how much money 0.5%, 1% or 2% of your account is per trade — the amount a losing trade should cost. No sign-up.">
+<link rel="canonical" href="https://trendkept.com/tools/risk-per-trade-calculator/">
+<link rel="icon" type="image/svg+xml" href="/logo.svg">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Risk Per Trade Calculator | Trendkept">
+<meta property="og:description" content="How much money is 1% of your account per trade — the amount a loss should cost. Free.">
+<meta property="og:url" content="https://trendkept.com/tools/risk-per-trade-calculator/">
+<meta property="og:image" content="https://trendkept.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://trendkept.com/og.png">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","name":"Risk Per Trade Calculator","applicationCategory":"FinanceApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"GBP"},"url":"https://trendkept.com/tools/risk-per-trade-calculator/"}
+</script>
+<style>
+  :root{--accent:#2a78d6;--surface:#fff;--page:#f6f7f9;--chip:#eef1f5;--ink:#0e1116;--ink2:#49525e;--muted:#8a93a0;--ring:rgba(14,17,22,.1);--ok:#158a60;--bad:#c04f5e;--shadow:0 1px 2px rgba(14,17,22,.05),0 12px 36px rgba(14,17,22,.08)}
+  @media(prefers-color-scheme:dark){:root{--accent:#4a90e8;--surface:#14161b;--page:#0a0c10;--chip:#1d2027;--ink:#f3f5f8;--ink2:#b6bdc8;--muted:#79818e;--ring:rgba(255,255,255,.09);--ok:#35c28c;--bad:#e0798a;--shadow:0 1px 2px rgba(0,0,0,.45),0 14px 40px rgba(0,0,0,.4)}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink);font:16px/1.65 Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+  a{color:var(--accent)}
+  .wrap{max-width:760px;margin:0 auto;padding:0 20px 80px}
+  .nav{border-bottom:1px solid var(--ring)}.nav .in{max-width:760px;margin:0 auto;padding:14px 20px}
+  .nav a{display:flex;align-items:center;gap:9px;font-weight:750;text-decoration:none;color:var(--ink)}.nav img{width:26px;height:26px;border-radius:7px}
+  .crumb{font-size:13px;color:var(--muted);margin:22px 0 0}
+  h1{font-size:clamp(28px,5vw,38px);letter-spacing:-.02em;margin:6px 0 8px}
+  .lead{color:var(--ink2);font-size:18px;margin:0 0 8px}
+  .card{background:var(--surface);border:1px solid var(--ring);border-radius:16px;padding:22px;margin:22px 0;box-shadow:var(--shadow)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:520px){.grid{grid-template-columns:1fr}}
+  label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--ink2);font-weight:600}
+  .ig{display:flex;align-items:center;border:1px solid var(--ring);border-radius:10px;background:var(--page);overflow:hidden}
+  .ig span{padding:0 10px;color:var(--muted);font-size:15px}.ig input{border:0;background:transparent;color:var(--ink);font:inherit;font-size:16px;padding:12px 12px 12px 0;width:100%;outline:none}
+  .big{margin-top:18px;border-top:1px solid var(--ring);padding-top:18px;text-align:center}
+  .big .k{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  .big .v{font-size:44px;font-weight:750;color:var(--accent);font-variant-numeric:tabular-nums}
+  table{width:100%;border-collapse:collapse;margin-top:18px;font-size:15px}
+  th,td{text-align:left;padding:9px 8px;border-top:1px solid var(--ring)}th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  td.n{text-align:right;font-variant-numeric:tabular-nums;font-weight:650}
+  h2{font-size:22px;letter-spacing:-.01em;margin:36px 0 6px}p{color:var(--ink2)}
+  .cta{display:inline-block;background:var(--accent);color:#fff;font-weight:650;text-decoration:none;border-radius:10px;padding:13px 22px;margin-top:8px}
+  .related{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}.related a{background:var(--surface);border:1px solid var(--ring);border-radius:999px;padding:8px 14px;text-decoration:none;font-size:14px}
+  .fine{color:var(--muted);font-size:13px;border-top:1px solid var(--ring);margin-top:40px;padding-top:20px}
+  code{font-family:ui-monospace,Menlo,Consolas,monospace;background:var(--chip);padding:2px 6px;border-radius:6px;font-size:14px}
+</style>
+</head>
+<body>
+<nav class="nav"><div class="in"><a href="/"><img src="/logo.svg" alt="">Trendkept</a></div></nav>
+<div class="wrap">
+  <p class="crumb"><a href="/">Home</a> › Free tools › Risk per trade calculator</p>
+  <h1>Risk Per Trade Calculator</h1>
+  <p class="lead">Before you think about any single trade, decide the one
+  number that keeps you in the game: the most a loss is allowed to cost.</p>
+
+  <div class="card">
+    <div class="grid">
+      <label>Account size
+        <span class="ig"><span>£</span><input id="acct" type="number" inputmode="decimal" value="10000"></span></label>
+      <label>Risk per trade
+        <span class="ig"><input id="risk" type="number" inputmode="decimal" value="1" step="0.1"><span>%</span></span></label>
+    </div>
+    <div class="big"><div class="k">Most a single trade should cost you</div><div class="v" id="amt">£100</div></div>
+    <table><thead><tr><th>If you risk…</th><th>…a loss costs</th><th>Trades to halve the account*</th></tr></thead>
+      <tbody id="tbl"></tbody></table>
+    <p style="font-size:12px;color:var(--muted);margin:6px 2px 0">*Consecutive losing trades at that risk, roughly — a reminder that small % keeps you alive through a losing streak.</p>
+  </div>
+
+  <p><a class="cta" href="/#signup">Get Trendkept free — it sizes every trade to this →</a></p>
+
+  <h2>The 1% rule, in plain English</h2>
+  <p>Most disciplined traders risk 0.5–2% of their account on any one
+  trade. At 1%, you could lose ten trades in a row and still have ~90% of
+  your money — annoying, survivable. At 10%, the same streak nearly wipes
+  you out. The percentage isn't about being timid; it's about guaranteeing
+  you're still standing when the winning trade finally comes.</p>
+
+  <h2>Risk is a decision, not an accident</h2>
+  <p>This number is chosen <em>before</em> the trade, when you're calm —
+  not during the drawdown, when you're not. Once you know your risk per
+  trade, the <a href="/tools/position-size-calculator/">position size
+  calculator</a> turns it into an exact number of shares using your entry
+  and stop-loss.</p>
+
+  <h2>Related calculators</h2>
+  <div class="related">
+    <a href="/tools/position-size-calculator/">Position size calculator</a>
+    <a href="/tools/stop-loss-calculator/">Stop-loss calculator</a>
+    <a href="/tools/r-multiple-calculator/">R-multiple calculator</a>
+  </div>
+  <p class="fine">Educational tool, not investment advice. Trading involves
+  risk of loss. © Trendkept.</p>
+</div>
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  function money(n){return "£"+n.toLocaleString(undefined,{maximumFractionDigits:2})}
+  function calc(){
+    var acct=parseFloat($('acct').value),risk=parseFloat($('risk').value);
+    if(isNaN(acct)||acct<=0){$('amt').textContent="—";return;}
+    var r=isNaN(risk)?0:risk;
+    $('amt').textContent=money(acct*r/100);
+    var rows=[0.5,1,2,3].map(function(p){
+      var loss=acct*p/100, n=loss>0?Math.round(Math.log(0.5)/Math.log(1-p/100)):0;
+      return "<tr><td>"+p+"%</td><td class='n'>"+money(loss)+"</td><td class='n'>~"+n+"</td></tr>";
+    }).join("");
+    $('tbl').innerHTML=rows;
+  }
+  ['acct','risk'].forEach(function(id){$(id).addEventListener('input',calc)});
+  calc();
+})();
+</script>
+</body>
+</html>
