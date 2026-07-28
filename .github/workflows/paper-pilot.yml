@@ -16,7 +16,7 @@ on:
 
 permissions:
   issues: write
-  contents: read
+  contents: write # so the pass can write its own row into the paper log
 
 jobs:
   fly:
@@ -36,6 +36,40 @@ jobs:
           set -o pipefail
           python -m trendkept.cli autopilot --risk 0.01 --confirm \
             | tee /tmp/pass.txt
+
+      # The log is the public evidence file, so every pass records itself —
+      # including quiet ones. Idempotent per date: a re-run adds nothing.
+      # A failure here must never mask the trading result, so it is tolerated.
+      - name: Log the pass to the paper log
+        if: always()
+        continue-on-error: true
+        run: |
+          if [ ! -s /tmp/pass.txt ]; then
+            echo "No pass output — nothing to log."
+            exit 0
+          fi
+          python -m trendkept.paper_log \
+            --pass-file /tmp/pass.txt \
+            --log business/paper_log.csv
+          if git diff --quiet -- business/paper_log.csv; then
+            echo "Paper log already up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add business/paper_log.csv
+          git commit -m "Paper log: autopilot pass $(date -u +%Y-%m-%d)"
+          # Another run may have landed first; rebase rather than clobber.
+          for attempt in 1 2 3; do
+            if git pull --rebase --autostash origin "${GITHUB_REF_NAME}" \
+               && git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              echo "Paper log updated."
+              exit 0
+            fi
+            echo "Push attempt $attempt failed; retrying."
+            sleep $((attempt * 5))
+          done
+          echo "::warning::Could not push the paper log row; the pass itself is unaffected."
 
       - name: Report when something happened
         if: always()
