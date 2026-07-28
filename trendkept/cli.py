@@ -398,8 +398,20 @@ def _cmd_autopilot(args: argparse.Namespace) -> int:
               "no new entries considered.")
         return 0
 
+    # Scan tally — printed at the end so the sweep is auditable. A silent
+    # loop makes "checked all 20 and none qualified" look identical to
+    # "stopped early"; these counters tell them apart.
+    scanned = 0
+    uptrends = 0
+    signals = 0
+    errors: List[str] = []
+    stopped_early = False
+    # Count held *before* the loop — `held` grows as entries are taken.
+    already_held = len(held)
+
     for symbol in STANDARD_TICKERS:
         if slots <= 0:
+            stopped_early = True
             break
         if symbol.upper() in held:
             continue
@@ -408,9 +420,14 @@ def _cmd_autopilot(args: argparse.Namespace) -> int:
             plan = plan_trade(client, strat, symbol, bars, args.risk)
         except AlpacaError as exc:
             print(f"  {symbol}: skipped ({exc})")
+            errors.append(symbol)
             continue
+        scanned += 1
+        if bars and strat.is_uptrend(bars, len(bars) - 1):
+            uptrends += 1
         if plan is None:
             continue
+        signals += 1
         cost = plan.quantity * plan.entry_price
         try:
             available = client.cash()
@@ -436,6 +453,14 @@ def _cmd_autopilot(args: argparse.Namespace) -> int:
 
     if not actions:
         print("  no new entries — the rules say sit tight.")
+
+    print(f"  Scan: {scanned} of {len(STANDARD_TICKERS)} tickers checked"
+          + (f" ({already_held} already held)" if already_held else "")
+          + f" — {uptrends} in an uptrend, {signals} met entry conditions, "
+          + f"{len(errors)} data error(s)"
+          + (f" [{', '.join(errors)}]" if errors else "")
+          + (" — scan stopped early: position cap reached"
+             if stopped_early else "") + ".")
 
     # Safety roll-call: every open position must have a standing stop.
     # (Entries carry stops by construction and manage heals gaps, so this
