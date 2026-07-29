@@ -25,7 +25,43 @@ You are looking for someone who:
 
 One good-fit answer beats ten from people who'd never buy.
 
-**Where to find them, in order of warmth:**
+### Where to actually send the referral question
+
+You are not asking people to be the customer — you are asking whether they
+**know** someone. Nearly everyone knows one person who trades. So this goes
+to your ordinary contacts, not to traders.
+
+**Do this:** open WhatsApp, look at the top ~15 recent chats, and send to
+everyone who isn't a grandparent. Then one group chat. Then a story. Total
+time: ten minutes.
+
+**1:1 (WhatsApp / iMessage / DM) — the highest response rate:**
+
+> Random one mate — do you know anyone who's into trading stocks? Building
+> something for traders and I need to ask someone a couple of questions.
+> No selling, just need an actual trader's opinion.
+
+**Group chat (the lads / uni / work):**
+
+> Random question for the chat — anyone here trade stocks, or know someone
+> who does? Building a tool for traders and I need to run it past someone
+> who actually trades. Would owe you one.
+
+**Instagram / Snapchat story (reaches everyone at once):**
+
+> Building something for people who trade stocks 📈
+> Know anyone who trades? DM me — need to ask them one question.
+
+**Also worth asking:** parents and older relatives (colleagues who trade),
+anyone at work, gym, uni course mates, and anyone who has *ever* mentioned
+stocks, crypto, Trading 212 or a big win/loss.
+
+**On the awkwardness:** it feels cringe to message people about your own
+project. This message is built to minimise that — you are asking for help
+and an introduction, not pitching. People say yes to that easily, and most
+will be mildly interested that you are building something.
+
+**Where to find them once you have names, in order of warmth:**
 
 1. **People you already know** who trade. Start here. It feels awkward; do it anyway.
 2. **Communities you already read** — r/swingtrading, r/algotrading, trading
