@@ -39,8 +39,10 @@ sprints.**
 
 ## Weeks 3–4 — first public swings (the validation data arrives)
 
-- [ ] **The three-warm-yeses test** (from the July "council" review — its
-      cheapest good idea): in direct, personal conversations (DMs, replies,
+- [ ] **The three-warm-yeses test** — full playbook with scripts, scoring
+      and a tracking table: **`business/THREE_WARM_YESES.md`**. (From the
+      July "council" review — its cheapest good idea): in direct,
+      personal conversations (DMs, replies,
       the one real subscriber — never spam posts), ask ~10 traders who fit
       the profile one question: *"Would you pay £12/month for a tool that
       enforces this written ruleset on your own account — sizing, stop

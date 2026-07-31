@@ -363,6 +363,114 @@ STANDARD_TICKERS = [
 _AUTOPILOT_MAX_POSITIONS = 4  # concentration rail: never more open trades
 
 
+def _cmd_lab(args: argparse.Namespace) -> int:
+    """Compare rule variants on real history, in-sample and out-of-sample.
+
+    READ-ONLY by construction: it fetches bars and simulates. It cannot place
+    an order — there is no broker call in this path at all.
+
+    The discipline that makes the output worth anything: a variant is only
+    worth shipping if it beats the baseline on the *validation* slice, which
+    the comparison never got to see while we were choosing what to try. A
+    variant that only wins in-sample is a variant fitted to noise.
+    """
+    from datetime import datetime, timedelta, timezone
+
+    from .alpaca import AlpacaClient, AlpacaError
+    from .portfolio import (EXTENDED, VARIANTS, PortfolioBacktester,
+                            split_date)
+
+    start = (datetime.now(timezone.utc)
+             - timedelta(days=365 * args.years)).strftime("%Y-%m-%d")
+    try:
+        client = AlpacaClient(paper=True)
+    except AlpacaError as exc:
+        print(f"Alpaca error: {exc}", file=sys.stderr)
+        return 1
+
+    # Fetch every symbol any variant might trade, so H4's wider universe is
+    # available without a second pass.
+    wanted = list(dict.fromkeys(list(STANDARD_TICKERS) + list(EXTENDED)))
+    data = {}
+    for sym in wanted:
+        try:
+            bars = client.daily_bars(sym, start=start)
+        except AlpacaError as exc:
+            print(f"  {sym}: skipped ({exc})")
+            continue
+        if bars:
+            data[sym] = bars
+    if not data:
+        print("No data fetched — cannot run the lab.", file=sys.stderr)
+        return 1
+
+    dates = sorted({b.date for bars in data.values() for b in bars})
+    cut = split_date(data, args.split)
+    print(f"Strategy lab — {len(data)} tickers, {len(dates)} sessions "
+          f"({dates[0]} to {dates[-1]})")
+    print(f"Tune on/before {cut}; validate strictly after it.\n")
+
+    bt = PortfolioBacktester(risk_pct=args.risk)
+
+    def table(title, kw):
+        print(title)
+        print(f"  {'variant':<18}{'return%':>9}{'maxDD%':>9}{'trades':>8}"
+              f"{'win%':>7}{'exp.R':>8}{'PF':>7}")
+        print("  " + "-" * 64)
+        rows = []
+        for v in VARIANTS:
+            r = bt.run(data, v, order=STANDARD_TICKERS, **kw)
+            pf = r.profit_factor
+            print(f"  {v.name:<18}{r.return_pct:>9.1f}{r.max_dd_pct:>9.1f}"
+                  f"{len(r.closed):>8}{r.win_rate:>7.0f}"
+                  f"{r.expectancy_r:>8.2f}"
+                  f"{(pf if pf != float('inf') else 999):>7.2f}")
+            rows.append((v.name, r))
+        print()
+        return dict(rows)
+
+    ins = table("IN-SAMPLE (tuning slice — do not trust these on their own)",
+                {"date_to": cut})
+    oos = table("OUT-OF-SAMPLE (validation slice — this is the one that counts)",
+                {"date_from": cut})
+
+    base_in, base_out = ins["baseline"], oos["baseline"]
+
+    # A comparison over a handful of trades is noise wearing a table's
+    # clothes. Say so rather than letting the numbers imply a finding.
+    _MIN = 30
+    thin = [n for n, r in (("in-sample", base_in), ("out-of-sample", base_out))
+            if len(r.closed) < _MIN]
+    if thin:
+        print(f"NOT ENOUGH DATA: the {' and '.join(thin)} slice(s) produced "
+              f"fewer than {_MIN} baseline trades.")
+        print("  Any ranking below is noise. Pull more history (--years) or "
+              "widen the universe before drawing a conclusion.\n")
+
+    print("VERDICT — a variant must beat the baseline on BOTH slices:")
+    any_ok = False
+    for v in VARIANTS:
+        if v.name == "baseline":
+            continue
+        a, b = ins[v.name], oos[v.name]
+        better_in = a.expectancy_r > base_in.expectancy_r
+        better_out = b.expectancy_r > base_out.expectancy_r
+        if better_in and better_out:
+            any_ok = True
+            flag = " (UNRELIABLE — thin sample)" if thin else ""
+            print(f"  CANDIDATE {v.name}{flag}: expectancy "
+                  f"{base_in.expectancy_r:+.2f}->{a.expectancy_r:+.2f} "
+                  f"in-sample, {base_out.expectancy_r:+.2f}->"
+                  f"{b.expectancy_r:+.2f} out.")
+        elif better_in:
+            print(f"  rejected  {v.name}: better in-sample only — fitted to noise.")
+    if not any_ok:
+        print("  Nothing beat the baseline on both slices. Change nothing.")
+    print("\nCandidates are hypotheses, not decisions. Ship only after review "
+          "against business/REVIEW_PROTOCOL.md §5.")
+    return 0
+
+
 def _cmd_autopilot(args: argparse.Namespace) -> int:
     """One full daily pass of the rules over the paper account.
 
@@ -641,6 +749,18 @@ def build_parser() -> argparse.ArgumentParser:
     jp.add_argument("--live", action="store_true",
                     help="read the LIVE account instead of paper")
     jp.set_defaults(func=_cmd_journal)
+
+    lp = sub.add_parser("lab",
+                        help="compare rule variants against the baseline on "
+                             "real data, with an out-of-sample split "
+                             "(read-only: places no orders, ever)")
+    lp.add_argument("--years", type=int, default=10,
+                    help="years of daily history to pull (default 10)")
+    lp.add_argument("--split", type=float, default=0.7,
+                    help="fraction of the timeline used for tuning; the rest "
+                         "is held back for validation (default 0.7)")
+    lp.add_argument("--risk", type=float, default=0.01)
+    lp.set_defaults(func=_cmd_lab)
 
     return parser
 
