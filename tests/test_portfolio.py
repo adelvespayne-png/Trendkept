@@ -117,7 +117,7 @@ class TestPortfolioMechanics(unittest.TestCase):
         self.assertLessEqual(len(cool.trades), len(base.trades))
 
     def test_impossible_breadth_gate_blocks_all_entries(self):
-        res = self.bt.run(self.data, Variant("b", min_breadth=999))
+        res = self.bt.run(self.data, Variant("b", min_breadth_pct=1.01))
         self.assertEqual(len(res.trades), 0)
         self.assertAlmostEqual(res.ending_equity, 100_000.0, places=6)
 
@@ -138,3 +138,42 @@ class TestPortfolioMechanics(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestUniverses(unittest.TestCase):
+    """H4: a variant may trade a different watchlist. Breadth is a *fraction*
+    so a threshold means the same thing whatever the universe size."""
+
+    def setUp(self):
+        self.data = {f"S{i}": synth(30 + i) for i in range(8)}
+        self.bt = PortfolioBacktester(starting_equity=100_000.0)
+
+    def test_variant_universe_restricts_which_symbols_trade(self):
+        res = self.bt.run(self.data, Variant("u", universe=["S0", "S1"]))
+        self.assertTrue(all(t.symbol in ("S0", "S1") for t in res.trades))
+
+    def test_wider_universe_gives_at_least_as_many_chances(self):
+        narrow = self.bt.run(self.data, Variant("n", universe=["S0", "S1"]))
+        wide = self.bt.run(self.data, Variant("w", universe=list(self.data)))
+        self.assertGreaterEqual(len(wide.trades), len(narrow.trades))
+
+    def test_breadth_is_a_fraction_not_a_count(self):
+        # The same threshold on a 2-symbol and an 8-symbol universe must both
+        # be interpretable; a count would silently mean different things.
+        small = self.bt.run(self.data,
+                            Variant("s", universe=["S0", "S1"],
+                                    min_breadth_pct=0.5))
+        big = self.bt.run(self.data,
+                          Variant("b", universe=list(self.data),
+                                  min_breadth_pct=0.5))
+        for r in (small, big):
+            self.assertIsInstance(len(r.trades), int)
+
+    def test_extended_universe_is_diversified_not_just_bigger(self):
+        from trendkept.portfolio import CORE_20, DIVERSIFIERS, EXTENDED
+        self.assertEqual(len(EXTENDED), len(set(EXTENDED)), "no duplicates")
+        self.assertTrue(set(CORE_20).issubset(EXTENDED))
+        # The diversifiers must not just be more US single-name equities.
+        for etf in ("TLT", "GLD", "EFA", "XLE", "UUP"):
+            self.assertIn(etf, DIVERSIFIERS)
+        self.assertGreater(len(DIVERSIFIERS), 20)

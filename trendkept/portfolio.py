@@ -103,11 +103,15 @@ class Variant:
     name: str
     # H1 — do not re-enter a symbol for N trading days after it closes.
     cooldown_days: int = 0
-    # H2 — require at least this many of the universe in a confirmed uptrend
-    # before opening anything new. Exits are never gated.
-    min_breadth: int = 0
+    # H2 — require this fraction of the universe to be in a confirmed uptrend
+    # before opening anything new. A *fraction*, not a count, so the threshold
+    # means the same thing whatever size universe a variant trades. Exits are
+    # never gated: a breadth collapse must not trap us in a broken trend.
+    min_breadth_pct: float = 0.0
     # H3 — stop distance override, as a fraction below the close.
     stop_pct: Optional[float] = None
+    # H4 — trade a different universe. None means "whatever the caller passed".
+    universe: Optional[List[str]] = None
 
 
 @dataclass
@@ -191,7 +195,7 @@ class PortfolioBacktester:
             order: Optional[Sequence[str]] = None,
             date_from: Optional[str] = None,
             date_to: Optional[str] = None) -> LabResult:
-        symbols = list(order or sorted(data))
+        symbols = list(variant.universe or order or sorted(data))
         pre = {s: Precomputed(data[s], self.cfg) for s in symbols if data.get(s)}
         symbols = [s for s in symbols if s in pre]
 
@@ -239,11 +243,12 @@ class PortfolioBacktester:
                     t.stop = max(t.stop, cand)  # ratchet only
 
             # --- 2. breadth gate (H2) ---
-            breadth = sum(
-                1 for s in symbols
-                if (j := at[s].get(date)) is not None and pre[s].uptrend[j]
-            )
-            may_enter = breadth >= variant.min_breadth
+            live_syms = [s for s in symbols if date in at[s]]
+            if variant.min_breadth_pct > 0 and live_syms:
+                breadth = sum(1 for s in live_syms if pre[s].uptrend[at[s][date]])
+                may_enter = breadth / len(live_syms) >= variant.min_breadth_pct
+            else:
+                may_enter = True
 
             # --- 3. new entries, in the live scan order ---
             if may_enter:
@@ -289,18 +294,56 @@ class PortfolioBacktester:
         )
 
 
+# --- universes -------------------------------------------------------------
+#
+# The live board is 20 US equities — but 13 of them are US mega-cap tech or
+# indices dominated by it, so it behaves like roughly one bet. When tech falls
+# the whole board falls together, which is exactly what "0 of 20 in an
+# uptrend" has meant these past weeks.
+#
+# Trend-following's historical edge leans heavily on *diversification across
+# uncorrelated markets* — something is usually trending somewhere. The
+# extended universe below adds bonds, gold and commodities, energy, currencies,
+# international equities and the US sectors, all as liquid ETFs. H4 tests
+# whether that actually helps, rather than assuming it.
+
+DIVERSIFIERS: List[str] = [
+    # bonds / rates
+    "TLT", "IEF", "SHY", "LQD", "HYG", "TIP",
+    # metals & commodities
+    "GLD", "SLV", "GDX", "DBC", "USO", "UNG",
+    # international equity
+    "EFA", "EEM", "VGK", "EWJ", "FXI", "EWZ",
+    # US sectors
+    "XLE", "XLF", "XLV", "XLU", "XLP", "XLI", "XLK", "XLB", "XLY", "XLRE",
+    # real assets & currency
+    "VNQ", "UUP",
+]
+
+CORE_20: List[str] = [
+    "AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA", "AVGO",
+    "JPM", "V", "UNH", "XOM", "COST", "PG", "HD", "NFLX", "AMD",
+    "SPY", "QQQ", "IWM",
+]
+
+EXTENDED: List[str] = CORE_20 + DIVERSIFIERS
+
 # The hypotheses, each traceable to something we observed live (see
 # business/REVIEW_PROTOCOL.md).
 VARIANTS: List[Variant] = [
     Variant("baseline"),
     Variant("H1 cooldown 5d", cooldown_days=5),
     Variant("H1 cooldown 10d", cooldown_days=10),
-    Variant("H2 breadth >=3", min_breadth=3),
-    Variant("H2 breadth >=5", min_breadth=5),
-    Variant("H2 breadth >=8", min_breadth=8),
-    Variant("H1+H2 (5d, >=5)", cooldown_days=5, min_breadth=5),
+    Variant("H2 breadth >=15%", min_breadth_pct=0.15),
+    Variant("H2 breadth >=25%", min_breadth_pct=0.25),
+    Variant("H2 breadth >=40%", min_breadth_pct=0.40),
+    Variant("H1+H2 (5d, 25%)", cooldown_days=5, min_breadth_pct=0.25),
     Variant("H3 stop 8%", stop_pct=0.08),
     Variant("H3 stop 12%", stop_pct=0.12),
+    Variant("H4 diversified", universe=EXTENDED),
+    Variant("H4 diversifiers only", universe=DIVERSIFIERS),
+    Variant("H4 + cooldown 5d", universe=EXTENDED, cooldown_days=5),
+    Variant("H4 + breadth 25%", universe=EXTENDED, min_breadth_pct=0.25),
 ]
 
 

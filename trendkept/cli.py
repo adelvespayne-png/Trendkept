@@ -377,7 +377,8 @@ def _cmd_lab(args: argparse.Namespace) -> int:
     from datetime import datetime, timedelta, timezone
 
     from .alpaca import AlpacaClient, AlpacaError
-    from .portfolio import VARIANTS, PortfolioBacktester, split_date
+    from .portfolio import (EXTENDED, VARIANTS, PortfolioBacktester,
+                            split_date)
 
     start = (datetime.now(timezone.utc)
              - timedelta(days=365 * args.years)).strftime("%Y-%m-%d")
@@ -387,8 +388,11 @@ def _cmd_lab(args: argparse.Namespace) -> int:
         print(f"Alpaca error: {exc}", file=sys.stderr)
         return 1
 
+    # Fetch every symbol any variant might trade, so H4's wider universe is
+    # available without a second pass.
+    wanted = list(dict.fromkeys(list(STANDARD_TICKERS) + list(EXTENDED)))
     data = {}
-    for sym in STANDARD_TICKERS:
+    for sym in wanted:
         try:
             bars = client.daily_bars(sym, start=start)
         except AlpacaError as exc:
