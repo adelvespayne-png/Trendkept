@@ -1,0 +1,72 @@
+# The strategy lab: compare rule variants against the live baseline on real
+# daily history, with an out-of-sample split, and post the comparison.
+#
+# READ-ONLY. The `lab` command fetches bars and simulates; there is no broker
+# order call anywhere in that path. It cannot trade.
+#
+# Manual by default — this is a research tool, not part of the daily rhythm.
+# A monthly run matches the review cadence in business/REVIEW_PROTOCOL.md
+# (§5: monthly, never per-trade).
+name: Strategy lab
+
+on:
+  workflow_dispatch:
+    inputs:
+      years:
+        description: "Years of daily history to test over"
+        default: "10"
+      split:
+        description: "Fraction used for tuning; the rest is held back"
+        default: "0.7"
+  schedule:
+    - cron: "0 7 1 * *" # 07:00 UTC on the 1st — the monthly review
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  lab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run the comparison
+        env:
+          APCA_API_KEY_ID: ${{ secrets.APCA_API_KEY_ID }}
+          APCA_API_SECRET_KEY: ${{ secrets.APCA_API_SECRET_KEY }}
+        run: |
+          set -o pipefail
+          python -m trendkept.cli lab \
+            --years "${{ github.event.inputs.years || 10 }}" \
+            --split "${{ github.event.inputs.split || 0.7 }}" \
+            | tee /tmp/lab.txt
+
+      - name: Post the results
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ ! -s /tmp/lab.txt ]; then
+            echo "The lab failed before producing output." > /tmp/lab.txt
+          fi
+          {
+            echo "Variant comparison on real daily history."
+            echo
+            echo '```'
+            cat /tmp/lab.txt
+            echo '```'
+            echo
+            echo "_Read-only simulation — no orders were placed. A candidate is"
+            echo "a hypothesis, not a decision: shipping requires a review under"
+            echo "\`business/REVIEW_PROTOCOL.md\` §5._"
+          } > /tmp/issue.md
+          gh issue create \
+            --title "Strategy lab — $(date -u +%Y-%m-%d)" \
+            --body-file /tmp/issue.md \
+            --repo "$GITHUB_REPOSITORY"
