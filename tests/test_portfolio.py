@@ -136,8 +136,6 @@ class TestPortfolioMechanics(unittest.TestCase):
         self.assertLess(d, alldates[-1])
 
 
-if __name__ == "__main__":
-    unittest.main()
 
 
 class TestUniverses(unittest.TestCase):
@@ -177,3 +175,6 @@ class TestUniverses(unittest.TestCase):
         for etf in ("TLT", "GLD", "EFA", "XLE", "UUP"):
             self.assertIn(etf, DIVERSIFIERS)
         self.assertGreater(len(DIVERSIFIERS), 20)
+
+if __name__ == "__main__":
+    unittest.main()
