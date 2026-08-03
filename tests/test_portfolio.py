@@ -178,3 +178,46 @@ class TestUniverses(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestRIsMeasuredFromEntryRisk(unittest.TestCase):
+    """Regression: R must divide by the risk taken AT ENTRY.
+
+    The first version of this module kept one mutable `stop` field, so a
+    trailing stop shrank the R denominator on exactly the trades that ran —
+    producing negative expectancy alongside a positive return. Every verdict
+    the lab printed from those numbers was wrong.
+    """
+
+    def test_trailing_the_stop_does_not_change_the_denominator(self):
+        from trendkept.portfolio import PortfolioTrade
+        t = PortfolioTrade("X", "2020-01-01", entry=100.0, shares=10,
+                           stop=90.0, initial_stop=90.0)
+        self.assertAlmostEqual(t.risk, 100.0)
+        t.stop = 99.0                      # trade ran; stop ratcheted up
+        self.assertAlmostEqual(t.risk, 100.0, msg="risk must not move")
+        t.exit = 130.0
+        self.assertAlmostEqual(t.r, 3.0)   # +300 on 100 risked
+
+    def test_a_winner_that_trailed_far_reports_sane_R(self):
+        bt = PortfolioBacktester(starting_equity=100_000.0)
+        res = bt.run({f"S{i}": synth(50 + i) for i in range(4)},
+                     Variant("baseline"))
+        for t in res.closed:
+            self.assertGreater(t.risk, 0, "risk must stay positive")
+            self.assertGreater(t.r, -6.0)
+            self.assertLess(t.r, 25.0, f"absurd R on {t.symbol}")
+
+    def test_expectancy_agrees_in_sign_with_dollar_profit(self):
+        # The tell that exposed the bug: a profitable run must not report a
+        # negative average R, and vice versa.
+        bt = PortfolioBacktester(starting_equity=100_000.0)
+        for seeds in ((50, 51, 52, 53), (60, 61, 62, 63)):
+            res = bt.run({f"S{i}": synth(i) for i in seeds}, Variant("baseline"))
+            if not res.closed:
+                continue
+            dollars = sum(t.pnl for t in res.closed)
+            if abs(dollars) > 1.0:
+                self.assertEqual(dollars > 0, res.expectancy_r > 0,
+                                 f"sign mismatch: {dollars:.0f} vs "
+                                 f"{res.expectancy_r:+.2f}R")
