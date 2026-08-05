@@ -447,14 +447,19 @@ def _cmd_lab(args: argparse.Namespace) -> int:
         print("  Any ranking below is noise. Pull more history (--years) or "
               "widen the universe before drawing a conclusion.\n")
 
-    print("VERDICT — a variant must beat the baseline on BOTH slices:")
+    print("VERDICT — a variant must beat the baseline on BOTH slices,\n        on BOTH expectancy and return:")
     any_ok = False
     for v in VARIANTS:
         if v.name == "baseline":
             continue
         a, b = ins[v.name], oos[v.name]
-        better_in = a.expectancy_r > base_in.expectancy_r
-        better_out = b.expectancy_r > base_out.expectancy_r
+        # Both metrics, both slices. Ranking on expectancy alone once let a
+        # variant with a worse return look like a winner; requiring return
+        # too stops us picking the metric that flatters our hypothesis.
+        better_in = (a.expectancy_r > base_in.expectancy_r
+                     and a.return_pct > base_in.return_pct)
+        better_out = (b.expectancy_r > base_out.expectancy_r
+                      and b.return_pct > base_out.return_pct)
         if better_in and better_out:
             any_ok = True
             flag = " (UNRELIABLE — thin sample)" if thin else ""

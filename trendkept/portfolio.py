@@ -120,19 +120,31 @@ class PortfolioTrade:
     entry_date: str
     entry: float
     shares: int
+    # `stop` ratchets up as the trade runs; `initial_stop` never moves.
+    # R must be measured against the risk taken *at entry* — dividing by the
+    # trailed stop shrinks the denominator on winners (and can flip its sign),
+    # which silently corrupts every expectancy figure downstream.
     stop: float
+    initial_stop: float = 0.0
     exit_date: Optional[str] = None
     exit: Optional[float] = None
     reason: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.initial_stop:
+            self.initial_stop = self.stop
 
     @property
     def pnl(self) -> float:
         return 0.0 if self.exit is None else (self.exit - self.entry) * self.shares
 
     @property
+    def risk(self) -> float:
+        return (self.entry - self.initial_stop) * self.shares
+
+    @property
     def r(self) -> float:
-        risk = (self.entry - self.stop) * self.shares
-        return 0.0 if risk <= 0 else self.pnl / risk
+        return 0.0 if self.risk <= 0 else self.pnl / self.risk
 
 
 @dataclass
@@ -276,7 +288,8 @@ class PortfolioBacktester:
                     if shares <= 0:
                         continue
                     cash -= entry * shares
-                    t = PortfolioTrade(sym, date, entry, shares, stop)
+                    t = PortfolioTrade(sym, date, entry, shares, stop,
+                                       initial_stop=stop)
                     open_pos[sym] = t
                     trades.append(t)
 
