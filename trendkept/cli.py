@@ -578,17 +578,32 @@ def _cmd_autopilot(args: argparse.Namespace) -> int:
     # Safety roll-call: every open position must have a standing stop.
     # (Entries carry stops by construction and manage heals gaps, so this
     # should always pass — printing it makes the guarantee auditable.)
+    #
+    # A position being exited is the one legitimate exception: `manage`
+    # cancels its stop and queues a market sell, which sits until the next
+    # open. It is *leaving*, not unprotected — flagging it cries wolf and
+    # (via the auto-logger) marks an otherwise clean day as a rule breach.
     try:
         open_positions = client.positions()
+        try:
+            leaving = {
+                o.get("symbol", "").upper()
+                for o in client.list_orders(status="open")
+                if o.get("side") == "sell" and "stop" not in (o.get("type") or "")
+            }
+        except AlpacaError:
+            leaving = set()
         naked = [p.get("symbol", "?") for p in open_positions
-                 if not client.find_stop_order(p.get("symbol", ""))]
+                 if p.get("symbol", "").upper() not in leaving
+                 and not client.find_stop_order(p.get("symbol", ""))]
         if naked:
             print(f"  UNPROTECTED POSITION(S): {', '.join(naked)} — "
                   "no standing stop found; next manage pass will install "
                   "one, or add it by hand in Alpaca now.")
         else:
-            print(f"  Safety check: {len(open_positions)} open position(s), "
-                  "every one protected by a standing stop-loss.")
+            note = (f" ({len(leaving)} exiting)" if leaving else "")
+            print(f"  Safety check: {len(open_positions)} open position(s)"
+                  f"{note}, every one protected by a standing stop-loss.")
     except AlpacaError as exc:
         print(f"  Safety check skipped (broker unreachable: {exc})")
     return 0

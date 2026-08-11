@@ -112,6 +112,9 @@ class TestScanSummaryIsAuditable(unittest.TestCase):
             def find_stop_order(self, symbol):
                 return {"id": "x"}
 
+            def list_orders(self, status="open"):
+                return []
+
         buf = io.StringIO()
         with mock.patch.object(alpaca_mod, "AlpacaClient", FakeClient), \
              mock.patch.object(alpaca_mod, "plan_trade",
@@ -132,3 +135,58 @@ class TestScanSummaryIsAuditable(unittest.TestCase):
         self.assertIn("2 data error(s)", out)
         self.assertIn("NFLX", out)
         self.assertIn("IWM", out)
+
+
+class TestExitingPositionIsNotCalledUnprotected(unittest.TestCase):
+    """A position whose exit is already queued has had its stop cancelled on
+    purpose. Flagging it UNPROTECTED cries wolf — and the auto-logger turns
+    that warning into an 'N' on the day's row, wrongly recording a breach.
+    Reproduces issue #38 (AMZN, 2026-08-05)."""
+
+    def _pass(self, pending_exit):
+        import argparse
+        import contextlib
+        import io
+        from unittest import mock
+
+        from trendkept import alpaca as alpaca_mod
+        from trendkept.cli import _cmd_autopilot
+
+        class FakeClient:
+            def __init__(self, paper=True):
+                pass
+
+            def positions(self):
+                return [{"symbol": "AMZN", "qty": "27"}]
+
+            def daily_bars(self, symbol):
+                raise alpaca_mod.AlpacaError("no data")
+
+            def cash(self):
+                return 0.0
+
+            def find_stop_order(self, symbol):
+                return None            # stop was cancelled by the exit
+
+            def list_orders(self, status="open"):
+                if not pending_exit:
+                    return []
+                return [{"symbol": "AMZN", "side": "sell", "type": "market"}]
+
+        buf = io.StringIO()
+        with mock.patch.object(alpaca_mod, "AlpacaClient", FakeClient), \
+             mock.patch.object(alpaca_mod, "plan_trade", lambda *a, **k: None), \
+             mock.patch("trendkept.cli._manage_one", lambda *a, **k: None), \
+             contextlib.redirect_stdout(buf):
+            _cmd_autopilot(argparse.Namespace(confirm=False, risk=0.01))
+        return buf.getvalue()
+
+    def test_pending_exit_is_not_flagged(self):
+        out = self._pass(pending_exit=True)
+        self.assertNotIn("UNPROTECTED", out)
+        self.assertIn("exiting", out)
+
+    def test_genuinely_naked_position_is_still_flagged(self):
+        out = self._pass(pending_exit=False)
+        self.assertIn("UNPROTECTED", out)
+        self.assertIn("AMZN", out)
