@@ -498,6 +498,21 @@ def _cmd_autopilot(args: argparse.Namespace) -> int:
     strat = TrendFollowingStrategy(StrategyConfig())
     args_ns = argparse.Namespace(confirm=args.confirm)
 
+    # Equity on every pass, not only on days with an entry. Without this the
+    # only way to answer "what's my balance?" between trades is to open the
+    # broker by hand, and a quiet week leaves no record of the curve at all.
+    try:
+        acct = client.account()
+        equity = float(acct.get("equity", 0.0))
+        last = float(acct.get("last_equity", 0.0) or 0.0)
+        start = 100_000.0  # the paper account's opening balance
+        day = f"{equity - last:+,.2f} today" if last else "day change n/a"
+        print(f"Equity {equity:,.2f} ({day}; "
+              f"{equity - start:+,.2f} = {(equity / start - 1) * 100:+.2f}% "
+              f"since the test began)")
+    except (AlpacaError, ValueError, TypeError) as exc:
+        print(f"Equity unavailable ({exc})")
+
     print(f"Autopilot pass (paper) — {len(positions)} open position(s)"
           + ("" if args.confirm else "  [DRY RUN]"))
     held = set()

@@ -115,6 +115,9 @@ class TestScanSummaryIsAuditable(unittest.TestCase):
             def list_orders(self, status="open"):
                 return []
 
+            def account(self):
+                return {"equity": "98000.00", "last_equity": "98500.00"}
+
         buf = io.StringIO()
         with mock.patch.object(alpaca_mod, "AlpacaClient", FakeClient), \
              mock.patch.object(alpaca_mod, "plan_trade",
@@ -173,6 +176,9 @@ class TestExitingPositionIsNotCalledUnprotected(unittest.TestCase):
                     return []
                 return [{"symbol": "AMZN", "side": "sell", "type": "market"}]
 
+            def account(self):
+                return {"equity": "98000.00", "last_equity": "98500.00"}
+
         buf = io.StringIO()
         with mock.patch.object(alpaca_mod, "AlpacaClient", FakeClient), \
              mock.patch.object(alpaca_mod, "plan_trade", lambda *a, **k: None), \
@@ -190,3 +196,66 @@ class TestExitingPositionIsNotCalledUnprotected(unittest.TestCase):
         out = self._pass(pending_exit=False)
         self.assertIn("UNPROTECTED", out)
         self.assertIn("AMZN", out)
+
+
+class TestEquityIsAlwaysReported(unittest.TestCase):
+    """Every pass must print the balance, including quiet ones. Otherwise a
+    week with no trades leaves no record of the curve, and the only way to
+    answer "what's my balance?" is to open the broker by hand."""
+
+    def _pass(self, account):
+        import argparse
+        import contextlib
+        import io
+        from unittest import mock
+
+        from trendkept import alpaca as alpaca_mod
+        from trendkept.cli import _cmd_autopilot
+
+        class FakeClient:
+            def __init__(self, paper=True):
+                pass
+
+            def positions(self):
+                return []
+
+            def daily_bars(self, symbol):
+                raise alpaca_mod.AlpacaError("no data")
+
+            def cash(self):
+                return 0.0
+
+            def find_stop_order(self, symbol):
+                return None
+
+            def list_orders(self, status="open"):
+                return []
+
+            def account(self):
+                if account is None:
+                    raise alpaca_mod.AlpacaError("account unavailable")
+                return account
+
+        buf = io.StringIO()
+        with mock.patch.object(alpaca_mod, "AlpacaClient", FakeClient), \
+             mock.patch.object(alpaca_mod, "plan_trade", lambda *a, **k: None), \
+             contextlib.redirect_stdout(buf):
+            _cmd_autopilot(argparse.Namespace(confirm=False, risk=0.01))
+        return buf.getvalue()
+
+    def test_reports_equity_and_moves_on_a_quiet_pass(self):
+        out = self._pass({"equity": "93500.00", "last_equity": "93800.00"})
+        self.assertIn("Equity 93,500.00", out)
+        self.assertIn("-300.00 today", out)
+        self.assertIn("-6,500.00", out)     # since the test began
+        self.assertIn("-6.50%", out)
+
+    def test_a_gain_reads_as_a_gain(self):
+        out = self._pass({"equity": "104000.00", "last_equity": "103000.00"})
+        self.assertIn("+1,000.00 today", out)
+        self.assertIn("+4.00%", out)
+
+    def test_missing_account_does_not_break_the_pass(self):
+        out = self._pass(None)
+        self.assertIn("Equity unavailable", out)
+        self.assertIn("Autopilot pass", out)   # the trading work still ran
