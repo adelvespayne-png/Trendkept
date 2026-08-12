@@ -216,7 +216,8 @@ _GREETING_RE = re.compile(
 
 _SCAN_HINTS = ("check", "scan", "how is", "how's", "hows ", "look at",
                "status", "what about", "read on", "looking", "update on",
-               "brief", "uptrend", "watchlist", "run ")
+               "uptrend", "watchlist", "run ")
+_BRIEF_WORDS = ("brief", "sitrep", "status report", "daily report")
 
 
 def _rules_text(cfg: StrategyConfig, account: float, risk: float) -> str:
@@ -269,6 +270,27 @@ def _paper_log_summary(path: str) -> str:
             "actually happened.")
 
 
+def _briefing(cfg: StrategyConfig, account: float, risk: float,
+              symbols: List[str], fetch: Optional[Fetcher],
+              paper_log_path: str) -> Answer:
+    """The status report: paper log, dials, and reads on any named
+    symbols. The closest thing to the film version — everything in it is
+    the present tense, honestly read; nothing in it is a forecast."""
+    parts = ["Status report."]
+    parts.append(_paper_log_summary(paper_log_path))
+    parts.append(
+        f"Dials: {cfg.fast_ma}/{cfg.slow_ma}-bar averages, "
+        f"{cfg.breakout_lookback}-bar breakout, risking {risk * 100:g}% "
+        f"of {account:,.2f} per trade.")
+    if symbols and fetch:
+        parts.extend(_read_symbol(s, cfg, account, risk, fetch)
+                     for s in symbols[:8])
+    else:
+        parts.append("Name symbols and I'll read them too — e.g. "
+                     "\"briefing on AAPL, MSFT and bitcoin\".")
+    return Answer("\n\n".join(parts), kind="info")
+
+
 _CAPABILITIES = (
     "Things you can ask me:\n"
     "- \"How's AAPL looking?\" / \"Check bitcoin and gold\" — I run your "
@@ -277,6 +299,8 @@ _CAPABILITIES = (
     "position size your risk setting implies.\n"
     "- \"What are my rules?\" — I read your Trading Diagram back to you "
     "in plain English, with your actual numbers.\n"
+    "- \"Briefing\" or \"status report\" — the paper log, your dials, "
+    "and reads on any symbols you name, in one report.\n"
     "- \"How's the paper log?\" — a summary of the paper-trading "
     "evidence file.\n"
     "- \"How am I doing?\" — I'll point you at the trade journal, which "
@@ -355,6 +379,9 @@ def ask(question: str, *, cfg: Optional[StrategyConfig] = None,
 
     if any(w in q for w in _LOG_WORDS):
         return Answer(_paper_log_summary(paper_log_path), kind="info")
+
+    if any(w in q for w in _BRIEF_WORDS):
+        return _briefing(cfg, account, risk, symbols, fetch, paper_log_path)
 
     if any(w in q for w in _JOURNAL_WORDS):
         return Answer(

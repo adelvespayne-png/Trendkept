@@ -96,7 +96,25 @@ world.
 
 ---
 
-## 4. Standing orders (every session, every project)
+## 4. The Iron Man parity map
+
+The owner asked for "everything JARVIS can do in the films." Here is the
+honest ledger — what's replicated, what's adapted, and what's refused.
+
+| In the films | Your Jarvis, in reality | Status |
+| --- | --- | --- |
+| Talks with Tony, out loud | The dashboard Jarvis speaks its replies (Voice toggle, generated locally in your browser) and takes push-to-talk voice commands | **Live** |
+| Morning status briefings | "Jarvis, briefing" — paper log, your dials, reads on any symbols you name; these sessions brief on anything else | **Live** |
+| Designs and builds the suits with him | These sessions build whatever you describe in plain English — the entire product was made this way | **Live** |
+| Runs diagnostics and simulations | Backtests, the variant lab with out-of-sample splits, the full test suite | **Live** |
+| Flies the suit itself | The paper autopilot runs the full ruleset daily and logs every pass — **paper only, forever, by design** (the live-money version is the one that ends badly in the films too) | **Live** |
+| Monitors for threats | Daily autopilot passes flag broken trends and unprotected positions; `manage` trails stops; the watchlist is the radar | **Live** |
+| Remembers everything | This repo — every decision, log row, and section file survives between sessions | **Live** |
+| Runs the household robots | No robot arms on the payroll yet | Not real tech |
+| Hacks into other systems | Refused. Not that kind of butler | **Never** |
+| Acts on its own agenda | Proposals and finished drafts instead — the five keys in §3 stay with you. The film where the AI got "full control over all" is called *Age of Ultron* | **By design** |
+
+## 5. Standing orders (every session, every project)
 
 - **Honesty is the brand.** No invented claims, no numbers that
   contradict a fresh model run, descriptive-never-imperative in anything

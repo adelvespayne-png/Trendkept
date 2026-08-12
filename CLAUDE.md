@@ -122,7 +122,14 @@ bright line + descriptive-never-imperative rule already settled.
   recites the ruleset, summarises the paper log, points at the journal.
   Brand rules baked in: refuses predictions and "should I buy" (then
   offers the descriptive read), all scan language descriptive-never-
-  imperative. Tests in `tests/test_jarvis.py`.
+  imperative. Tests in `tests/test_jarvis.py`. Mark II (same batch,
+  owner asked to "replicate everything from Iron Man"): voice replies
+  (browser speechSynthesis, local, en-GB voice preferred), push-to-talk
+  input (browser speech service — disclosed on the page as the one
+  non-local exception, off unless pressed), and a "briefing" intent
+  (paper log + dials + reads on named symbols). The honest film-parity
+  ledger lives in jarvis/JARVIS.md §4 (hacking refused; live-money
+  autopilot refused; "acts on its own agenda" refused by design).
 - Personal Jarvis HQ shipped (Aug 2026, owner asked for "a personal
   Jarvis with sections per project and full capability"): `jarvis/` —
   JARVIS.md (the protocol: capability map incl. the 33-skill library,

@@ -1857,6 +1857,70 @@ _JARVIS_JS = """
     var box = document.getElementById('jarvis-q');
     if (box) box.focus();
   }
+
+  // --- voice out: spoken replies, generated locally by the browser. ---
+  var VKEY = 'trendkept-jarvis-voice';
+  var voiceBtn = document.getElementById('jarvis-voice');
+  function voiceOn() {
+    try { return localStorage.getItem(VKEY) === 'on'; }
+    catch (e) { return false; }
+  }
+  function setVoiceLabel() {
+    if (voiceBtn) voiceBtn.textContent = 'Voice: ' + (voiceOn() ? 'on' : 'off');
+  }
+  function speak(text) {
+    if (!window.speechSynthesis || !text) return;
+    var u = new SpeechSynthesisUtterance(text);
+    var pick = null;
+    speechSynthesis.getVoices().forEach(function (v) {
+      if (!pick && /en[-_]GB/i.test(v.lang)) pick = v;  // butler accent
+    });
+    if (pick) u.voice = pick;
+    u.rate = 1.02; u.pitch = 0.95;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+  }
+  if (voiceBtn && window.speechSynthesis) {
+    setVoiceLabel();
+    voiceBtn.addEventListener('click', function () {
+      var next = voiceOn() ? 'off' : 'on';
+      try { localStorage.setItem(VKEY, next); } catch (e) {}
+      setVoiceLabel();
+      if (next === 'on') speak('Voice on. At your service.');
+      else speechSynthesis.cancel();
+    });
+    if (voiceOn() && latest && latest.getAttribute('data-q')) {
+      var say = latest.getAttribute('data-a') || '';
+      if (speechSynthesis.getVoices().length) speak(say);
+      else speechSynthesis.onvoiceschanged = function () { speak(say); };
+    }
+  } else if (voiceBtn) {
+    voiceBtn.hidden = true;
+  }
+
+  // --- voice in: push-to-talk. Uses the browser's speech service (in
+  // Chrome the audio goes to Google to transcribe — the page says so),
+  // which is why it only ever listens while you've pressed the button.
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var mic = document.getElementById('jarvis-mic');
+  if (mic && SR && form) {
+    mic.hidden = false;
+    mic.addEventListener('click', function () {
+      var rec = new SR();
+      rec.lang = navigator.language || 'en-GB';
+      rec.interimResults = false;
+      mic.textContent = 'Listening…';
+      rec.onresult = function (ev) {
+        var box = document.getElementById('jarvis-q');
+        box.value = ev.results[0][0].transcript;
+        form.submit();
+      };
+      rec.onend = function () { mic.textContent = '🎤 Speak'; };
+      rec.onerror = function () { mic.textContent = '🎤 Speak'; };
+      rec.start();
+    });
+  }
+
   window.scrollTo(0, document.body.scrollHeight);
 })();
 """
@@ -1888,6 +1952,9 @@ def _jarvis_page(question: str, answer) -> str:
            placeholder="How's AAPL looking? What are my rules?"></label>
   {hidden}
   <button>Ask</button>
+  <button type="button" class="ghost" id="jarvis-mic" hidden>&#127908;
+    Speak</button>
+  <button type="button" class="ghost" id="jarvis-voice">Voice: off</button>
   <button type="button" class="ghost" id="jarvis-clear">Clear chat</button>
 </form>
 <p class="note">Jarvis answers from the same engine as every other page,
@@ -1896,7 +1963,12 @@ account &amp; risk. It's deterministic keyword matching running on your
 machine &mdash; not a cloud AI; nothing you type here leaves your computer,
 and the chat history lives only in this browser. It reports what your
 written rules read &mdash; it never predicts, and it never tells you to
-buy or sell.</p></div>
+buy or sell.<br>
+<strong>Voice:</strong> spoken replies are generated locally by your
+browser. The <em>Speak</em> button is the one exception to fully-local:
+it uses your browser's speech service to turn your voice into text
+(Chrome sends that audio to Google), so it only listens while you've
+pressed it &mdash; and you can simply never press it.</p></div>
 <script>{_JARVIS_JS}</script>"""
 
 

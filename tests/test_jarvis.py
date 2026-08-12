@@ -125,6 +125,15 @@ class TestAsk(unittest.TestCase):
         self.assertIn("R-multiples", answer.text)
         self.assertIn(("/journal", "Open the journal"), answer.links)
 
+    def test_briefing_reports_status_and_reads_named_symbols(self):
+        answer = ask("morning briefing on TEST", fetch=fake_fetch)
+        self.assertIn("Status report", answer.text)
+        self.assertIn("Dials", answer.text)
+        self.assertIn("Confirmed uptrend", answer.text)
+
+    def test_plain_greeting_is_not_a_briefing(self):
+        self.assertEqual(ask("good morning jarvis").kind, "help")
+
     def test_unknown_question_admits_it(self):
         answer = ask("make me a sandwich")
         self.assertEqual(answer.kind, "error")
@@ -153,6 +162,11 @@ class TestJarvisRoute(unittest.TestCase):
                                          "fast_ma": ["banana"]})
         self.assertEqual(status, 200)
         self.assertIn("Trend filter", body)
+
+    def test_voice_controls_present(self):
+        status, body = route("/jarvis", {})
+        self.assertIn('id="jarvis-voice"', body)
+        self.assertIn('id="jarvis-mic"', body)
 
     def test_nav_links_to_jarvis(self):
         status, body = route("/", {})
