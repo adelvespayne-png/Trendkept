@@ -7,6 +7,12 @@ important into committed files — the repo is the memory between sessions.
 
 ## Where everything lives
 
+- **`jarvis/JARVIS.md` — the owner's personal-assistant protocol. Every
+  session operates as the owner's Jarvis under it: per-project section
+  files in `jarvis/projects/` are the working memory — read the relevant
+  section before working on a project, update it after. The protocol's
+  owner-only keys (money, accounts, merges, publishing, legal) are hard
+  rules.**
 - `business/START_HERE.md` — the owner's do-this-now sequence. Read first.
 - `business/PLAN.md` — strategy, roadmap, risks, **trajectory gates (§9)**.
 - `business/model.py` — the financial model ("honest edition": month-3
@@ -117,6 +123,15 @@ bright line + descriptive-never-imperative rule already settled.
   Brand rules baked in: refuses predictions and "should I buy" (then
   offers the descriptive read), all scan language descriptive-never-
   imperative. Tests in `tests/test_jarvis.py`.
+- Personal Jarvis HQ shipped (Aug 2026, owner asked for "a personal
+  Jarvis with sections per project and full capability"): `jarvis/` —
+  JARVIS.md (the protocol: capability map incl. the 33-skill library,
+  the five owner-only keys, standing orders) + `jarvis/projects/`
+  sections (product, business, content, paper-trading, template for new
+  projects). Sessions ARE the personal Jarvis; the dashboard Jarvis is
+  the product feature. Honest line held: it acts on instructions and
+  standing orders, prepares everything else as drafts/proposals — no
+  autonomous spending/publishing/merging.
 - Next build candidates: journal v2 (discipline score per rule, owner
   notes per trade + broker-agnostic CSV import), one-click Windows
   installer, "Open in TradingView" links on symbols, more cluster
