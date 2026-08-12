@@ -7,12 +7,13 @@ important into committed files — the repo is the memory between sessions.
 
 ## Where everything lives
 
-- **`jarvis/JARVIS.md` — the owner's personal-assistant protocol. Every
-  session operates as the owner's Jarvis under it: per-project section
-  files in `jarvis/projects/` are the working memory — read the relevant
-  section before working on a project, update it after. The protocol's
-  owner-only keys (money, accounts, merges, publishing, legal) are hard
-  rules.**
+- **The owner's personal Jarvis lives in a separate PRIVATE repo**
+  (`adelvespayne-png/jarvis` — owner decision, Aug 2026: personal
+  assistant HQ is separate from the website/product). This public repo
+  holds only Trendkept. If that repo doesn't exist yet, the drafted HQ
+  content is in this branch's git history (commits that added/removed
+  `jarvis/`), ready to migrate. The protocol's owner-only keys (money,
+  accounts, merges, publishing, legal) remain hard rules everywhere.
 - `business/START_HERE.md` — the owner's do-this-now sequence. Read first.
 - `business/PLAN.md` — strategy, roadmap, risks, **trajectory gates (§9)**.
 - `business/model.py` — the financial model ("honest edition": month-3
@@ -130,15 +131,20 @@ bright line + descriptive-never-imperative rule already settled.
   (paper log + dials + reads on named symbols). The honest film-parity
   ledger lives in jarvis/JARVIS.md §4 (hacking refused; live-money
   autopilot refused; "acts on its own agenda" refused by design).
-- Personal Jarvis HQ shipped (Aug 2026, owner asked for "a personal
-  Jarvis with sections per project and full capability"): `jarvis/` —
-  JARVIS.md (the protocol: capability map incl. the 33-skill library,
-  the five owner-only keys, standing orders) + `jarvis/projects/`
-  sections (product, business, content, paper-trading, template for new
-  projects). Sessions ARE the personal Jarvis; the dashboard Jarvis is
-  the product feature. Honest line held: it acts on instructions and
-  standing orders, prepares everything else as drafts/proposals — no
-  autonomous spending/publishing/merging.
+- Personal Jarvis (Aug 2026): owner asked for a personal Jarvis with
+  per-project sections and full capability, then clarified it is
+  SEPARATE from the website/product. Decision: it lives in a private
+  repo `adelvespayne-png/jarvis` (sessions there are the personal
+  assistant; sections per project incl. one pointing back at Trendkept;
+  the 33-skill pack gets copied into its `.claude/skills/`). The
+  GitHub integration cannot create repos, so the owner creates it
+  (github.com/new, name "jarvis", Private) and the next session builds
+  it out — drafted HQ content is in this branch's history (the commit
+  "Add the personal Jarvis HQ", later removed from this public repo).
+  Honest line held: Jarvis acts on instructions and standing orders —
+  proposals and drafts, no autonomous spending/publishing/merging.
+  The dashboard/CLI Jarvis (above) is the separate product feature and
+  stays.
 - Next build candidates: journal v2 (discipline score per rule, owner
   notes per trade + broker-agnostic CSV import), one-click Windows
   installer, "Open in TradingView" links on symbols, more cluster
