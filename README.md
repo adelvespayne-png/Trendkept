@@ -85,6 +85,15 @@ The dashboard is yours to shape: the **Appearance** panel (bottom of every
 page) sets theme (light/dark/auto), accent & chart colour, text size, density,
 and corner style — saved in your browser only, like everything else here.
 
+The dashboard also has **Jarvis**, a plain-English assistant: ask "how's
+AAPL looking?" or "what are my rules?" and it answers from the same engine,
+using your saved Trading Diagram. It's deterministic keyword matching on
+your machine — not a cloud AI, nothing you type leaves your computer — and
+it's honest by design: it reports what your written rules read today, and
+it refuses to predict prices or tell you to buy or sell. Also available in
+the terminal: `python -m trendkept.cli jarvis "check NVDA"` (no question
+starts a chat).
+
 Or from the command line:
 
 ```bash
@@ -219,7 +228,8 @@ Profit factor    : inf
 | `trendkept/backtest.py` | Bar-by-bar simulator: risk-based sizing, trailing stops, stats |
 | `trendkept/fetch.py` | Free no-key data: Stooq + Yahoo |
 | `trendkept/alpaca.py` | Alpaca data, account/positions/orders, trade & manage logic |
-| `trendkept/cli.py` | `backtest`, `scan`, `fetch`, `account`, `trade`, `manage` |
+| `trendkept/jarvis.py` | Plain-English assistant (deterministic, local, never predicts) |
+| `trendkept/cli.py` | `backtest`, `scan`, `fetch`, `account`, `trade`, `manage`, `jarvis` |
 | `examples/` | Synthetic + real (AAPL) sample data and the generator |
 | `tests/` | The unit-test suite (`python -m unittest discover -s tests`) |
 

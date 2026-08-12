@@ -645,6 +645,29 @@ def _cmd_journal(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_jarvis(args: argparse.Namespace) -> int:
+    """Ask Jarvis one question, or chat until 'exit'."""
+    from .jarvis import ask, repl
+    from .web import _load_watchlist_item  # symbols and CSV paths alike
+
+    cfg = StrategyConfig(fast_ma=args.fast_ma, slow_ma=args.slow_ma,
+                         breakout_lookback=args.breakout_lookback)
+
+    def ask_here(question: str):
+        return ask(question, cfg=cfg, account=args.account, risk=args.risk,
+                   fetch=_load_watchlist_item)
+
+    question = " ".join(args.question).strip()
+    if question:
+        print(ask_here(question).text)
+        return 0
+    if not sys.stdin.isatty():
+        print(ask_here("").text)
+        return 0
+    repl(ask_here)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="trendkept",
@@ -754,6 +777,23 @@ def build_parser() -> argparse.ArgumentParser:
     jp.add_argument("--live", action="store_true",
                     help="read the LIVE account instead of paper")
     jp.set_defaults(func=_cmd_journal)
+
+    jv = sub.add_parser("jarvis",
+                        help="ask the plain-English assistant — reads "
+                             "symbols against your rules, recites the "
+                             "ruleset, never predicts")
+    jv.add_argument("question", nargs="*",
+                    help='e.g. jarvis "how is AAPL looking?" '
+                         "(no question starts a chat)")
+    jv.add_argument("--account", type=float, default=1000.0,
+                    help="account size for position sizing (default 1000)")
+    jv.add_argument("--risk", type=float, default=0.01,
+                    help="fraction of account risked per trade (default 0.01)")
+    jv.add_argument("--fast-ma", type=int, default=50, dest="fast_ma")
+    jv.add_argument("--slow-ma", type=int, default=200, dest="slow_ma")
+    jv.add_argument("--breakout-lookback", type=int, default=20,
+                    dest="breakout_lookback")
+    jv.set_defaults(func=_cmd_jarvis)
 
     lp = sub.add_parser("lab",
                         help="compare rule variants against the baseline on "

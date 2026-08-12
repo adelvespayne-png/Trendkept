@@ -106,6 +106,17 @@ bright line + descriptive-never-imperative rule already settled.
   `business/launch/`: essay_moving_stops.md, essay_lookahead_bias.md,
   welcome_email.md. Plans: `business/CONTENT_STRATEGY.md`,
   `business/CRO_AUDIT.md`.
+- Jarvis shipped (Aug 2026, owner asked for "Jarvis from Iron Man"):
+  `trendkept/jarvis.py` — a plain-English assistant in the dashboard
+  (`/jarvis` chat page, nav link) and CLI (`trendkept.cli jarvis`,
+  one-shot or REPL). Deterministic keyword matching over the same
+  engine (like the Diagram interpreter — NOT a cloud LLM; local-first,
+  nothing typed leaves the machine, transcript in localStorage only).
+  Reads symbols against the user's saved Diagram + account/risk,
+  recites the ruleset, summarises the paper log, points at the journal.
+  Brand rules baked in: refuses predictions and "should I buy" (then
+  offers the descriptive read), all scan language descriptive-never-
+  imperative. Tests in `tests/test_jarvis.py`.
 - Next build candidates: journal v2 (discipline score per rule, owner
   notes per trade + broker-agnostic CSV import), one-click Windows
   installer, "Open in TradingView" links on symbols, more cluster

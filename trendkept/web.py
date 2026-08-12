@@ -279,6 +279,15 @@ figure.eq svg text { fill: var(--muted); font-size: 11px;
   background: var(--surface); border: 1px solid var(--ring); border-radius: 6px;
   padding: 4px 8px; font-size: 12px; color: var(--ink);
   box-shadow: 0 2px 8px rgba(0,0,0,.15); white-space: nowrap; }
+.chat { display: flex; flex-direction: column; gap: 10px; margin: 12px 0; }
+.chat .q, .chat .a { border-radius: var(--radius); padding: 10px 14px;
+  max-width: 86%; white-space: pre-line; overflow-wrap: break-word; }
+.chat .q { align-self: flex-end; background: var(--series); color: #fff; }
+.chat .a { align-self: flex-start; background: var(--surface);
+  border: 1px solid var(--ring); }
+.chat .a.refusal { border-left: 3px solid var(--series); }
+.chat .a .who { display: block; font-size: 11px; color: var(--muted);
+  margin-bottom: 2px; }
 a { color: var(--series); }
 footer { margin-top: 32px; font-size: 12px; color: var(--muted); }
 details.appearance { margin-top: 28px; }
@@ -445,6 +454,7 @@ _NAV = """
   trend-following</small></a>
   <a class="btn ghost" href="/">Home</a>
   <a class="btn ghost" href="/journal">Journal</a>
+  <a class="btn ghost" href="/jarvis">Jarvis</a>
   <a class="btn" href="/ruleset">My Trading Diagram</a>
 </nav>"""
 
@@ -1777,6 +1787,119 @@ def _journal_view(trips, open_lots, stats) -> str:
         "risking).</p>" + cards + trades_table + lots_table)
 
 
+# Jarvis page plumbing, all client-side state: the transcript lives in the
+# visitor's own browser (localStorage), and the hidden inputs are filled from
+# the saved Trading Diagram before submit — same local-first pattern as every
+# other form here. The server stores nothing.
+_JARVIS_JS = """
+(function () {
+  var KEY = 'trendkept-jarvis-log';
+  function load() {
+    try { return JSON.parse(localStorage.getItem(KEY)) || []; }
+    catch (e) { return []; }
+  }
+  var log = load();
+  var chat = document.getElementById('jarvis-chat');
+  if (!chat) return;
+
+  // Saved history renders above the newest (server-rendered) exchange.
+  var frag = document.createDocumentFragment();
+  log.forEach(function (e) {
+    var q = document.createElement('div');
+    q.className = 'q'; q.textContent = e.q;
+    var a = document.createElement('div');
+    a.className = 'a' + (e.k === 'refusal' ? ' refusal' : '');
+    var who = document.createElement('span');
+    who.className = 'who'; who.textContent = 'Jarvis';
+    a.appendChild(who);
+    a.appendChild(document.createTextNode(e.a));
+    frag.appendChild(q); frag.appendChild(a);
+  });
+  chat.insertBefore(frag, chat.firstChild);
+
+  // Remember the newest exchange — unless this is a refresh of the same one.
+  var latest = document.getElementById('jarvis-latest');
+  if (latest) {
+    var q = latest.getAttribute('data-q');
+    var a = latest.getAttribute('data-a');
+    var k = latest.getAttribute('data-k');
+    var last = log[log.length - 1];
+    if (q && !(last && last.q === q && last.a === a)) {
+      log.push({q: q, a: a, k: k});
+      while (log.length > 40) log.shift();
+      try { localStorage.setItem(KEY, JSON.stringify(log)); } catch (e) {}
+    }
+  }
+
+  var clear = document.getElementById('jarvis-clear');
+  if (clear) clear.addEventListener('click', function () {
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    location.href = '/jarvis';
+  });
+
+  // Jarvis answers with YOUR dials: fill the hidden inputs from the saved
+  // Trading Diagram and the remembered account/risk boxes.
+  var form = document.getElementById('jarvis-form');
+  if (form) {
+    var saved = null;
+    try { saved = JSON.parse(localStorage.getItem('trendkept-ruleset')); }
+    catch (e) {}
+    if (saved) Object.keys(saved).forEach(function (k) {
+      var el = form.querySelector('input[type="hidden"][name="' + k + '"]');
+      if (el && saved[k]) el.value = saved[k];
+    });
+    ['account', 'risk'].forEach(function (k) {
+      var v = null;
+      try { v = localStorage.getItem('trendkept-form-' + k); } catch (e) {}
+      var el = form.querySelector('input[type="hidden"][name="' + k + '"]');
+      if (el && v) el.value = v;
+    });
+    var box = document.getElementById('jarvis-q');
+    if (box) box.focus();
+  }
+  window.scrollTo(0, document.body.scrollHeight);
+})();
+"""
+
+
+def _jarvis_page(question: str, answer) -> str:
+    """The Jarvis chat page: newest exchange server-rendered, transcript
+    client-side. ``answer`` is a :class:`trendkept.jarvis.Answer`."""
+    links = "".join(
+        f' <a href="{_esc(href)}">{_esc(label)} &rarr;</a>'
+        for href, label in answer.links)
+    bubble_q = (f'<div class="q">{_esc(question)}</div>' if question else "")
+    css = " refusal" if answer.kind == "refusal" else ""
+    convo = (
+        bubble_q
+        + f'<div class="a{css}" id="jarvis-latest" data-q="{_esc(question)}" '
+        f'data-a="{_esc(answer.text)}" data-k="{_esc(answer.kind)}">'
+        f'<span class="who">Jarvis</span>{_esc(answer.text)}{links}</div>')
+    hidden = "".join(
+        f'<input type="hidden" name="{k}" value="">'
+        for k in RULESET_KEYS + ("account", "risk"))
+    return f"""
+<h2>Jarvis <small>at your service &mdash; local, honest, no predictions</small></h2>
+<div class="chat" id="jarvis-chat">{convo}</div>
+<div class="card"><form class="controls" method="get" action="/jarvis"
+     id="jarvis-form">
+  <label>Ask Jarvis
+    <input name="q" id="jarvis-q" class="wide" autocomplete="off"
+           placeholder="How's AAPL looking? What are my rules?"></label>
+  {hidden}
+  <button>Ask</button>
+  <button type="button" class="ghost" id="jarvis-clear">Clear chat</button>
+</form>
+<p class="note">Jarvis answers from the same engine as every other page,
+using <a href="/ruleset">your Trading Diagram</a> and your remembered
+account &amp; risk. It's deterministic keyword matching running on your
+machine &mdash; not a cloud AI; nothing you type here leaves your computer,
+and the chat history lives only in this browser. It reports what your
+written rules read &mdash; it never predicts, and it never tells you to
+buy or sell.</p></div>
+<script>{_JARVIS_JS}</script>"""
+
+
 def route(path: str, params: Dict[str, List[str]]) -> Tuple[int, str]:
     """Pure request router: (path, query params) -> (status, html page).
 
@@ -1818,6 +1941,27 @@ def route(path: str, params: Dict[str, List[str]]) -> Tuple[int, str]:
                     '<div class="card warn">Could not load the journal: '
                     f"{_esc(str(exc))}</div>")
         return 200, _page("Trendkept", title + body)
+
+    if path == "/jarvis":
+        from .jarvis import ask
+
+        values = {k: _first(params, k) for k in
+                  ("q", "account", "risk") + RULESET_KEYS}
+        question = values["q"].strip()
+        # A garbled dial never blocks a chat — fall back to the defaults
+        # rather than lecturing about number formats mid-conversation.
+        try:
+            cfg = _build_cfg(values)
+            account = float(values["account"] or DEFAULTS["account"])
+            risk = float(values["risk"] or DEFAULTS["risk"])
+        except ValueError:
+            cfg = StrategyConfig()
+            account, risk = DEFAULTS["account"], DEFAULTS["risk"]
+        if not 0 < risk <= 0.1:
+            risk = DEFAULTS["risk"]
+        answer = ask(question, cfg=cfg, account=account, risk=risk,
+                     fetch=_load_watchlist_item)
+        return 200, _page("Trendkept", title + _jarvis_page(question, answer))
 
     if path == "/ruleset":
         described = _first(params, "describe")
