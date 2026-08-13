@@ -29,6 +29,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Callable, List, Optional, Tuple
 
+from . import indicators as ind
 from .data import Bar
 from .strategy import Signal, StrategyConfig, TrendFollowingStrategy
 
@@ -71,7 +72,8 @@ _STOPWORDS = {
     "a", "about", "again", "an", "and", "any", "are", "as", "at", "am",
     "back", "bad", "be", "been", "big", "bit", "but",
     "buy", "can", "chart", "cheers", "check", "close", "could", "day",
-    "days", "do", "does", "doing", "done", "down", "end", "entry", "even",
+    "days", "do", "does", "doing", "done", "down", "end", "enter",
+    "entered", "entry", "even",
     "ever", "exit", "feel", "for", "from", "get",
     "give", "go", "going", "gone", "good", "great", "has", "have", "hello",
     "here", "hey", "hi", "hold", "how", "i", "if", "in", "into", "is",
@@ -218,6 +220,7 @@ _SCAN_HINTS = ("check", "scan", "how is", "how's", "hows ", "look at",
                "status", "what about", "read on", "looking", "update on",
                "uptrend", "watchlist", "run ")
 _BRIEF_WORDS = ("brief", "sitrep", "status report", "daily report")
+_WHY_WORDS = ("why", "diagnos", "blocking", "blocked", "what stopped")
 
 
 def _rules_text(cfg: StrategyConfig, account: float, risk: float) -> str:
@@ -270,6 +273,102 @@ def _paper_log_summary(path: str) -> str:
             "actually happened.")
 
 
+def _diagnose_symbol(item: str, cfg: StrategyConfig,
+                     fetch: Fetcher) -> str:
+    """Full diagnostics on one symbol: every gate in the ruleset checked
+    against the latest bar, with the numbers, and the exact gate that
+    blocked (or allowed) an entry. The whole decision, made visible —
+    there is nothing else in the box."""
+    try:
+        bars, label = fetch(item)
+    except Exception as exc:
+        msg = str(exc) or exc.__class__.__name__
+        if len(msg) > 160:
+            msg = msg[:157] + "..."
+        return f"{item}: couldn't load it — {msg}"
+
+    i = len(bars) - 1
+    bar = bars[i]
+    lines = [f"Diagnostics — {label} as of {bar.date}, "
+             f"close {bar.close:,.2f}."]
+
+    if len(bars) < cfg.slow_ma + 1:
+        lines.append(f"✗ History: {len(bars)} bars — the {cfg.slow_ma}-bar "
+                     f"average needs {cfg.slow_ma + 1}. Everything stops "
+                     "here; no trend can be confirmed yet.")
+        return "\n".join(lines)
+
+    closes = [b.close for b in bars]
+    fast = ind.sma(closes, cfg.fast_ma)[i]
+    slow = ind.sma(closes, cfg.slow_ma)[i]
+    swings = ind.confirmed_swings_through(bars, i, cfg.swing_window)
+    structure = ind.making_higher_highs_and_lows(swings)
+
+    def mark(ok: bool, text: str) -> bool:
+        lines.append(("✓ " if ok else "✗ ") + text)
+        return ok
+
+    above_fast = mark(bar.close > fast,
+                      f"Close above the {cfg.fast_ma}-bar average "
+                      f"({fast:,.2f}).")
+    above_slow = mark(bar.close > slow,
+                      f"Close above the {cfg.slow_ma}-bar average "
+                      f"({slow:,.2f}).")
+    stacked = mark(fast > slow,
+                   f"Averages stacked: {cfg.fast_ma}-bar ({fast:,.2f}) "
+                   f"above {cfg.slow_ma}-bar ({slow:,.2f}).")
+    structure_ok = mark(structure,
+                        "Structure: confirmed higher highs and higher "
+                        "lows.")
+
+    if not (above_fast and above_slow and stacked and structure_ok):
+        first = ("close vs fast average" if not above_fast else
+                 "close vs slow average" if not above_slow else
+                 "average stacking" if not stacked else "market structure")
+        lines.append(f"Verdict: the trend filter fails at {first} — rule 1 "
+                     "reads this as no confirmed uptrend, so entries are "
+                     "off the table regardless of anything below.")
+        return "\n".join(lines)
+
+    extension = (bar.close - fast) / fast if fast else 0.0
+    not_chasing = mark(
+        extension <= cfg.max_extension_pct,
+        f"Not chasing: close is {extension * 100:.1f}% above the "
+        f"{cfg.fast_ma}-bar average (limit "
+        f"{cfg.max_extension_pct * 100:g}%).")
+
+    near_ma = (bar.low - fast) / fast <= cfg.pullback_pct if fast else False
+    closed_up = i >= 1 and bar.close > bars[i - 1].close
+    pullback = mark(
+        near_ma and closed_up,
+        f"Pullback entry: dipped to within {cfg.pullback_pct * 100:g}% "
+        f"of the {cfg.fast_ma}-bar average and closed up "
+        f"(low {bar.low:,.2f}, average {fast:,.2f}).")
+
+    prior_high = max(b.high for b in bars[i - cfg.breakout_lookback:i])
+    breakout = mark(
+        bar.close > prior_high,
+        f"Breakout entry: close above the prior {cfg.breakout_lookback}-"
+        f"bar high ({prior_high:,.2f}).")
+
+    if not not_chasing:
+        lines.append("Verdict: uptrend confirmed, but the never-chase "
+                     "rule blocks any entry today — price is too extended "
+                     "above the fast average. Rule 2's job is exactly "
+                     "this kind of day.")
+    elif pullback or breakout:
+        kind = "pullback" if pullback else "breakout"
+        lines.append(f"Verdict: every gate open — today's bar qualifies "
+                     f"as a {kind} entry under the written rules. (The "
+                     "scan will size it and place the stop.)")
+    else:
+        lines.append("Verdict: uptrend confirmed and nothing blocks — "
+                     "there was simply no qualifying trigger today: no "
+                     "pullback resuming, no breakout. Under the rules "
+                     "that's a waiting day, not a missed one.")
+    return "\n".join(lines)
+
+
 def _briefing(cfg: StrategyConfig, account: float, risk: float,
               symbols: List[str], fetch: Optional[Fetcher],
               paper_log_path: str) -> Answer:
@@ -299,6 +398,9 @@ _CAPABILITIES = (
     "position size your risk setting implies.\n"
     "- \"What are my rules?\" — I read your Trading Diagram back to you "
     "in plain English, with your actual numbers.\n"
+    "- \"Why didn't it enter NVDA?\" — full diagnostics: every rule "
+    "checked with the actual numbers, and the exact gate that blocked "
+    "(or allowed) an entry.\n"
     "- \"Briefing\" or \"status report\" — the paper log, your dials, "
     "and reads on any symbols you name, in one report.\n"
     "- \"How's the paper log?\" — a summary of the paper-trading "
@@ -382,6 +484,18 @@ def ask(question: str, *, cfg: Optional[StrategyConfig] = None,
 
     if any(w in q for w in _BRIEF_WORDS):
         return _briefing(cfg, account, risk, symbols, fetch, paper_log_path)
+
+    # "Why didn't it enter?" — run full diagnostics on the named symbols.
+    if symbols and any(w in q for w in _WHY_WORDS):
+        if fetch is None:
+            return Answer("I can't reach any data from here to diagnose "
+                          + ", ".join(symbols[:5]) + ".", kind="error")
+        reports = [_diagnose_symbol(s, cfg, fetch) for s in symbols[:5]]
+        return Answer(
+            "\n\n".join(reports)
+            + "\n\nThat's the entire decision, every gate visible — "
+            "nothing else goes into it, and the same checks run "
+            "identically every day.", kind="scan")
 
     if any(w in q for w in _JOURNAL_WORDS):
         return Answer(

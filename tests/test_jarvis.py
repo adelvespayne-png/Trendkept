@@ -125,6 +125,14 @@ class TestAsk(unittest.TestCase):
         self.assertIn("R-multiples", answer.text)
         self.assertIn(("/journal", "Open the journal"), answer.links)
 
+    def test_why_gives_full_diagnostics_with_a_verdict(self):
+        answer = ask("why didn't it enter TEST?", fetch=fake_fetch)
+        self.assertIn("Diagnostics", answer.text)
+        self.assertIn("Verdict", answer.text)
+        # Every gate is marked pass or fail, with the actual numbers.
+        self.assertTrue("✓" in answer.text or "✗" in answer.text)
+        self.assertIn("average", answer.text)
+
     def test_briefing_reports_status_and_reads_named_symbols(self):
         answer = ask("morning briefing on TEST", fetch=fake_fetch)
         self.assertIn("Status report", answer.text)
@@ -162,6 +170,10 @@ class TestJarvisRoute(unittest.TestCase):
                                          "fast_ma": ["banana"]})
         self.assertEqual(status, 200)
         self.assertIn("Trend filter", body)
+
+    def test_hologram_theme_is_offered(self):
+        status, body = route("/jarvis", {})
+        self.assertIn('value="hologram"', body)
 
     def test_voice_controls_present(self):
         status, body = route("/jarvis", {})

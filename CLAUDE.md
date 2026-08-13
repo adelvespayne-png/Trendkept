@@ -129,8 +129,15 @@ bright line + descriptive-never-imperative rule already settled.
   input (browser speech service — disclosed on the page as the one
   non-local exception, off unless pressed), and a "briefing" intent
   (paper log + dials + reads on named symbols). The honest film-parity
-  ledger lives in jarvis/JARVIS.md §4 (hacking refused; live-money
-  autopilot refused; "acts on its own agenda" refused by design).
+  ledger (hacking refused; live-money autopilot refused; "acts on its
+  own agenda" refused by design) moved out with the personal HQ — see
+  below. Mark III (Aug 2026 overnight batch, owner asked for "the Iron
+  Man 2 look" and maximum capability): "Hologram (Iron Man)" theme in
+  the Appearance panel — a full HUD skin (cyan-on-dark glass, grid,
+  corner brackets, glow) flowing through the existing CSS tokens so
+  every page and chart inherits it — and a diagnostics intent: "why
+  didn't it enter X?" checks every gate with the real numbers and names
+  the exact blocking rule.
 - Personal Jarvis (Aug 2026): owner asked for a personal Jarvis with
   per-project sections and full capability, then clarified it is
   SEPARATE from the website/product. Decision: it lives in a private

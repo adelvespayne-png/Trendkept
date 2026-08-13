@@ -82,12 +82,16 @@ On Windows you can skip the terminal entirely: double-click
 **`Daily_Check.bat`** (the daily account/positions check).
 
 The dashboard is yours to shape: the **Appearance** panel (bottom of every
-page) sets theme (light/dark/auto), accent & chart colour, text size, density,
-and corner style — saved in your browser only, like everything else here.
+page) sets theme (light/dark/auto — plus **Hologram**, the Iron Man look),
+accent & chart colour, text size, density, and corner style — saved in your
+browser only, like everything else here.
 
 The dashboard also has **Jarvis**, a plain-English assistant: ask "how's
-AAPL looking?" or "what are my rules?" and it answers from the same engine,
-using your saved Trading Diagram. It's deterministic keyword matching on
+AAPL looking?", "why didn't it enter?" (full diagnostics — every rule
+checked with the numbers, and the exact gate that blocked it), "briefing",
+or "what are my rules?" and it answers from the same engine,
+using your saved Trading Diagram. It can speak its answers out loud and
+take push-to-talk voice questions. It's deterministic keyword matching on
 your machine — not a cloud AI, nothing you type leaves your computer — and
 it's honest by design: it reports what your written rules read today, and
 it refuses to predict prices or tell you to buy or sell. Also available in

@@ -308,6 +308,88 @@ details.appearance summary:hover { color: var(--ink-2); }
   padding: 6px 12px; font: inherit; font-size: 13px; cursor: pointer; }
 .swatch { display: inline-block; width: 10px; height: 10px;
   border-radius: 50%; background: var(--series); margin-right: 5px; }
+
+/* --- Hologram: the Iron Man 2 HUD look. Same information, different
+   glass. Everything still flows through the same tokens, so charts,
+   tables and the chat all pick it up automatically. --- */
+:root[data-theme="hologram"] {
+  --surface: rgba(13, 34, 51, 0.58); --page: #04080f;
+  --ink: #d9f3ff; --ink-2: #9dc9de; --muted: #5f8ba3;
+  --grid: #0e2c40; --axis: #1c4a66; --ring: rgba(64, 196, 255, 0.30);
+  --series: #40c4ff; --up: #2fe6a8; --down: #ff7a4d;
+  --radius: 4px;
+}
+:root[data-theme="hologram"] body {
+  background:
+    radial-gradient(ellipse 90% 55% at 50% -10%,
+      rgba(64, 196, 255, 0.16), transparent 60%),
+    repeating-linear-gradient(0deg, transparent 0 39px,
+      rgba(64, 196, 255, 0.045) 39px 40px),
+    repeating-linear-gradient(90deg, transparent 0 39px,
+      rgba(64, 196, 255, 0.045) 39px 40px),
+    var(--page);
+}
+:root[data-theme="hologram"] h1, :root[data-theme="hologram"] h2 {
+  text-transform: uppercase; letter-spacing: 0.09em;
+  text-shadow: 0 0 12px rgba(64, 196, 255, 0.55);
+}
+:root[data-theme="hologram"] .card,
+:root[data-theme="hologram"] .tile,
+:root[data-theme="hologram"] .appearance-grid {
+  position: relative; border-color: var(--ring);
+  box-shadow: 0 0 18px rgba(64, 196, 255, 0.10),
+    inset 0 0 24px rgba(64, 196, 255, 0.05);
+}
+:root[data-theme="hologram"] .card::before,
+:root[data-theme="hologram"] .card::after {
+  content: ""; position: absolute; width: 14px; height: 14px;
+  border-color: rgba(64, 196, 255, 0.75); border-style: solid;
+}
+:root[data-theme="hologram"] .card::before {
+  top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+:root[data-theme="hologram"] .card::after {
+  bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+:root[data-theme="hologram"] form.controls button,
+:root[data-theme="hologram"] nav.top a.btn {
+  background: rgba(64, 196, 255, 0.12); color: var(--series);
+  border: 1px solid var(--series);
+  text-shadow: 0 0 8px rgba(64, 196, 255, 0.6);
+  box-shadow: 0 0 12px rgba(64, 196, 255, 0.25);
+}
+:root[data-theme="hologram"] form.controls input,
+:root[data-theme="hologram"] form.controls textarea,
+:root[data-theme="hologram"] form.controls select,
+:root[data-theme="hologram"] .appearance-grid select {
+  background: rgba(4, 12, 20, 0.7); border-color: var(--axis);
+}
+:root[data-theme="hologram"] form.controls input:focus,
+:root[data-theme="hologram"] form.controls textarea:focus {
+  outline: none; border-color: var(--series);
+  box-shadow: 0 0 10px rgba(64, 196, 255, 0.45);
+}
+:root[data-theme="hologram"] .chat .q {
+  background: rgba(64, 196, 255, 0.16); color: var(--ink);
+  border: 1px solid var(--ring);
+}
+:root[data-theme="hologram"] .chat .a {
+  box-shadow: 0 0 14px rgba(64, 196, 255, 0.12);
+}
+:root[data-theme="hologram"] .chat .a .who {
+  color: var(--series); text-transform: uppercase;
+  letter-spacing: 0.12em;
+  text-shadow: 0 0 10px rgba(64, 196, 255, 0.8);
+  animation: tk-hud-pulse 2.6s ease-in-out infinite;
+}
+@keyframes tk-hud-pulse {
+  0%, 100% { opacity: 1; } 50% { opacity: 0.55; }
+}
+:root[data-theme="hologram"] table.trades th {
+  text-transform: uppercase; letter-spacing: 0.07em; font-size: 11px;
+}
+:root[data-theme="hologram"] svg .marker-blocked { fill: #ffb454; }
+:root[data-theme="hologram"] .signal {
+  text-shadow: 0 0 12px rgba(64, 196, 255, 0.5);
+}
 """.replace("{DARK_VARS}", "{" + _DARK_VARS + "}")
 
 # Applied in <head>, before first paint, so a saved dark theme never flashes
@@ -336,6 +418,7 @@ _APPEARANCE_PANEL = """
       <option value="auto">Match my system</option>
       <option value="light">Light</option>
       <option value="dark">Dark</option>
+      <option value="hologram">Hologram (Iron Man)</option>
     </select></label>
   <label>Accent &amp; chart colour
     <select data-ap="accent">
