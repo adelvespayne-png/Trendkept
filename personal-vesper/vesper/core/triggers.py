@@ -32,6 +32,11 @@ class Rule:
     # Rules are individually rate-limited: "someone is at the door" should be
     # able to fire often, "the stove has been on a while" should not.
     cooldown: float = 300.0
+    # Whether this rule should also reach the phone. Most should not — a
+    # remark about the weather does not need to buzz you in a meeting. The
+    # body ones do: they fire precisely when you may not be at the laptop,
+    # and saying it to an empty room is the same as not saying it.
+    alert: bool = False
     last_fired: float = field(default=0.0, repr=False)
 
     def ready(self, now: float) -> bool:
@@ -186,6 +191,7 @@ DEFAULT_RULES: List[Rule] = [
              "the session justifies, urine colour, how much they have drunk. "
              "Log whatever they answer with log_symptom. Do not diagnose."),
         cooldown=6 * 3600,
+        alert=True,
     ),
     Rule(
         name="strained_after_effort",
@@ -195,6 +201,7 @@ DEFAULT_RULES: List[Rule] = [
              "doing in one sentence, and ask how they actually feel. This is "
              "a prompt to check, not a finding — say so."),
         cooldown=12 * 3600,
+        alert=True,
     ),
     Rule(
         name="major_news",

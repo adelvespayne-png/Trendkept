@@ -53,6 +53,7 @@ LOG = logging.getLogger("vesper.main")
 
 WAKE = "wake"          # the user is about to speak
 AMBIENT = "ambient"    # a trigger rule wants the brain to have a look
+ALERT = "alert"        # ...and it is one you should get wherever you are
 
 
 class Vesper:
@@ -116,7 +117,7 @@ class Vesper:
             return
         fired = self.triggers.evaluate(snap, changes)
         if fired:
-            self._post(AMBIENT, fired.why)
+            self._post(ALERT if fired.rule.alert else AMBIENT, fired.why)
 
     # -- the single consumer ----------------------------------------------
 
@@ -126,7 +127,15 @@ class Vesper:
             if kind == WAKE:
                 await self._handle_wake()
             else:
-                await self._speak(await self.brain.respond(reason=why))
+                reply = await self.brain.respond(reason=why)
+                await self._speak(reply)
+                if kind == ALERT and reply:
+                    # Speaking only reaches you if you are in the room, and
+                    # the body rules fire exactly when you might not be —
+                    # mid-session, asleep, or away from the laptop. So this
+                    # one goes to the phone as well.
+                    self.alerts.send(reply, level="urgent",
+                                     title="Vesper - your body")
         finally:
             self._busy = False
 

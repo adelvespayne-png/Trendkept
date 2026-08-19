@@ -91,6 +91,25 @@ def main():
     print("8. shipped default ->", Alerts(off).available, "(off until you set it up)")
     assert not Alerts(off).available
 
+    # 9. the wearable path. This is the one that was missing: a bad number
+    # from the bracelet woke the brain to SPEAK, and speaking only reaches
+    # you if you are in the room. The body rules fire exactly when you may
+    # not be — mid-session, asleep, away from the laptop.
+    from vesper.core.triggers import DEFAULT_RULES
+
+    body = {r.name: r for r in DEFAULT_RULES
+            if r.name in ("exertion_spike", "strained_after_effort")}
+    assert len(body) == 2, sorted(r.name for r in DEFAULT_RULES)
+    for name, rule in sorted(body.items()):
+        print(f"9. {name} reaches the phone:", rule.alert)
+        assert rule.alert, f"{name} would only ever be said out loud"
+
+    # ...and nothing else does, so ordinary remarks stay off your lock screen.
+    chatty = [r.name for r in DEFAULT_RULES
+              if r.alert and r.name not in body]
+    print("   rules that buzz the phone:", sorted(body), "| others:", chatty)
+    assert not chatty, chatty
+
     h.shutdown()
     print("\nAll alert checks passed.")
 
