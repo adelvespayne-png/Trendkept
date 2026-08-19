@@ -1,0 +1,11 @@
+.env
+state.json
+selftest_state.json
+conversations.jsonl
+selftest_log.jsonl
+reminders.jsonl
+__pycache__/
+*.pyc
+.venv/
+*.onnx
+*.pt
