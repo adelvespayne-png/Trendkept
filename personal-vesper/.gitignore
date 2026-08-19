@@ -1,11 +1,34 @@
+# This repo is public on purpose. Everything Vesper writes while running is
+# therefore ignored by default — the code is the shared part, what it learns
+# about you is not.
+
+# Secrets. `.env.example` is tracked; `.env` never is.
 .env
+
+# --- your body -------------------------------------------------------------
+# Health data is the most sensitive thing here and the repo is public, so
+# these are listed explicitly rather than left to a wildcard.
+health.json
+health_input.json
+symptoms.jsonl
+
+# --- what you said, did, and are working on --------------------------------
+map.json
 state.json
-selftest_state.json
 conversations.jsonl
-selftest_log.jsonl
 reminders.jsonl
+
+# --- test leftovers --------------------------------------------------------
+selftest_state.json
+selftest_log.jsonl
+bridgetest_state.json
+bridgetest_log.jsonl
+.selftest-drive.mjs
+
+# --- machinery -------------------------------------------------------------
 __pycache__/
 *.pyc
 .venv/
+# Speech and vision model weights, downloaded on first run.
 *.onnx
 *.pt

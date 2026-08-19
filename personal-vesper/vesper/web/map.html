@@ -1,4 +1,5 @@
 <title>Vesper Mainframe</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%2308080C%27/%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%277%27 fill=%27none%27 stroke=%27%23F0B23C%27 stroke-width=%272.5%27/%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%272%27 fill=%27%23FFE9B0%27/%3E%3C/svg%3E">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <style>
 /* A deliberately single-world design: this is a dark instrument, and it
@@ -217,6 +218,7 @@ body.panelopen .rail { opacity: 0; pointer-events: none; }
     <button type="submit">Add</button>
   </form>
   <footer>
+    <button type="button" id="pBrief">Brief me</button>
     <button type="button" id="pUp">▲ Parent</button>
     <button type="button" id="pLink">Link to…</button>
     <button type="button" id="pDone">Mark done</button>
@@ -300,7 +302,7 @@ function seed() {
   add("prod1", "Engine & rules", "prod");
   add("prod1a", "Trend filter: 50/200, higher highs", "prod1");
   add("prod1b", "Stop goes in with the entry", "prod1");
-  add("prod1c", "189 tests passing", "prod1", true);
+  add("prod1c", "Full test suite green", "prod1", true);
   add("prod2", "Dashboard", "prod");
   add("prod2a", "Scan, backtest, watchlist", "prod2", true);
   add("prod2b", "Trade journal in R-multiples", "prod2", true);
@@ -377,12 +379,33 @@ function seed() {
 
   add("hl3f", "Not training until cleared", "hl3");
 
+  add("mk", "Markets", "root");
+  add("mk1", "Watchlist", "mk");
+  add("mk1a", "Symbols I actually follow", "mk1");
+  add("mk1b", "Why each one is on here", "mk1");
+  add("mk2", "Positions & risk", "mk");
+  add("mk2a", "Account size and risk per trade", "mk2");
+  add("mk2b", "Open positions and where the stops are", "mk2");
+  add("mk3", "What my rules say", "mk");
+  add("mk3a", "Trend filter: 50/200, higher highs", "mk3");
+  add("mk3b", "Stop goes in with the entry", "mk3");
+  add("mk3c", "Most days the answer is do nothing", "mk3");
+  add("mk4", "Macro worth watching", "mk");
+  add("mk4a", "Rates, inflation prints, earnings season", "mk4");
+  add("mk5", "Never: predictions, tips, should-I-buy", "mk");
+
+  add("nw", "News & weather", "root");
+  add("nw1", "Feeds I follow", "nw");
+  add("nw2", "Watch words that interrupt me", "nw");
+  add("nw3", "Weather where I am", "nw");
+  add("nw4", "Today's brief", "nw");
+
   add("me", "Personal", "root");
   add("me1", "Ideas", "me");
   add("me2", "To do", "me");
   add("me3", "Notes", "me");
 
-  links.push(["hl4c", "hl4d"], ["biz1a", "log5"], ["con3a", "prod1b"], ["biz3a", "prod3a"],
+  links.push(["hl4c", "hl4d"], ["mk3a", "prod1a"], ["nw2", "nw4"], ["biz1a", "log5"], ["con3a", "prod1b"], ["biz3a", "prod3a"],
              ["biz3b", "prod1"], ["con2b", "log1"]);
   return { nodes: n, links: links };
 }
@@ -809,11 +832,15 @@ function drawLabel(L, taken) {
     }
   }
   // Still nothing, even smaller. Seen almost edge-on the structure really
-  // does run out of room. Two overlapping names are both unreadable, so a
-  // SECTION name steps aside and you rotate to see it — but a limb name and
-  // the selected point always draw, because those are how you navigate.
+  // does run out of room, and two overlapping names are both unreadable —
+  // strictly worse than one name plus a rotate. So anything that cannot
+  // find a slot steps aside, however important it is.
+  //
+  // Two exceptions, and only two: the core, which is how you know where the
+  // middle is, and whatever you have selected, which is what you are looking
+  // at. Everything else can wait for a better angle.
   if (!spot) {
-    if (!L.sel && !top) return;
+    if (!L.sel && L.id !== "root") return;
     var fx = L.p.x + L.r + pad, fy = L.p.y + size * 0.34;
     if (fx + w > W - 8) fx = L.p.x - L.r - pad - w;
     spot = { x: fx, y: fy, box: [fx - 4, fy - size, fx + w + 4, fy + 5] };
@@ -1016,7 +1043,12 @@ cv.addEventListener("wheel", function (ev) {
 }, { passive: false });
 
 function hit(sx, sy) {
-  var best = null, bestD = 1e9;
+  // Rank by how central the tap is WITHIN each node's own grab circle, not
+  // by raw camera depth. Depth alone let a tiny far-out leaf that happened
+  // to float in front of a limb steal a tap aimed dead-centre at the limb —
+  // which got common once the map grew to five limbs. A dead-centre hit
+  // scores 0 and cannot be beaten; depth only settles genuine near-ties.
+  var best = null, bestScore = 1e9, bestD = 1e9;
   for (var k in store.nodes) {
     if (!P[k]) continue;
     var p = project(P[k]);
@@ -1025,8 +1057,14 @@ function hit(sx, sy) {
     var r = Math.max(1.4, (k === "root" ? 13 : 8.4 - dep * 1.25) * p.s * 1.5);
     var grab = Math.max(15, r + 11);
     var dd = Math.hypot(sx - p.x, sy - p.y);
-    // Nearest to the camera wins a tie, so you select what you can see.
-    if (dd < grab && p.d < bestD) { best = k; bestD = p.d; }
+    if (dd >= grab) continue;
+    var score = dd / grab;
+    if (score < bestScore - 0.08 ||
+        (score < bestScore + 0.08 && p.d < bestD)) {
+      best = k;
+      bestD = p.d;
+      if (score < bestScore) bestScore = score;
+    }
   }
   return best;
 }
@@ -1132,6 +1170,36 @@ function drawItems(n) {
     pItems.appendChild(row);
   });
 }
+function outlineOf(id, depth) {
+  depth = depth || 0;
+  var out = [];
+  kids(id).forEach(function (c) {
+    out.push(new Array(depth + 2).join("  ") + "- " + c.t +
+             (c.done ? " [done]" : ""));
+    if (depth < 3) out = out.concat(outlineOf(c.id, depth + 1));
+  });
+  return out;
+}
+
+function briefRequest(id) {
+  var n = node(id);
+  if (!n) return "";
+  var body = outlineOf(id).join("\n");
+  return "Brief me on \"" + n.t + "\" from my map"
+    + (crumbOfPublic(id) ? " (" + crumbOfPublic(id) + ")" : "") + ".\n\n"
+    + (body ? "What I have under it:\n" + body + "\n\n" : "There is nothing under it yet.\n\n")
+    + "Go into real depth rather than reading my notes back to me. Search "
+    + "the web for anything current that bears on it, say what is worth "
+    + "knowing that I have not written down, and be specific. If it touches "
+    + "markets, stay descriptive — no predictions, no buy or sell calls.";
+}
+
+function crumbOfPublic(id) {
+  var trail = [], c = node(id);
+  while (c && c.p) { c = node(c.p); if (c) trail.unshift(c.t); }
+  return trail.join(" > ");
+}
+
 function removeNode(id) {
   if (id === "root") return;
   var doomed = [];
@@ -1190,6 +1258,13 @@ document.getElementById("pDelete").addEventListener("click", function () {
   toast("Deleted");
   if (up) select(up);
 });
+document.getElementById("pBrief").addEventListener("click", function () {
+  if (!selected) return;
+  var q = briefRequest(selected);
+  closePanels();
+  toast("Briefing on " + node(selected).t);
+  askVesper(q);
+});
 document.getElementById("pClose").addEventListener("click", closePanels);
 document.getElementById("sClose").addEventListener("click", closePanels);
 document.getElementById("vClose").addEventListener("click", closePanels);
@@ -1244,6 +1319,8 @@ document.getElementById("fileIn").addEventListener("change", function (ev) {
 ================================================================== */
 var toggleVoice = function () {};
 var talkInto = function () {};
+// Ask Vesper something from the map rather than by speaking it.
+var askVesper = function () {};
 (function () {
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   var synth = window.speechSynthesis;
@@ -1492,6 +1569,11 @@ var talkInto = function () {};
     }
     return reply(said);
   }
+
+  askVesper = function (text) {
+    if (!wakeOn) { try { startWake(); } catch (e) {} }
+    handle(text);
+  };
 
   talkInto = function (id) {
     if (!node(id)) return;
