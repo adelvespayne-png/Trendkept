@@ -249,6 +249,26 @@ class Config:
         "poor sleep|couldn't sleep|not sleeping|insomnia|slept badly|sleeping badly|bad sleep|barely slept,"
         "low mood|anxious|anxiety|panicky|stressed"))
 
+    # --- alerts -----------------------------------------------------------
+    # Speaking aloud only reaches you if you are in the room. This pushes to
+    # your phone too, so a red flag finds you in the garden or asleep.
+    #   ntfy     free, no account, an app on both stores
+    #   webhook  POST the JSON somewhere of your own
+    #   none     off
+    alert_backend: str = field(
+        default_factory=lambda: os.environ.get("ALERT_BACKEND", "none"))
+    ntfy_server: str = field(
+        default_factory=lambda: os.environ.get("NTFY_SERVER", "https://ntfy.sh"))
+    # Anyone who knows the topic can read your alerts, so make it long and
+    # unguessable — it is a password, not a name.
+    ntfy_topic: str = field(default_factory=lambda: os.environ.get("NTFY_TOPIC", ""))
+    alert_webhook: str = field(
+        default_factory=lambda: os.environ.get("ALERT_WEBHOOK", ""))
+    # The least severe thing worth buzzing your phone for. `watch` sends
+    # everything logged; `urgent` only sends what needs seeing today.
+    alert_min_level: str = field(
+        default_factory=lambda: os.environ.get("ALERT_MIN_LEVEL", "urgent"))
+
     # --- wake word -------------------------------------------------------
     wake_enabled: bool = field(default_factory=lambda: _bool("WAKE_ENABLED", True))
     # The SPOKEN trigger, which is not the same thing as the name. openWakeWord

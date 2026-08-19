@@ -36,6 +36,7 @@ from .core.brain import Brain
 from .core.triggers import (TriggerEngine, configure_health,
                             configure_watch_words)
 from .core.world_state import Change, Snapshot, WorldState
+from .alerts import Alerts
 from .mapstore import MapStore
 from .sensors.clock import Clock
 from .sensors.home_assistant import HomeAssistant
@@ -71,8 +72,10 @@ class Vesper:
                                      on_wake=self._on_wake)
 
         self.map = MapStore(cfg.map_path)
+        self.alerts = Alerts(cfg)
         self.executor = ToolExecutor(self.state, cfg, home=self.home,
-                                     mapstore=self.map, health=self.health)
+                                     mapstore=self.map, health=self.health,
+                                     alerts=self.alerts)
         self.brain = Brain(self.state, self.executor, cfg)
         configure_watch_words(cfg.news_watch)
         configure_health(cfg.health_load_sigmas)
@@ -314,6 +317,8 @@ def _check(cfg: Config) -> int:
         ("news", vesper.news.available, "set NEWS_ENABLED=true and NEWS_FEEDS"),
         ("health", vesper.health.available,
          "set HEALTH_BACKEND=file (and HEALTH_FILE), or =oura with OURA_TOKEN"),
+        ("alerts", vesper.alerts.available,
+         "set ALERT_BACKEND=ntfy and NTFY_TOPIC to reach your phone"),
     ]
     missing = 0
     for name, ok, fix in rows:

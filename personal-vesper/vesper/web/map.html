@@ -347,12 +347,42 @@ function seed() {
   add("log4", "Never backfill an unevidenced day", "log");
   add("log5", "Day 30 unlocks the results post", "log");
 
+  add("hl", "Health", "root");
+
+  add("hl1", "The episode", "hl");
+  add("hl1a", "Get the discharge summary + peak CK", "hl1");
+  add("hl1b", "Did my kidneys recover fully?", "hl1");
+  add("hl1c", "What triggered it — or was there no clear trigger?", "hl1");
+  add("hl1d", "Referral to look for an underlying cause?", "hl1");
+  add("hl1e", "What CK retest schedule do you want?", "hl1");
+
+  add("hl2", "Red flags — A&E same day", "hl");
+  add("hl2a", "Dark urine, or passing much less", "hl2");
+  add("hl2b", "Muscle pain beyond what the session justifies", "hl2");
+  add("hl2c", "Swelling, weakness, nausea", "hl2");
+  add("hl2d", "Say: I have had rhabdomyolysis before", "hl2");
+
+  add("hl3", "Prevention", "hl");
+  add("hl3a", "Build up gradually — the trigger is the jump", "hl3");
+  add("hl3b", "Never train through illness or fever", "hl3");
+  add("hl3c", "Hydrate before, during, after", "hl3");
+  add("hl3d", "No hard sessions in heat", "hl3");
+  add("hl3e", "Check supplements and meds with the GP", "hl3");
+
+  add("hl4", "Set up", "hl");
+  add("hl4a", "Medical ID on the phone", "hl4");
+  add("hl4b", "Tell whoever I train with", "hl4");
+  add("hl4c", "Choose a wearable", "hl4");
+  add("hl4d", "Alerts to phone when something is off", "hl4");
+
+  add("hl3f", "Not training until cleared", "hl3");
+
   add("me", "Personal", "root");
   add("me1", "Ideas", "me");
   add("me2", "To do", "me");
   add("me3", "Notes", "me");
 
-  links.push(["biz1a", "log5"], ["con3a", "prod1b"], ["biz3a", "prod3a"],
+  links.push(["hl4c", "hl4d"], ["biz1a", "log5"], ["con3a", "prod1b"], ["biz3a", "prod3a"],
              ["biz3b", "prod1"], ["con2b", "log1"]);
   return { nodes: n, links: links };
 }
@@ -739,7 +769,7 @@ function drawLabel(L, taken) {
   // naturally, then left, then stepped above and below, then further out.
   // Whichever is free first wins, so nothing is ever drawn over anything.
   var spot = null;
-  var rings = [1, 1.7, 2.5, 3.4];
+  var rings = [1, 1.7, 2.5, 3.4, 4.5, 6];
   var lifts = [0, -1.15, 1.15, -2.3, 2.3, -3.5, 3.5];
   for (var ri = 0; ri < rings.length && !spot; ri++) {
     for (var li = 0; li < lifts.length && !spot; li++) {
@@ -753,10 +783,37 @@ function drawLabel(L, taken) {
       }
     }
   }
-  // Nothing free anywhere: a leaf steps aside, but a limb or section name
-  // must not vanish — that was the old bug — so it takes its first choice.
+  // Nothing free at full size. A limb or section name must not vanish —
+  // that was the old bug — but it need not barge either: try again smaller
+  // before resorting to sitting on top of something.
+  if (!spot && (top || mid || L.sel)) {
+    for (var shrink = 0; shrink < 2 && !spot; shrink++) {
+      var smaller = size * (shrink ? 0.68 : 0.82);
+      if (smaller < 9) break;
+      ctx.font = (top ? "600 " : mid ? "500 " : "400 ") + smaller.toFixed(1) +
+        "px " + (top || mid ? "ui-monospace, SF Mono, Menlo, monospace"
+                            : "-apple-system, BlinkMacSystemFont, sans-serif");
+      var w2 = ctx.measureText(text).width;
+      for (var r2 = 0; r2 < rings.length && !spot; r2++) {
+        for (var l2 = 0; l2 < lifts.length && !spot; l2++) {
+          for (var s2 = 0; s2 < 2 && !spot; s2++) {
+            var off2 = (L.r + pad) * rings[r2];
+            var x2 = s2 === 0 ? L.p.x + off2 : L.p.x - off2 - w2;
+            var y2 = L.p.y + smaller * 0.34 + lifts[l2] * smaller;
+            if (x2 < 8 || x2 + w2 > W - 8 || y2 - smaller < 4 || y2 > H - 6) continue;
+            var b2 = [x2 - 4, y2 - smaller, x2 + w2 + 4, y2 + 5];
+            if (!hits(b2, taken)) { spot = { x: x2, y: y2, box: b2 }; size = smaller; }
+          }
+        }
+      }
+    }
+  }
+  // Still nothing, even smaller. Seen almost edge-on the structure really
+  // does run out of room. Two overlapping names are both unreadable, so a
+  // SECTION name steps aside and you rotate to see it — but a limb name and
+  // the selected point always draw, because those are how you navigate.
   if (!spot) {
-    if (!L.sel && !top && !mid) return;
+    if (!L.sel && !top) return;
     var fx = L.p.x + L.r + pad, fy = L.p.y + size * 0.34;
     if (fx + w > W - 8) fx = L.p.x - L.r - pad - w;
     spot = { x: fx, y: fy, box: [fx - 4, fy - size, fx + w + 4, fy + 5] };

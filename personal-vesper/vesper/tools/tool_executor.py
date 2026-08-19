@@ -25,12 +25,13 @@ LOG = logging.getLogger("vesper.tools")
 class ToolExecutor:
     def __init__(self, state: WorldState, cfg: Config = CONFIG,
                  home=None, reminders_path: Optional[Path] = None,
-                 mapstore=None, health=None) -> None:
+                 mapstore=None, health=None, alerts=None) -> None:
         self.state = state
         self.cfg = cfg
         self.home = home            # sensors.home_assistant.HomeAssistant | None
         self.map = mapstore         # mapstore.MapStore | None
         self.health = health        # sensors.health.HealthFeed | None
+        self.alerts = alerts        # alerts.Alerts | None
         self.reminders_path = reminders_path or (
             Path(cfg.state_path).parent / "reminders.jsonl")
         self._handlers: Dict[str, Callable[[dict], str]] = {
@@ -102,6 +103,9 @@ class ToolExecutor:
         SymptomLog(self.cfg.symptom_log).add(text, verdict["level"] or "none")
         if verdict["level"]:
             LOG.warning("symptom logged as %s: %s", verdict["level"], text)
+            # Push straight from here, not from the model's reply. The phone
+            # buzzing must not depend on a model choosing to mention it.
+            self._alert(verdict["level"], verdict["instruction"], text)
         return json.dumps({
             "logged": True,
             "level": verdict["level"],
@@ -109,6 +113,21 @@ class ToolExecutor:
             "note": ("This instruction was decided by local code, not by a "
                      "model. Read it out exactly as written."),
         })
+
+    def _alert(self, level: str, instruction: str, said: str) -> None:
+        from .. import alerts as alerts_mod
+
+        if self.alerts is None or not self.alerts.available:
+            return
+        order = ["watch", "urgent", "crisis", "emergency"]
+        floor = (self.cfg.alert_min_level or "urgent").lower()
+        try:
+            if order.index(level) < order.index(floor):
+                return
+        except ValueError:
+            pass
+        self.alerts.send(f"You said: {said}\n\n{instruction}",
+                         level=level, title=f"Vesper - {level}")
 
     def _read_body(self, args: dict) -> str:
         from ..core.redflag import SymptomLog
