@@ -61,6 +61,48 @@ out.brief = await p.evaluate(() => {
   return briefRequest(mk.id);
 });
 
+// The opening view has to frame the whole map. The fit used to oscillate
+// rather than converge and could leave a third of it off the left edge.
+out.frame = await p.evaluate(() => {
+  let minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9, off = 0;
+  for (const k in P) {
+    const q = project(P[k]);
+    if (q.d <= 40) continue;
+    minX = Math.min(minX, q.x); maxX = Math.max(maxX, q.x);
+    minY = Math.min(minY, q.y); maxY = Math.max(maxY, q.y);
+    if (q.x < 0 || q.x > innerWidth || q.y < 0 || q.y > innerHeight) off++;
+  }
+  return { off, dx: Math.abs((minX + maxX) / 2 - innerWidth / 2),
+           dy: Math.abs((minY + maxY) / 2 - innerHeight / 2) };
+});
+
+// A main branch must look like one from every angle.
+out.rank = await p.evaluate(() => {
+  const rec = [];
+  const real = drawLabel;
+  drawLabel = function (L, taken) {
+    const before = taken.length;
+    real(L, taken);
+    if (taken.length > before) rec.push({ dep: L.dep, size: L.size, f: L.f });
+  };
+  let minLimb = 1e9, dwarfed = 0, faded = 0, seen = 0;
+  for (let y = 0; y < 6.28; y += 0.5) {
+    window.yaw = y; window.glide = null;
+    rec.length = 0;
+    draw(performance.now());
+    const limbs = rec.filter(r => r.dep === 1);
+    const deep = rec.filter(r => r.dep >= 2);
+    seen += limbs.length;
+    for (const L of limbs) {
+      minLimb = Math.min(minLimb, L.size);
+      if (L.f < 0.6) faded++;
+      for (const d of deep) if (d.size > L.size * 1.15) dwarfed++;
+    }
+  }
+  drawLabel = real;
+  return { minLimb: minLimb === 1e9 ? 0 : minLimb, dwarfed, faded, seen };
+});
+
 await b.close();
 console.log('@@' + JSON.stringify(out));
 """
@@ -148,6 +190,28 @@ def main() -> int:
             print("  FAIL: brief prompt dropped the descriptive-only rule")
         print(f"brief prompt: {len(brief)} chars, carries the subtree "
               "and the no-predictions rule")
+
+        fr = out["frame"]
+        framed = fr["off"] == 0 and fr["dx"] < 110 and fr["dy"] < 80
+        if not framed:
+            bad += 1
+        print(f"opening view: {fr['off']} off-screen, centre off by "
+              f"{fr['dx']:.0f}x{fr['dy']:.0f}px"
+              + ("" if framed else "  <- NOT FRAMED"))
+
+        rk = out["rank"]
+        if rk["seen"] == 0:
+            bad += 1
+            print("  FAIL: no limb labels drawn at all")
+        if rk["minLimb"] < 16.9:
+            bad += 1
+            print(f"  FAIL: a limb shrank to {rk['minLimb']:.1f}px")
+        if rk["dwarfed"] or rk["faded"]:
+            bad += 1
+            print(f"  FAIL: {rk['dwarfed']} dwarfed, {rk['faded']} faded")
+        print(f"limb rank: {rk['seen']} limb labels across the turn, "
+              f"smallest {rk['minLimb']:.1f}px, "
+              f"{rk['dwarfed']} dwarfed, {rk['faded']} faded")
 
         if out["errors"]:
             bad += len(out["errors"])

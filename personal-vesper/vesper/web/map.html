@@ -529,16 +529,25 @@ function layout() {
   P = {}; DIRS = {};
   P.root = [0, 0, 0];
   var limbs = kids("root");
-  // With only two or three limbs, consecutive points on a Fibonacci sphere
-  // sit close together. Spreading the indices across a larger notional set
-  // pushes them to genuinely opposite quarters of the sky.
-  var N = Math.max(limbs.length, 5);
+  // Main branches are spaced evenly around the core rather than scattered on
+  // a Fibonacci sphere. Fibonacci is the right way to scatter many points,
+  // but for a handful of main branches it leaves the spacing to chance — and
+  // it had put Trendkept almost directly behind My trading, where a main
+  // branch reads as a stray note hanging off its neighbour.
+  //
+  // Even spacing is also honest about what the map claims: these are peers.
   limbs.forEach(function (n, i) {
-    var d = fibDir(Math.round(i * N / limbs.length) % N, N);
-    // Flatten slightly towards a disc. A perfect sphere reads as a ball of
-    // wool from any angle; a galaxy has a plane, which gives the eye
-    // somewhere to stand and fills a wide screen instead of a tall column.
-    d = norm([d[0], d[1] * 0.55, d[2]]);
+    var a = (i / limbs.length) * Math.PI * 2;
+    // Alternate above and below the plane. Two limbs opposite each other in
+    // the ring still line up when the camera sits between them, and this is
+    // what separates them vertically when it does. The slight irregularity
+    // keeps it from looking like a mechanical fan.
+    var tilt = (i % 2 ? 1 : -1) * (0.2 + (i % 3) * 0.06);
+    // A disc rather than a ball: a sphere reads as wool from any angle, a
+    // galaxy has a plane, which gives the eye somewhere to stand and fills a
+    // wide screen instead of a tall column.
+    var d = norm([Math.cos(a) * Math.cos(tilt), Math.sin(tilt),
+                  Math.sin(a) * Math.cos(tilt)]);
     DIRS[n.id] = d;
     // A limb carrying a lot of weight starts further out, so its own
     // sub-branches have somewhere to go.
@@ -587,7 +596,13 @@ function place(id, depth) {
 ================================================================== */
 var cv = document.getElementById("map"), ctx = cv.getContext("2d");
 var W = 0, H = 0, DPR = 1;
-var yaw = 0.6, pitch = -0.32, dist = 720, zoom = 1;
+// Looking DOWN on the disc rather than along it. Edge-on, whichever limb
+// happens to point at the camera is foreshortened into a huddle around the
+// core and stops reading as a main branch at all — with five limbs in a ring
+// there is always one, and it was Trendkept. From above, every limb keeps its
+// length: measured across the ring, the tightest limb goes from 67px clear of
+// the core to 154px, and the spread evens out to 154-238px.
+var yaw = 0.6, pitch = -0.8, dist = 720, zoom = 1;
 var target = [0, 0, 0];          // what the camera looks at
 var glide = null;                // an in-flight move to a node
 var FOCAL = 620;
@@ -720,6 +735,13 @@ function draw(now) {
     var n = store.nodes[id], p = proj[id];
     if (p.d <= 40) return;
     var dep = depthOf(id), f = fog(p.d);
+    // The core and the limbs are the structure of the map, so they hold their
+    // rank wherever the camera puts them. A main branch that drifted to the
+    // back was rendering dimmer and smaller than its own grandchildren, which
+    // is what stopped Trendkept reading as a main branch at all. Applied here,
+    // above the dot, so the point and its name recede together.
+    var top = id === "root" || dep === 1;
+    if (top) f = Math.max(f, 0.66);
     var r = Math.max(1.4, (id === "root" ? 13 : 8.4 - dep * 1.25) * p.s * 1.5);
     var isSel = id === selected, isHov = id === hovered;
 
@@ -742,8 +764,15 @@ function draw(now) {
       ctx.shadowBlur = 0;
     }
 
-    var size = Math.max(10, Math.min(26,
-      (id === "root" ? 19 : 17 - dep * 1.7) * p.s * 1.45));
+    // Distance still shrinks a limb, but far less steeply, and never below a
+    // floor that keeps it above the deeper tiers.
+    var scale = top ? Math.pow(p.s, 0.4) : p.s;
+    // Separate ceilings as well as floors, so the tiers barely overlap: a
+    // main branch runs 16-26px, everything under it stops at 21. Without the
+    // lower ceiling a leaf that drifted close to the camera could still be
+    // drawn larger than the branch it hangs off.
+    var size = Math.max(top ? 17 : 10, Math.min(top ? 26 : 19,
+      (id === "root" ? 19 : 17 - dep * 1.7) * scale * 1.45));
     // Three tiers, so what you read is the structure rather than whatever
     // happened to drift near the camera: the core and its limbs always,
     // section names always, and the leaves only when you're close to them.
@@ -794,13 +823,20 @@ function drawLabel(L, taken) {
   var top = L.dep <= 1 || L.id === "root";     // the core and its limbs
   var mid = L.dep === 2;                       // section names
   var size = L.size;
-  ctx.font = (top ? "600 " : mid ? "500 " : "400 ") + size.toFixed(1) + "px " +
+  // Three tiers that actually look like three tiers. Limbs and their children
+  // used to be near-identical — both wide uppercase monospace in the same hot
+  // gold — so a main branch read as just another heading, and which was which
+  // depended on where the camera happened to be. Now only a MAIN BRANCH gets
+  // capitals, wide spacing and the hot colour; sections keep the monospace but
+  // drop to sentence case and plain gold; leaves stay sans.
+  ctx.font = (top ? "700 " : mid ? "500 " : "400 ") + size.toFixed(1) + "px " +
     (top || mid ? "ui-monospace, SF Mono, Menlo, monospace"
                 : "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif");
-  var text = (top || mid) ? L.n.t.toUpperCase() : L.n.t;
-  if (!top && !mid && text.length > 34) text = text.slice(0, 33) + "…";
-  ctx.letterSpacing = top ? (size * 0.15).toFixed(1) + "px"
-                    : mid ? (size * 0.11).toFixed(1) + "px" : "0px";
+  var text = top ? L.n.t.toUpperCase() : L.n.t;
+  var cap = top ? 0 : mid ? 40 : 34;
+  if (cap && text.length > cap) text = text.slice(0, cap - 1) + "…";
+  ctx.letterSpacing = top ? (size * 0.18).toFixed(1) + "px"
+                    : mid ? (size * 0.05).toFixed(1) + "px" : "0px";
 
   var w = ctx.measureText(text).width;
   var pad = Math.max(9, 11 * L.p.s);
@@ -871,8 +907,22 @@ function drawLabel(L, taken) {
   ctx.shadowBlur = 8;
   ctx.fillStyle = L.n.done ? "rgba(120,140,132," + (a * 0.8).toFixed(3) + ")"
                            : (top ? hot(a) : gold(a));
-  if (mid && !L.n.done) ctx.fillStyle = hot(a * 0.82);
   ctx.fillText(text, lx, ly);
+  // A rule under a main branch. Size and colour say "important"; a rule says
+  // "this is a heading, and the things near it hang off it" — which is the
+  // part the map was failing to communicate.
+  if (top && L.id !== "root" && !L.n.done) {
+    // Measured here rather than reused: if the label had to shrink to find a
+    // free spot, the width taken earlier belongs to the bigger font and the
+    // rule would overhang the text.
+    var uw = ctx.measureText(text).width;
+    ctx.strokeStyle = hot(a * 0.5);
+    ctx.lineWidth = Math.max(1, size * 0.07);
+    ctx.beginPath();
+    ctx.moveTo(lx, ly + size * 0.28);
+    ctx.lineTo(lx + uw, ly + size * 0.28);
+    ctx.stroke();
+  }
   ctx.shadowBlur = 0;
   ctx.letterSpacing = "0px";
 }
@@ -947,12 +997,20 @@ function fit() {
   cx /= keys.length; cy /= keys.length; cz /= keys.length;
 
   var keepT = target.slice(), keepD = dist, keepY = yaw, keepP = pitch, keepZ = zoom;
-  yaw = 0.6; pitch = -0.3; zoom = 1;
+  yaw = 0.6; pitch = -0.8; zoom = 1;
   target = [cx, cy, cz];
   var d = 900;
   var wantW = W * 0.76, wantH = H * 0.70;
 
-  for (var pass = 0; pass < 4; pass++) {
+  // Damped, and given room to settle. Correcting the distance and the centre
+  // by their full amounts in the same pass makes the two fight: moving the
+  // camera back changes what is off-centre, re-centring changes what fits,
+  // and four passes of that OSCILLATE rather than converge — it was landing
+  // on whichever phase pass four happened to end on, which is how a third of
+  // the map ended up off the left-hand edge. Correcting part of the way each
+  // time converges instead, in well under the passes allowed here.
+  var DAMP = 0.55;
+  for (var pass = 0; pass < 14; pass++) {
     dist = d;
     var minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9, meanD = 0;
     keys.forEach(function (k) {
@@ -962,21 +1020,23 @@ function fit() {
       meanD += q.d;
     });
     meanD /= keys.length;
-    d = Math.max(220, d * Math.max((maxX - minX) / wantW, (maxY - minY) / wantH));
+    var ratio = Math.max((maxX - minX) / wantW, (maxY - minY) / wantH);
+    d = Math.max(220, d * (1 + (ratio - 1) * DAMP));
 
     // Re-centre: shift what the camera looks at by the screen-space offset.
     var offX = (minX + maxX) / 2 - W / 2, offY = (minY + maxY) / 2 - H / 2;
     var scale = (FOCAL * zoom) / Math.max(60, meanD);
     var rt = camAxis([1, 0, 0]), up = camAxis([0, 1, 0]);
-    target = [target[0] + (offX / scale) * rt[0] + (offY / scale) * up[0],
-              target[1] + (offX / scale) * rt[1] + (offY / scale) * up[1],
-              target[2] + (offX / scale) * rt[2] + (offY / scale) * up[2]];
+    var kx = (offX / scale) * DAMP, ky = (offY / scale) * DAMP;
+    target = [target[0] + kx * rt[0] + ky * up[0],
+              target[1] + kx * rt[1] + ky * up[1],
+              target[2] + kx * rt[2] + ky * up[2]];
   }
 
   var to = target.slice();
   target = keepT; dist = keepD; zoom = keepZ;
   yaw = keepY; pitch = keepP;
-  yaw = 0.6; pitch = -0.3; zoom = 1;
+  yaw = 0.6; pitch = -0.8; zoom = 1;
   glide = { from: keepT, to: to, fromD: keepD, toD: d,
             t0: performance.now(), ms: 700 };
 }
