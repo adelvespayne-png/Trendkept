@@ -80,6 +80,9 @@ class Speaker:
         self._lock = threading.Lock()   # one utterance at a time
         self._piper: Optional[str] = None
         self._player = _first_player()
+        # The running playback process, so it can be cut off mid-sentence.
+        self._proc: Optional[subprocess.Popen] = None
+        self._interrupted = False
 
         wanted = (cfg.tts_backend or "piper").lower()
         if wanted == "elevenlabs" and cfg.elevenlabs_api_key:
@@ -109,6 +112,7 @@ class Speaker:
         text = (text or "").strip()
         if not text:
             return
+        self._interrupted = False
         with self._lock:
             try:
                 if self.backend == "piper":
@@ -123,11 +127,35 @@ class Speaker:
                 print(f"[vesper] {text}")
 
     def _play(self, path: str) -> None:
+        """Play, and stay interruptible while doing it."""
         if WINDOWS:
             _play_windows(path)
             return
-        subprocess.run([*self._player, path], check=True,
-                       capture_output=True, timeout=180)
+        self._proc = subprocess.Popen([*self._player, path],
+                                      stdout=subprocess.DEVNULL,
+                                      stderr=subprocess.DEVNULL)
+        try:
+            self._proc.wait(timeout=180)
+        except subprocess.TimeoutExpired:
+            self._proc.kill()
+        finally:
+            self._proc = None
+
+    def stop(self) -> None:
+        """Cut it off. Called when you start talking over it."""
+        self._interrupted = True
+        proc = self._proc
+        if proc and proc.poll() is None:
+            try:
+                proc.terminate()
+                LOG.debug("playback interrupted")
+            except Exception:
+                pass
+
+    @property
+    def interrupted(self) -> bool:
+        was, self._interrupted = self._interrupted, False
+        return was
 
     # -- backends --------------------------------------------------------
 

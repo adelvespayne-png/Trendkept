@@ -285,6 +285,19 @@ class Config:
     wake_threshold: float = field(
         default_factory=lambda: _float("WAKE_THRESHOLD", 0.5))
 
+    # --- conversation -----------------------------------------------------
+    # After Vesper answers it keeps listening for this long, so a follow-up
+    # needs no wake word. This is most of what separates talking to someone
+    # from operating a machine. 0 turns it off.
+    follow_up_seconds: float = field(
+        default_factory=lambda: _float("FOLLOW_UP_SECONDS", 25.0))
+    # Talking over it stops it mid-sentence.
+    barge_in: bool = field(default_factory=lambda: _bool("BARGE_IN", True))
+    # How much louder than the room (or than its own voice) you must be for
+    # that to count. Lower if it ignores you; raise if it cuts itself off.
+    barge_in_over: float = field(
+        default_factory=lambda: _float("BARGE_IN_OVER", 3.0))
+
     # --- speech ----------------------------------------------------------
     stt_enabled: bool = field(default_factory=lambda: _bool("STT_ENABLED", True))
     stt_model: str = field(default_factory=lambda: os.environ.get("STT_MODEL", "base.en"))

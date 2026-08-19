@@ -167,6 +167,48 @@ class Listener:
 
         return b"".join(frames)
 
+    def wait_for_speech(self, seconds: float, over: float = 3.0) -> bool:
+        """Listen for someone starting to talk. True as soon as they do.
+
+        Used two ways: to notice you cutting across a reply, and to keep the
+        conversation open for a follow-up without the wake word.
+
+        The noise floor is measured from the first moments of listening. When
+        this runs *during* playback, those moments contain Vesper's own voice
+        — which is the point. Its own speech becomes the floor, and yours has
+        to be louder than it to count. That is echo cancellation for people
+        without echo cancellation: crude, free, and good enough in a normal
+        room. With speakers loud and a distant microphone it can still hear
+        itself; headphones or a directional mic remove the problem entirely.
+        """
+        if not self.mic.available:
+            return False
+        started = time.monotonic()
+        floor: Optional[float] = None
+        calib: list = []
+        loud_frames = 0
+        need = max(2, int(0.18 / (FRAME_MS / 1000)))   # ~180ms of real speech
+
+        try:
+            with self.mic.stream() as stream:
+                while time.monotonic() - started < seconds:
+                    block, _ = stream.read(FRAME_SAMPLES)
+                    level = _rms(bytes(block))
+                    if floor is None:
+                        calib.append(level)
+                        if len(calib) >= 8:
+                            floor = max(sorted(calib)[len(calib) // 2], 60)
+                        continue
+                    if level > floor * over:
+                        loud_frames += 1
+                        if loud_frames >= need:
+                            return True
+                    else:
+                        loud_frames = 0
+        except Exception:
+            LOG.debug("listening for speech failed", exc_info=True)
+        return False
+
     def listen_once(self) -> str:
         if not self.available:
             return ""

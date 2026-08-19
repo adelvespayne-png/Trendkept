@@ -131,6 +131,12 @@ class Vesper:
             self._busy = False
 
     async def _handle_wake(self) -> None:
+        """One wake word, then a conversation — not one question.
+
+        You should not have to say its name again to ask the obvious
+        follow-up. After each answer it keeps listening for a while; say
+        nothing and it goes quiet on its own.
+        """
         if not self.listener.available:
             await self._speak("I heard you, but I have no way to listen.")
             return
@@ -140,15 +146,29 @@ class Vesper:
         # streams on one device — it often doesn't.
         self.wake.stop()
         try:
-            LOG.info("listening…")
-            text = await asyncio.to_thread(self.listener.listen_once)
+            first = True
+            while True:
+                if not first:
+                    LOG.debug("holding the conversation open")
+                    heard = await asyncio.to_thread(
+                        self.listener.wait_for_speech,
+                        self.cfg.follow_up_seconds, self.cfg.barge_in_over)
+                    if not heard:
+                        LOG.info("conversation closed")
+                        break
+
+                LOG.info("listening…")
+                text = await asyncio.to_thread(self.listener.listen_once)
+                if not text:
+                    if first:
+                        LOG.info("nothing heard after the wake word")
+                    break
+                await self.ask(text)
+                first = False
+                if self.cfg.follow_up_seconds <= 0:
+                    break
         finally:
             self.wake.start()
-
-        if not text:
-            LOG.info("nothing heard after the wake word")
-            return
-        await self.ask(text)
 
     async def ask(self, text: str, channel: str = "voice") -> Optional[str]:
         """One user turn, start to finish. Returns what was said, if anything."""
@@ -159,10 +179,31 @@ class Vesper:
         return reply
 
     async def _speak(self, text: Optional[str]) -> None:
+        """Say it, and stop the moment you start talking over it."""
         if not text:
             return
-        # Speaking blocks on a subprocess; keep it off the event loop.
-        await asyncio.to_thread(self.speaker.say, text)
+        if not (self.cfg.barge_in and self.listener.available
+                and self.speaker.backend != "print"):
+            await asyncio.to_thread(self.speaker.say, text)
+            return
+
+        # Two threads: one speaking, one listening for you cutting in.
+        # Roughly a second per three words, plus headroom — the watcher only
+        # needs to outlive the speech, and it stops as soon as it fires.
+        window = max(4.0, len(text.split()) / 2.6 + 3.0)
+        saying = asyncio.to_thread(self.speaker.say, text)
+        watching = asyncio.to_thread(self.listener.wait_for_speech,
+                                     window, self.cfg.barge_in_over)
+        done, pending = await asyncio.wait(
+            [asyncio.ensure_future(saying), asyncio.ensure_future(watching)],
+            return_when=asyncio.FIRST_COMPLETED)
+
+        interrupted = any(t.done() and t.result() is True for t in done)
+        if interrupted:
+            LOG.info("you cut in; stopping")
+            self.speaker.stop()
+        for t in pending:
+            t.cancel()
 
     # -- lifecycle ---------------------------------------------------------
 

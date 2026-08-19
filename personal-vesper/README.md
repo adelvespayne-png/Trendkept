@@ -225,6 +225,13 @@ python -m vesper.main
 ```
 
 Wake word → record → transcribe → brain → speak, plus the ambient path.
+
+**One wake word starts a conversation, not a question.** After each answer it
+keeps listening for `FOLLOW_UP_SECONDS`, so the obvious follow-up needs no
+wake word; say nothing and it goes quiet on its own. **Talking over it stops
+it mid-sentence** — there is no echo cancellation, so while it speaks its own
+voice sets the noise floor and yours has to beat it. That works in a normal
+room; headphones make it exact.
 **Manual setup: none**, assuming steps 3–5.
 
 ### 7. Vision
