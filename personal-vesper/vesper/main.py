@@ -256,7 +256,15 @@ class Vesper:
             print("\nNo ANTHROPIC_API_KEY, so there is nothing to think with.")
             print("Put one in .env and run again — README step 5.\n")
 
-        print(f"\nVesper is up. Say “{self.cfg.wake_phrase}”. Ctrl-C to stop.\n")
+        # Say what is actually listening. If the wake word did not come up,
+        # printing a phrase to say would leave you talking to a dead room.
+        if self.wake.available:
+            print(f"\nVesper is up. Say “{self.wake.phrase}”. Ctrl-C to stop.\n")
+        else:
+            print("\nVesper is up, but the wake word is not running:")
+            print(f"  {self.wake.problem}")
+            print("Type to it with --text, or ask from your phone. "
+                  "Ctrl-C to stop.\n")
         try:
             while self._running:
                 kind, why = await self._events.get()

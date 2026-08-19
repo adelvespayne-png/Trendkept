@@ -79,7 +79,8 @@ def main() -> int:
               f"only-python={sorted(set(b)-set(a))}")
 
     # The five limbs the owner asked for, by name, in order.
-    want = ["Trendkept", "Health", "Markets", "News & weather", "Personal"]
+    want = ["Trendkept", "Health", "My trading", "News & weather",
+            "Personal"]
     for name, seed in (("browser", jn), ("python", pn)):
         limbs = [n["t"] for n in seed.values() if n["p"] == "root"]
         if limbs != want:

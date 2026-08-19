@@ -57,7 +57,7 @@ out.taps = await p.evaluate(() => {
 
 // The brief prompt must name the branch and carry its subtree.
 out.brief = await p.evaluate(() => {
-  const mk = Object.values(store.nodes).find(n => n.t === 'Markets');
+  const mk = Object.values(store.nodes).find(n => n.t === 'My trading');
   return briefRequest(mk.id);
 });
 
@@ -116,7 +116,8 @@ def main() -> int:
         out = json.loads(line[2:])
 
         bad = 0
-        want = ["Trendkept", "Health", "Markets", "News & weather", "Personal"]
+        want = ["Trendkept", "Health", "My trading", "News & weather",
+                "Personal"]
 
         print(f"served {out['nodes']} nodes")
         if out["nodes"] < 90:
@@ -138,7 +139,7 @@ def main() -> int:
         bad += len(wrong)
 
         brief = out["brief"]
-        for needle in ("Markets", "Watchlist", "Never: predictions"):
+        for needle in ("My trading", "Watchlist", "Never: predictions"):
             if needle not in brief:
                 bad += 1
                 print(f"  FAIL: brief prompt is missing {needle!r}")

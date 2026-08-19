@@ -80,8 +80,23 @@ changes at it: `people=unknown`, `devices.stove=on`, `time_of_day=night`.
 ```bash
 pip install sounddevice numpy faster-whisper
 python -m vesper.sensors.tts "Speech output is working."
-python -m vesper.sensors.stt      # records one sentence and prints it
+python -m vesper.sensors.stt --devices   # what microphones can it see?
+python -m vesper.sensors.stt --level     # does it actually hear you?
+python -m vesper.sensors.stt             # records one sentence and prints it
 ```
+
+**Do you need to buy a microphone?** Almost certainly not. Any laptop from
+the last decade has one built in, and business laptops (ThinkPad, Latitude,
+EliteBook) have two, positioned for someone sitting in front of the screen.
+That is enough for the wake word at normal desk distance.
+
+Check rather than assume — `--level` listens for five seconds and tells you
+whether the level is usable. A built-in mic that reads "very quiet" is
+usually muted or set to the wrong input, not inadequate.
+
+Worth spending money only if: you want to wake it from across the room, the
+room is noisy, or a fan sits between you and the laptop. A £20 USB desk mic
+or any headset fixes all three; nothing about this assumes an expensive one.
 
 **Manual setup:**
 
@@ -112,20 +127,36 @@ the first transcription is slow and every one after is not.
 
 ```bash
 pip install openwakeword onnxruntime
-python -m vesper.sensors.wake_word     # prints a line each time it hears you
+python -m vesper.sensors.wake_word --list   # what phrases are available
+python -m vesper.sensors.wake_word          # listen, and report each hit
 ```
 
-**The spoken trigger is still "hey Jarvis", and that is deliberate.**
-openWakeWord ships trained models for a fixed set of phrases; there is no
-"hey vesper" to download. Training a custom one takes a few hours and comes
-out less reliable than a stock model, so the assistant is called Vesper and
-answers to "hey Jarvis" until you decide that bothers you enough to fix.
-`WAKE_PHRASE` is what the interface tells you to say, so it always matches
-whatever model is loaded.
+**The wake word is a trained model, not a name you can type.** It is the one
+part that listens continuously, so it has to be tiny and local — which means
+a phrase exists only if someone has trained it. openWakeWord ships four:
+`hey_jarvis`, `hey_mycroft`, `hey_rhasspy`, `alexa`. There is no
+"hey vesper", because Vesper is a name we made up.
 
-**Manual setup: none** — openWakeWord downloads its own models on first run. If it triggers on the
-television, raise `WAKE_THRESHOLD` towards 0.7; if it takes two goes to hear
-you, drop it to 0.4.
+The default is `hey_jarvis` — the assistant is Vesper everywhere else, and
+only the two syllables that wake it are borrowed.
+
+**To make it answer to its own name**, train the phrase once: free, about an
+hour in a browser, no code, and the result is a file on your laptop. Then:
+
+```
+WAKE_MODEL=hey_vesper.onnx
+```
+
+The walkthrough is in **[WAKE_WORD.md](WAKE_WORD.md)**.
+
+A model that will not load **stops with an explanation** rather than falling
+back to the built-in phrases. That fallback would leave you saying "hey
+Vesper" at something listening for "hey Jarvis", with nothing on screen to
+explain why.
+
+**Manual setup: none** — openWakeWord downloads the stock models on first
+run. If it triggers on the television, raise `WAKE_THRESHOLD` towards 0.7;
+if it takes two goes to hear you, drop it to 0.4.
 
 ### 5. The brain
 

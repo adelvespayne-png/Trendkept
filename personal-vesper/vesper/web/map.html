@@ -379,20 +379,38 @@ function seed() {
 
   add("hl3f", "Not training until cleared", "hl3");
 
-  add("mk", "Markets", "root");
-  add("mk1", "Watchlist", "mk");
-  add("mk1a", "Symbols I actually follow", "mk1");
-  add("mk1b", "Why each one is on here", "mk1");
-  add("mk2", "Positions & risk", "mk");
-  add("mk2a", "Account size and risk per trade", "mk2");
-  add("mk2b", "Open positions and where the stops are", "mk2");
-  add("mk3", "What my rules say", "mk");
-  add("mk3a", "Trend filter: 50/200, higher highs", "mk3");
-  add("mk3b", "Stop goes in with the entry", "mk3");
-  add("mk3c", "Most days the answer is do nothing", "mk3");
-  add("mk4", "Macro worth watching", "mk");
-  add("mk4a", "Rates, inflation prints, earnings season", "mk4");
-  add("mk5", "Never: predictions, tips, should-I-buy", "mk");
+  add("mk", "My trading", "root");
+  add("mk0", "My own money. Nothing here belongs to Trendkept", "mk");
+
+  add("mk1", "My account", "mk");
+  add("mk1a", "Broker, and what the account is actually worth", "mk1");
+  add("mk1b", "Risk per trade — the one number that matters", "mk1");
+  add("mk1c", "Most I will hold at once", "mk1");
+
+  add("mk2", "Watchlist", "mk");
+  add("mk2a", "Symbols I actually follow", "mk2");
+  add("mk2b", "Why each one is on here", "mk2");
+  add("mk2c", "What would take one off", "mk2");
+
+  add("mk3", "Open positions", "mk");
+  add("mk3a", "Entry, size, and where the stop is", "mk3");
+  add("mk3b", "What I am risking right now, added up", "mk3");
+
+  add("mk4", "My rules", "mk");
+  add("mk4a", "What has to be true before I enter", "mk4");
+  add("mk4b", "The stop goes in with the entry", "mk4");
+  add("mk4c", "When I do not trade at all", "mk4");
+  add("mk4d", "Most days the answer is do nothing", "mk4");
+
+  add("mk5", "Closed trades", "mk");
+  add("mk5a", "Every trade scored in R, win or lose", "mk5");
+  add("mk5b", "Did I follow my own rules?", "mk5");
+  add("mk5c", "Review monthly — never after one trade", "mk5");
+
+  add("mk6", "Macro worth watching", "mk");
+  add("mk6a", "Rates, inflation prints, earnings season", "mk6");
+
+  add("mk7", "Never: predictions, tips, should-I-buy", "mk");
 
   add("nw", "News & weather", "root");
   add("nw1", "Feeds I follow", "nw");
@@ -405,7 +423,7 @@ function seed() {
   add("me2", "To do", "me");
   add("me3", "Notes", "me");
 
-  links.push(["hl4c", "hl4d"], ["mk3a", "prod1a"], ["nw2", "nw4"], ["biz1a", "log5"], ["con3a", "prod1b"], ["biz3a", "prod3a"],
+  links.push(["hl4c", "hl4d"], ["nw2", "nw4"], ["biz1a", "log5"], ["con3a", "prod1b"], ["biz3a", "prod3a"],
              ["biz3b", "prod1"], ["con2b", "log1"]);
   return { nodes: n, links: links };
 }

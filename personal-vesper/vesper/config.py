@@ -271,17 +271,22 @@ class Config:
 
     # --- wake word -------------------------------------------------------
     wake_enabled: bool = field(default_factory=lambda: _bool("WAKE_ENABLED", True))
-    # The SPOKEN trigger, which is not the same thing as the name. openWakeWord
-    # ships trained models for a fixed set of phrases, and "hey jarvis" is the
-    # closest one; there is no "hey vesper" to download. Training a custom one
-    # is a few hours and comes out less reliable, so this stays until you
-    # decide it is worth it. See README, "the wake word".
+    # The SPOKEN trigger, which is not the same thing as the name. A wake word
+    # is a trained model, so this cannot be renamed the way everything else
+    # was: openWakeWord ships four phrases and "hey vesper" is not one of
+    # them. You can train it — free, about an hour, in a browser — and then
+    # set WAKE_MODEL=hey_vesper.onnx. See WAKE_WORD.md.
+    #
+    # Until then the default is "hey jarvis", which is the closest ready-made
+    # phrase. Anything unloadable stops with an explanation rather than
+    # falling back to a phrase you are not saying.
     wake_model: str = field(
         default_factory=lambda: os.environ.get("WAKE_MODEL", "hey_jarvis"))
-    # What the interface tells you to say, kept separate so it always matches
-    # whatever model is actually loaded.
+    # Blank means "derive it from whichever model is loaded", which is what
+    # keeps the interface from telling you to say one thing while the
+    # detector listens for another. Set it only to override the wording.
     wake_phrase: str = field(
-        default_factory=lambda: os.environ.get("WAKE_PHRASE", "hey Jarvis"))
+        default_factory=lambda: os.environ.get("WAKE_PHRASE", ""))
     wake_threshold: float = field(
         default_factory=lambda: _float("WAKE_THRESHOLD", 0.5))
 

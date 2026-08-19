@@ -66,6 +66,41 @@ class Microphone:
             dtype="int16", channels=1,
         )
 
+    def devices(self):
+        """Every input the OS can see, and which one you are about to use."""
+        if not self.available:
+            return [], None
+        try:
+            everything = self._sd.query_devices()
+            default = self._sd.default.device[0]
+        except Exception as exc:
+            LOG.error("could not list audio devices: %s", exc)
+            return [], None
+        ins = [(i, d) for i, d in enumerate(everything)
+               if d.get("max_input_channels", 0) > 0]
+        return ins, default
+
+    def level(self, seconds: float = 5.0):
+        """Listen for a few seconds and report how loud it actually was.
+
+        A laptop's built-in microphone usually works but is easy to get
+        wrong — muted in the OS, or set to an input that is not the one you
+        are speaking at. This answers "is it hearing me?" without involving
+        speech recognition, a model download, or the network.
+        """
+        peak = 0.0
+        floor = None
+        frames = 0
+        with self.stream() as stream:
+            end = time.monotonic() + seconds
+            while time.monotonic() < end:
+                block, _overflow = stream.read(FRAME_SAMPLES)
+                rms = _rms(bytes(block))
+                peak = max(peak, rms)
+                floor = rms if floor is None else min(floor, rms)
+                frames += 1
+        return {"peak": peak, "floor": floor or 0.0, "frames": frames}
+
 
 class Transcriber:
     """faster-whisper, loaded lazily — the model takes seconds to warm up."""
@@ -223,12 +258,73 @@ class Listener:
 
 
 def main(argv=None) -> int:
+    import argparse
+
+    p = argparse.ArgumentParser(description="Microphone and transcription check.")
+    p.add_argument("--devices", action="store_true",
+                   help="list the microphones this machine can see")
+    p.add_argument("--level", action="store_true",
+                   help="check the microphone actually hears you (no models)")
+    args = p.parse_args(argv)
     setup_logging(CONFIG.log_level)
+
+    if args.devices:
+        mic = Microphone()
+        if not mic.available:
+            print("\nsounddevice is not installed, so no audio device can be "
+                  "seen at all.\n  pip install sounddevice\n")
+            return 1
+        ins, default = mic.devices()
+        if not ins:
+            print("\nNo input devices. On a laptop this usually means the "
+                  "microphone is muted or blocked in the OS privacy "
+                  "settings rather than missing.\n")
+            return 1
+        print("\nMicrophones this machine can see:\n")
+        for i, d in ins:
+            star = " <- default, this is the one Vesper uses" if i == default else ""
+            print(f"  [{i}] {d['name']}{star}")
+        print("\nIf the default is the wrong one, change it in the OS sound "
+              "settings.\nThen check it hears you:  "
+              "python -m vesper.sensors.stt --level\n")
+        return 0
+
+    if args.level:
+        mic = Microphone()
+        if not mic.available:
+            print("\nNo microphone available here.\n")
+            return 1
+        print("\nTalk normally for five seconds, at the distance you would "
+              "actually use…\n")
+        r = mic.level(5.0)
+        peak = r["peak"]
+        # RMS of 16-bit audio. Judged from what the wake word needs to work,
+        # not from any absolute standard.
+        if peak < 60:
+            verdict = ("Nothing came through. The microphone is muted, "
+                       "blocked in privacy settings, or the wrong device is "
+                       "selected — run --devices.")
+        elif peak < 300:
+            verdict = ("Very quiet. The wake word will miss you often. Move "
+                       "closer, raise the input level in the OS, or use a "
+                       "headset.")
+        elif peak < 8000:
+            verdict = "Good level. The wake word should hear you reliably."
+        else:
+            verdict = ("Very loud — it may be clipping. Lower the input level "
+                       "if it mishears you.")
+        print(f"  loudest: {peak:.0f}    quietest: {r['floor']:.0f}    "
+              f"({r['frames']} frames)")
+        print(f"\n  {verdict}\n")
+        return 0
+
     listener = Listener()
     if not listener.available:
         print("No microphone available in this environment.")
         print("Install `sounddevice` and grant microphone permission, "
               "then run this again.")
+        print("To see what the machine can hear: "
+              "python -m vesper.sensors.stt --devices")
         return 1
     print("Speak after the beep-less prompt… (silence ends the recording)")
     text = listener.listen_once()
