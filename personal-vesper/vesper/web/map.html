@@ -1,0 +1,1620 @@
+<title>Vesper Mainframe</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>
+/* A deliberately single-world design: this is a dark instrument, and it
+   stays dark on any host ground. Every colour is painted explicitly. */
+:root {
+  --void:      #08080C;
+  --void-lift: #0E0E15;
+  --gold:      #F0B23C;
+  --gold-hot:  #FFE9B0;
+  --ember:     #C4632A;
+  --ash:       #8A8071;
+  --ash-dim:   #58513F;
+  --done:      #4E7F6E;
+  --danger:    #B4553C;
+  --edge:      rgba(240,178,60,.20);
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--void);
+  color: var(--gold);
+  font-family: var(--sans);
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+#map { position: fixed; inset: 0; width: 100%; height: 100%; display: block;
+       touch-action: none; cursor: grab; }
+#map:active { cursor: grabbing; }
+
+/* ---- the only permanent chrome: two corner rails ---- */
+.rail {
+  position: fixed; z-index: 5; display: flex; gap: 2px;
+  font-family: var(--mono);
+}
+.rail.left  { left: env(safe-area-inset-left, 0px); bottom: 0;
+              padding: 0 0 14px 14px; }
+.rail.right { right: env(safe-area-inset-right, 0px); bottom: 0;
+              padding: 0 14px 14px 0; }
+.rbtn {
+  appearance: none; background: none; border: 0;
+  color: var(--ash); font: inherit; font-size: 11px;
+  letter-spacing: .16em; text-transform: uppercase;
+  padding: 9px 11px; cursor: pointer; transition: color .18s;
+}
+.rbtn:hover, .rbtn:focus-visible { color: var(--gold); outline: 0; }
+.rbtn:focus-visible { text-decoration: underline; text-underline-offset: 4px; }
+.rbtn.live { color: var(--gold-hot); }
+
+/* ---- voice state, top centre, no box ---- */
+.vstate {
+  position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+  z-index: 5; margin: 0; padding: calc(16px + env(safe-area-inset-top,0px)) 16px 0;
+  font-family: var(--mono); font-size: 11px; letter-spacing: .22em;
+  text-transform: uppercase; color: var(--ash-dim);
+  transition: color .3s; pointer-events: none; text-align: center;
+}
+body.listening .vstate { color: var(--gold); }
+body.speaking  .vstate { color: var(--gold-hot); }
+.said {
+  position: fixed; top: 42px; left: 50%; transform: translateX(-50%);
+  z-index: 5; margin: 0; padding: 0 24px; max-width: min(640px, 92vw);
+  text-align: center; font-size: 15px; line-height: 1.5; color: var(--ash);
+  opacity: 0; transition: opacity .4s; pointer-events: none;
+  text-wrap: balance;
+}
+.said.on { opacity: 1; }
+
+/* Shown only when the laptop can't be reached, because that is the moment
+   the map stops being intelligent and you need to know. */
+.offline .vstate::after {
+  content: " · offline"; color: var(--none, #B4553C);
+}
+
+/* ---- panels ---- */
+.panel {
+  position: fixed; z-index: 10; left: 50%; bottom: 0;
+  transform: translate(-50%, 102%);
+  width: min(560px, 100%); max-height: 82vh;
+  background: var(--void-lift);
+  border: 1px solid var(--edge); border-bottom: 0;
+  border-radius: 14px 14px 0 0;
+  display: flex; flex-direction: column;
+  transition: transform .34s cubic-bezier(.22,.9,.3,1);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.panel.on { transform: translate(-50%, 0); }
+.panel header {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 18px 18px 12px; border-bottom: 1px solid var(--edge);
+}
+.grow { flex: 1; min-width: 0; }
+.crumb {
+  margin: 0 0 4px; font-family: var(--mono); font-size: 10px;
+  letter-spacing: .2em; text-transform: uppercase; color: var(--ash-dim);
+}
+.panel h2 {
+  margin: 0; font-size: 21px; font-weight: 500; color: var(--gold-hot);
+  line-height: 1.25; letter-spacing: -.01em; outline: 0;
+}
+.panel h2:focus { border-bottom: 1px solid var(--gold); }
+.xbtn {
+  appearance: none; background: none; border: 0; color: var(--ash);
+  font-size: 24px; line-height: 1; padding: 2px 6px; cursor: pointer;
+}
+.xbtn:hover { color: var(--gold); }
+.items { overflow-y: auto; padding: 8px 0; flex: 1; -webkit-overflow-scrolling: touch; }
+.row {
+  display: flex; align-items: center; gap: 12px; padding: 11px 18px;
+  border-bottom: 1px solid rgba(240,178,60,.07);
+}
+.row:last-child { border-bottom: 0; }
+.tick {
+  appearance: none; background: none; flex: none;
+  width: 17px; height: 17px; border: 1px solid var(--ash-dim);
+  border-radius: 50%; cursor: pointer; transition: .18s; padding: 0;
+}
+.tick.on { background: var(--done); border-color: var(--done); }
+.rowtext { flex: 1; min-width: 0; font-size: 15px; line-height: 1.4;
+           color: var(--gold); outline: 0; }
+.rowtext.done { color: var(--ash-dim); text-decoration: line-through; }
+.rowsub { font-family: var(--mono); font-size: 10px; letter-spacing: .14em;
+          text-transform: uppercase; color: var(--ash-dim); margin-top: 3px; }
+.mini {
+  appearance: none; background: none; border: 0; color: var(--ash-dim);
+  font-family: var(--mono); font-size: 15px; cursor: pointer; padding: 4px 6px;
+}
+.mini:hover { color: var(--gold); }
+.mini.danger:hover { color: var(--danger); }
+.compose { display: flex; gap: 8px; padding: 12px 18px;
+           border-top: 1px solid var(--edge); }
+.compose input, .fallback input {
+  flex: 1; min-width: 0; background: rgba(240,178,60,.05);
+  border: 1px solid var(--edge); border-radius: 8px;
+  padding: 11px 13px; color: var(--gold-hot); font: inherit; font-size: 15px;
+}
+.compose input::placeholder { color: var(--ash-dim); }
+.compose input:focus, .fallback input:focus {
+  outline: 0; border-color: var(--gold); }
+.compose button, .fallback button {
+  appearance: none; background: var(--gold); border: 0; border-radius: 8px;
+  color: #1A1206; font-family: var(--mono); font-size: 11px; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase; padding: 0 16px;
+  cursor: pointer;
+}
+.panel footer {
+  display: flex; flex-wrap: wrap; gap: 2px; padding: 10px 12px 14px;
+  border-top: 1px solid var(--edge);
+}
+.panel footer button {
+  appearance: none; background: none; border: 0; color: var(--ash);
+  font-family: var(--mono); font-size: 11px; letter-spacing: .12em;
+  text-transform: uppercase; padding: 9px 11px; cursor: pointer;
+}
+.panel footer button:hover { color: var(--gold); }
+.panel footer button.danger:hover { color: var(--danger); }
+.sheet { padding: 4px 18px 18px; font-size: 15px; line-height: 1.6;
+         color: var(--ash); }
+.sheet p { margin: 14px 0; }
+.sheet b { color: var(--gold); font-weight: 600; }
+.sheet ol, .sheet ul { margin: 12px 0; padding-left: 20px; }
+.sheet li { margin: 6px 0; }
+.sheet .dim { color: var(--ash-dim); font-size: 13.5px; }
+.sheet code { font-family: var(--mono); font-size: 13px; color: var(--gold); }
+.fallback { display: none; gap: 8px; padding: 12px 18px;
+            border-top: 1px solid var(--edge); }
+.fallback.on { display: flex; }
+
+.toast {
+  position: fixed; left: 50%; bottom: 68px; transform: translate(-50%, 14px);
+  z-index: 30; background: var(--void-lift); border: 1px solid var(--edge);
+  border-radius: 999px; padding: 9px 18px; font-family: var(--mono);
+  font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--gold); opacity: 0; pointer-events: none;
+  transition: opacity .25s, transform .25s;
+}
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+/* An open panel sits over the bottom rails on a phone, so the buttons
+   underneath would be unreachable and, worse, silently swallow taps. The
+   panel carries its own controls, so the rails simply stand down. */
+body.panelopen .rail { opacity: 0; pointer-events: none; }
+.rail { transition: opacity .2s; }
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: .01ms !important; }
+}
+</style>
+
+<canvas id="map"></canvas>
+<p class="vstate" id="vstate">Touch anywhere to wake</p>
+<p class="said" id="vsaid"></p>
+
+<div class="rail left">
+  <button class="rbtn" id="voiceBtn" type="button">Voice</button>
+  <button class="rbtn" id="fitBtn" type="button">Centre</button>
+</div>
+<div class="rail right">
+  <button class="rbtn" id="importBtn" type="button">Import</button>
+  <button class="rbtn" id="exportBtn" type="button">Export</button>
+  <button class="rbtn" id="setupBtn" type="button">Guide</button>
+</div>
+<input type="file" id="fileIn" accept="application/json,.json" hidden>
+
+<div class="panel" id="panel" role="dialog" aria-label="Point">
+  <header>
+    <div class="grow">
+      <p class="crumb" id="pCrumb"></p>
+      <h2 id="pName" contenteditable="true" spellcheck="false"></h2>
+    </div>
+    <button class="xbtn" id="pClose" type="button" aria-label="Close">×</button>
+  </header>
+  <div class="items" id="pItems"></div>
+  <form class="compose" id="pForm">
+    <input id="pInput" placeholder="Add anything under this…" autocomplete="off">
+    <button type="submit">Add</button>
+  </form>
+  <footer>
+    <button type="button" id="pUp">▲ Parent</button>
+    <button type="button" id="pLink">Link to…</button>
+    <button type="button" id="pDone">Mark done</button>
+    <button type="button" id="pDelete" class="danger">Delete</button>
+  </footer>
+</div>
+
+<div class="panel" id="setupPanel" role="dialog" aria-label="Guide">
+  <header>
+    <div class="grow"><h2>How it works</h2>
+      <p class="crumb">Moving · speaking · keeping</p></div>
+    <button class="xbtn" id="sClose" type="button" aria-label="Close">×</button>
+  </header>
+  <div class="items">
+    <div class="sheet">
+      <p><b>Moving.</b> Drag to turn the whole structure. Pinch or scroll to
+        fly in and out. Tap any point to open it; tap the core to talk.
+        <b>Centre</b> puts you back if you get lost.</p>
+      <p><b>Speaking.</b> Say <b>“Vesper”</b> and then what you want. It
+        answers out loud and flies to whatever you name.</p>
+      <p><b>Talking into a branch.</b> Press and hold any point — however
+        small or deep — and it starts listening <i>into</i> that point.
+        Everything you then say becomes something underneath it, one after
+        another, no need to say “add” or name the branch. Questions and
+        commands still work while you're in there. It lets go after twenty
+        seconds of quiet.</p>
+      <p>It builds as well as reads. Try:</p>
+      <ul>
+        <li><code>new project called Northwind</code></li>
+        <li><code>add buy the domain to Trendkept</code></li>
+        <li><code>mark buy the domain done</code></li>
+        <li><code>go to paper log</code> · <code>status</code></li>
+      </ul>
+      <p class="dim">Chrome listens as soon as this opens. Safari needs one
+        touch per visit before any page may use the microphone — Apple's rule,
+        not a setting — so your first touch anywhere switches it on. The screen
+        is held awake while it listens.</p>
+      <p><b>Keeping it.</b> The map lives in this browser only. Clear your
+        history or change device and it is gone. <b>Export</b> writes a file;
+        <b>Import</b> reads it back. Do that before you put anything into it
+        you would mind losing.</p>
+    </div>
+  </div>
+  <form class="fallback" id="fallbackForm">
+    <input id="fallbackInput" autocomplete="off"
+           placeholder="Microphone blocked — type to Vesper instead">
+    <button type="submit">Ask</button>
+  </form>
+</div>
+
+<div class="panel" id="voicePanel" role="dialog" aria-label="Voice">
+  <header>
+    <div class="grow"><h2>Voice</h2>
+      <p class="crumb" id="vCurrent">—</p></div>
+    <button class="xbtn" id="vClose" type="button" aria-label="Close">×</button>
+  </header>
+  <div class="items" id="vList"></div>
+  <footer>
+    <button type="button" id="vMute">Spoken replies: on</button>
+    <button type="button" id="vTest">Test</button>
+    <button type="button" id="vRetry">Retry mic</button>
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ==================================================================
+   Store — a tree of nodes plus cross-links between any two, which is
+   what makes this a web rather than an outline.
+================================================================== */
+var KEY = "vesper-mainframe-v1";
+
+function seed() {
+  var n = {}, links = [];
+  function add(id, t, p, done) { n[id] = { id: id, t: t, p: p, done: !!done }; }
+  add("root", "Vesper", null);
+
+  add("tk", "Trendkept", "root");
+  add("prod", "Product", "tk");
+  add("prod1", "Engine & rules", "prod");
+  add("prod1a", "Trend filter: 50/200, higher highs", "prod1");
+  add("prod1b", "Stop goes in with the entry", "prod1");
+  add("prod1c", "189 tests passing", "prod1", true);
+  add("prod2", "Dashboard", "prod");
+  add("prod2a", "Scan, backtest, watchlist", "prod2", true);
+  add("prod2b", "Trade journal in R-multiples", "prod2", true);
+  add("prod2c", "Hologram theme", "prod2", true);
+  add("prod3", "Assistant", "prod");
+  add("prod3a", "Chat page + CLI", "prod3", true);
+  add("prod3b", "Voice & briefings", "prod3", true);
+  add("prod3c", "Why-didn't-it-enter diagnostics", "prod3", true);
+  add("prod4", "Next up", "prod");
+  add("prod4a", "Journal v2 — discipline score", "prod4");
+  add("prod4b", "One-click Windows installer", "prod4");
+  add("prod4c", "Open in TradingView links", "prod4");
+
+  add("biz", "Business", "tk");
+  add("biz1", "Validation", "biz");
+  add("biz1a", "Day-30 gate — the log is the pitch", "biz1");
+  add("biz1b", "Three warm yeses, £12 question", "biz1");
+  add("biz2", "Money", "biz");
+  add("biz2a", "£10 proof → £100 incorporate → monthly", "biz2");
+  add("biz2b", "Spent so far: £0", "biz2", true);
+  add("biz2c", "Revenue starts month 3 in the model", "biz2");
+  add("biz3", "Legal", "biz");
+  add("biz3a", "FCA bright line — descriptive only", "biz3");
+  add("biz3b", "Licensed feed before the paid tier", "biz3");
+  add("biz3c", "US perimeter check", "biz3");
+
+  add("con", "Content", "tk");
+  add("con1", "Website", "con");
+  add("con1a", "trendkept.com live", "con1", true);
+  add("con1b", "Four free calculators", "con1", true);
+  add("con1c", "OG image, sitemap, llm.txt", "con1", true);
+  add("con2", "Newsletter", "con");
+  add("con2a", "The Trend Check — live", "con2", true);
+  add("con2b", "Sunday auto-draft action", "con2", true);
+  add("con3", "Drafts ready", "con");
+  add("con3a", "Essay: moving stops", "con3");
+  add("con3b", "Essay: lookahead bias", "con3");
+  add("con3c", "Welcome email", "con3");
+
+  add("log", "Paper log", "tk");
+  add("log1", "26 days recorded to 12 Aug", "log", true);
+  add("log2", "Rules kept on 24 of 26", "log", true);
+  add("log3", "Send photos — Vesper transcribes", "log");
+  add("log4", "Never backfill an unevidenced day", "log");
+  add("log5", "Day 30 unlocks the results post", "log");
+
+  add("me", "Personal", "root");
+  add("me1", "Ideas", "me");
+  add("me2", "To do", "me");
+  add("me3", "Notes", "me");
+
+  links.push(["biz1a", "log5"], ["con3a", "prod1b"], ["biz3a", "prod3a"],
+             ["biz3b", "prod1"], ["con2b", "log1"]);
+  return { nodes: n, links: links };
+}
+
+/* Served by your laptop, so the map is a file on your disk that Vesper can
+   read and write too. That is the whole difference between this and the
+   browser-only version: the assistant can see what you are working on. */
+var TOKEN = "__TOKEN__";
+var store = { nodes: { root: { id: "root", t: "Vesper", p: null } }, links: [] };
+var saveTimer = null, online = true;
+
+function api(path, opts) {
+  opts = opts || {};
+  opts.headers = Object.assign({ "Authorization": "Bearer " + TOKEN,
+                                 "Content-Type": "application/json" },
+                               opts.headers || {});
+  return fetch(path, opts);
+}
+function pull(then) {
+  api("/map/data").then(function (r) { return r.json(); }).then(function (d) {
+    if (d && d.nodes && d.nodes.root) {
+      store = d;
+      if (!store.links) store.links = [];
+      layout();
+      if (then) then();
+    }
+    setOnline(true);
+  }).catch(function () { setOnline(false); });
+}
+function setOnline(v) {
+  if (v === online) return;
+  online = v;
+  document.body.classList.toggle("offline", !v);
+}
+// Batched: dragging a tick or typing a name shouldn't be one request each.
+function save() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(function () {
+    api("/map/data", { method: "POST", body: JSON.stringify(store) })
+      .then(function () { setOnline(true); })
+      .catch(function () { setOnline(false); });
+  }, 350);
+}
+function uid() {
+  return "n" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+function node(id) { return store.nodes[id]; }
+function kids(id) {
+  var out = [];
+  for (var k in store.nodes) if (store.nodes[k].p === id) out.push(store.nodes[k]);
+  return out;
+}
+function depthOf(id) {
+  var d = 0, n = node(id);
+  while (n && n.p) { d++; n = node(n.p); }
+  return d;
+}
+function hash(s) {
+  var h = 2166136261;
+  for (var i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i); h = (h * 16777619) >>> 0;
+  }
+  return h / 4294967295;
+}
+
+/* ==================================================================
+   Layout in three dimensions.
+
+   The root sits at the origin. Its limbs take directions spread evenly
+   over a sphere (a Fibonacci spiral — even coverage without clumping at
+   the poles). Every child then leaves its parent inside a cone around
+   the parent's own direction, so a branch keeps travelling outward
+   instead of doubling back through the middle. Segment length shrinks
+   with depth, which is what makes it read as a tree rather than a cloud.
+================================================================== */
+var P = {};          // id -> [x,y,z]
+var DIRS = {};       // id -> unit direction it left its parent on
+
+function fibDir(i, n) {
+  var off = 2 / n, y = i * off - 1 + off / 2;
+  var r = Math.sqrt(Math.max(0, 1 - y * y));
+  var phi = i * Math.PI * (3 - Math.sqrt(5));
+  return [Math.cos(phi) * r, y, Math.sin(phi) * r];
+}
+function norm(v) {
+  var m = Math.hypot(v[0], v[1], v[2]) || 1;
+  return [v[0] / m, v[1] / m, v[2] / m];
+}
+function basis(d) {
+  // Any vector not parallel to d, then two perpendiculars.
+  var a = Math.abs(d[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+  var u = norm([d[1] * a[2] - d[2] * a[1],
+                d[2] * a[0] - d[0] * a[2],
+                d[0] * a[1] - d[1] * a[0]]);
+  var v = [d[1] * u[2] - d[2] * u[1],
+           d[2] * u[0] - d[0] * u[2],
+           d[0] * u[1] - d[1] * u[0]];
+  return [u, v];
+}
+var SEG = [0, 300, 178, 114, 76, 54, 42];
+
+function layout() {
+  P = {}; DIRS = {};
+  P.root = [0, 0, 0];
+  var limbs = kids("root");
+  // With only two or three limbs, consecutive points on a Fibonacci sphere
+  // sit close together. Spreading the indices across a larger notional set
+  // pushes them to genuinely opposite quarters of the sky.
+  var N = Math.max(limbs.length, 5);
+  limbs.forEach(function (n, i) {
+    var d = fibDir(Math.round(i * N / limbs.length) % N, N);
+    // Flatten slightly towards a disc. A perfect sphere reads as a ball of
+    // wool from any angle; a galaxy has a plane, which gives the eye
+    // somewhere to stand and fills a wide screen instead of a tall column.
+    d = norm([d[0], d[1] * 0.55, d[2]]);
+    DIRS[n.id] = d;
+    // A limb carrying a lot of weight starts further out, so its own
+    // sub-branches have somewhere to go.
+    var load = 1 + Math.min(0.55, countUnder(n.id) / 60);
+    P[n.id] = [d[0] * SEG[1] * load, d[1] * SEG[1] * load, d[2] * SEG[1] * load];
+    place(n.id, 2);
+  });
+}
+function countUnder(id) {
+  var c = 0;
+  (function walk(x) { kids(x).forEach(function (k) { c++; walk(k.id); }); })(id);
+  return c;
+}
+function place(id, depth) {
+  var ch = kids(id);
+  if (!ch.length) return;
+  var d = DIRS[id], b = basis(d), u = b[0], v = b[1];
+  var seg = SEG[Math.min(depth, SEG.length - 1)];
+  // Wider cone when there are more children, and wider still just below a
+  // limb — that is where a big project has to open out. Without this,
+  // Trendkept's forty-odd points try to fit through the same gap as
+  // Personal's four.
+  var cone = Math.min(1.34, 0.5 + ch.length * 0.09 + (depth === 2 ? 0.3 : 0));
+  var spin = hash(id) * Math.PI * 2;
+  ch.forEach(function (c, i) {
+    var a = spin + (i / ch.length) * Math.PI * 2;
+    // A little jitter so siblings don't sit on a perfect ring.
+    var k = cone * (0.78 + hash(c.id) * 0.44);
+    var cd = norm([
+      d[0] * Math.cos(k) + (u[0] * Math.cos(a) + v[0] * Math.sin(a)) * Math.sin(k),
+      d[1] * Math.cos(k) + (u[1] * Math.cos(a) + v[1] * Math.sin(a)) * Math.sin(k),
+      d[2] * Math.cos(k) + (u[2] * Math.cos(a) + v[2] * Math.sin(a)) * Math.sin(k)
+    ]);
+    // A branch carrying more beneath it reaches further, so dense subtrees
+    // get the room they need instead of tangling.
+    var L = seg * (0.82 + hash(c.id + "L") * 0.36)
+                * (1 + Math.min(0.6, countUnder(c.id) / 26));
+    DIRS[c.id] = cd;
+    P[c.id] = [P[id][0] + cd[0] * L, P[id][1] + cd[1] * L, P[id][2] + cd[2] * L];
+    place(c.id, depth + 1);
+  });
+}
+
+/* ==================================================================
+   Camera — orbit, dolly, and a perspective projection by hand.
+================================================================== */
+var cv = document.getElementById("map"), ctx = cv.getContext("2d");
+var W = 0, H = 0, DPR = 1;
+var yaw = 0.6, pitch = -0.32, dist = 720, zoom = 1;
+var target = [0, 0, 0];          // what the camera looks at
+var glide = null;                // an in-flight move to a node
+var FOCAL = 620;
+
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = cv.clientWidth; H = cv.clientHeight;
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+window.addEventListener("resize", resize);
+
+function project(p) {
+  var x = p[0] - target[0], y = p[1] - target[1], z = p[2] - target[2];
+  var cy = Math.cos(yaw), sy = Math.sin(yaw);
+  var x1 = x * cy - z * sy, z1 = x * sy + z * cy;
+  var cp = Math.cos(pitch), sp = Math.sin(pitch);
+  var y1 = y * cp - z1 * sp, z2 = y * sp + z1 * cp;
+  var d = z2 + dist;
+  if (d < 40) d = 40;
+  var s = (FOCAL * zoom) / d;
+  return { x: W / 2 + x1 * s, y: H / 2 + y1 * s, s: s, d: d };
+}
+
+/* Stars: fixed points in world space, so flying through gives parallax. */
+var STARS = (function () {
+  var out = [];
+  for (var i = 0; i < 260; i++) {
+    var d = fibDir(i, 260), r = 900 + hash("s" + i) * 2200;
+    out.push([d[0] * r, d[1] * r * 0.7, d[2] * r]);
+  }
+  return out;
+})();
+
+/* ==================================================================
+   Drawing. Painter's algorithm: everything is projected, sorted far to
+   near, then drawn — so near branches genuinely occlude far ones.
+================================================================== */
+var selected = null, hovered = null, T0 = performance.now();
+
+function fog(d) {
+  // 1 near, 0 far. Tuned so the far side of the structure stays visible
+  // as a suggestion rather than vanishing.
+  var f = 1 - (d - dist * 0.35) / (dist * 2.1);
+  return Math.max(0.06, Math.min(1, f));
+}
+function gold(a) { return "rgba(240,178,60," + a.toFixed(3) + ")"; }
+function hot(a) { return "rgba(255,233,176," + a.toFixed(3) + ")"; }
+
+function draw(now) {
+  var t = (now - T0) / 1000;
+  if (glide) step(t);
+
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = "#08080C";
+  ctx.fillRect(0, 0, W, H);
+
+  /* stars */
+  for (var i = 0; i < STARS.length; i++) {
+    var sp = project(STARS[i]);
+    if (sp.d <= 40 || sp.x < -50 || sp.x > W + 50 || sp.y < -50 || sp.y > H + 50)
+      continue;
+    var tw = 0.25 + 0.2 * Math.sin(t * 0.7 + i);
+    ctx.fillStyle = "rgba(255,233,176," + (tw * fog(sp.d) * 0.5).toFixed(3) + ")";
+    ctx.fillRect(sp.x, sp.y, 1.2, 1.2);
+  }
+
+  /* project every node once */
+  var proj = {}, ids = [];
+  for (var k in store.nodes) {
+    if (!P[k]) continue;
+    proj[k] = project(P[k]);
+    ids.push(k);
+  }
+
+  /* --- branches, far to near --- */
+  var segs = [];
+  ids.forEach(function (id) {
+    var n = store.nodes[id];
+    if (!n.p || !proj[n.p]) return;
+    segs.push({ a: proj[n.p], b: proj[id], d: (proj[n.p].d + proj[id].d) / 2,
+                depth: depthOf(id), done: n.done, id: id });
+  });
+  store.links.forEach(function (l) {
+    if (!proj[l[0]] || !proj[l[1]]) return;
+    segs.push({ a: proj[l[0]], b: proj[l[1]], cross: true,
+                d: (proj[l[0]].d + proj[l[1]].d) / 2 });
+  });
+  segs.sort(function (a, b) { return b.d - a.d; });
+
+  segs.forEach(function (s) {
+    var f = fog(s.d);
+    ctx.beginPath();
+    if (s.cross) {
+      // Cross-links arc, so they read as a different kind of connection.
+      var mx = (s.a.x + s.b.x) / 2, my = (s.a.y + s.b.y) / 2;
+      var dx = s.b.x - s.a.x, dy = s.b.y - s.a.y;
+      ctx.moveTo(s.a.x, s.a.y);
+      ctx.quadraticCurveTo(mx - dy * 0.16, my + dx * 0.16, s.b.x, s.b.y);
+      ctx.setLineDash([2, 6]);
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = "rgba(196,99,42," + (f * 0.5).toFixed(3) + ")";
+    } else {
+      ctx.moveTo(s.a.x, s.a.y);
+      ctx.lineTo(s.b.x, s.b.y);
+      ctx.setLineDash([]);
+      ctx.lineWidth = Math.max(0.6, (4.2 - s.depth * 0.62) * (s.a.s + s.b.s) / 2 * 0.9);
+      ctx.strokeStyle = s.done ? "rgba(78,127,110," + (f * 0.5).toFixed(3) + ")"
+                               : gold(f * (0.5 - s.depth * 0.05));
+    }
+    ctx.stroke();
+  });
+  ctx.setLineDash([]);
+
+  /* --- nodes, far to near --- */
+  var order = ids.slice().sort(function (a, b) { return proj[b].d - proj[a].d; });
+  // The status line and the two rails are DOM, invisible to the canvas, so
+  // reserve their footprints up front or labels drift underneath them.
+  var taken = [
+    [W / 2 - 210, 0, W / 2 + 210, 74],          // voice state, top centre
+    [0, H - 46, 210, H],                        // left rail
+    [W - 260, H - 46, W, H]                     // right rail
+  ];
+  // Labels are drawn in two passes. The named limbs and whatever is selected
+  // claim their space first, so a deep leaf can never elbow out "Trendkept"
+  // just by happening to sit nearer the camera.
+  var labelQueue = [];
+
+  order.forEach(function (id) {
+    var n = store.nodes[id], p = proj[id];
+    if (p.d <= 40) return;
+    var dep = depthOf(id), f = fog(p.d);
+    var r = Math.max(1.4, (id === "root" ? 13 : 8.4 - dep * 1.25) * p.s * 1.5);
+    var isSel = id === selected, isHov = id === hovered;
+
+    if (id === "root") { drawCore(p, r, t, f); }
+    else {
+      if (isSel || isHov) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, r + 7, 0, 6.2832);
+        ctx.strokeStyle = hot(f * (isSel ? 0.85 : 0.4));
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, 0, 6.2832);
+      ctx.fillStyle = n.done ? "rgba(78,127,110," + (f * 0.9).toFixed(3) + ")"
+                             : (dep <= 1 ? hot(f) : gold(f * 0.92));
+      ctx.shadowColor = n.done ? "rgba(78,127,110,.8)" : "rgba(240,178,60,.9)";
+      ctx.shadowBlur = (dep <= 1 ? 22 : 10) * f;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+
+    var size = Math.max(10, Math.min(26,
+      (id === "root" ? 19 : 17 - dep * 1.7) * p.s * 1.45));
+    // Three tiers, so what you read is the structure rather than whatever
+    // happened to drift near the camera: the core and its limbs always,
+    // section names always, and the leaves only when you're close to them.
+    var show = id === "root" || isSel || isHov || dep <= 2 ||
+               (p.s > 0.95 && f > 0.55);
+    if (!show || size < 10 || f < 0.16) return;
+    labelQueue.push({ id: id, n: n, p: p, r: r, dep: dep, f: f,
+                      size: size, sel: isSel });
+  });
+
+  // Every visible point blocks text too, so a name never lands on a dot or
+  // on the glow around it.
+  ids.forEach(function (id) {
+    var p = proj[id];
+    if (p.d <= 40) return;
+    var dep = depthOf(id);
+    var r = Math.max(1.4, (id === "root" ? 13 : 8.4 - dep * 1.25) * p.s * 1.5);
+    var pad = id === "root" ? r * 2.2 : r + 2;
+    taken.push([p.x - pad, p.y - pad, p.x + pad, p.y + pad]);
+  });
+
+  /* --- labels: named limbs first, then everything else --- */
+  labelQueue.sort(function (a, b) {
+    var pa = (a.id === "root" || a.dep <= 2 || a.sel) ? 0 : 1;
+    var pb = (b.id === "root" || b.dep <= 2 || b.sel) ? 0 : 1;
+    return pa !== pb ? pa - pb : a.p.d - b.p.d;
+  });
+  labelQueue.forEach(function (L) {
+    drawLabel(L, taken);
+  });
+
+  requestAnimationFrame(draw);
+}
+
+function hits(box, taken) {
+  for (var i = 0; i < taken.length; i++) {
+    var o = taken[i];
+    if (box[0] < o[2] && box[2] > o[0] && box[1] < o[3] && box[3] > o[1])
+      return true;
+  }
+  return false;
+}
+
+/* Labels sit in the scene: no plate, no border, no box. Legibility comes
+   from a dark glow behind the glyphs, so the starfield shows through the
+   gaps in the letters instead of through a floating rectangle. */
+function drawLabel(L, taken) {
+  var top = L.dep <= 1 || L.id === "root";     // the core and its limbs
+  var mid = L.dep === 2;                       // section names
+  var size = L.size;
+  ctx.font = (top ? "600 " : mid ? "500 " : "400 ") + size.toFixed(1) + "px " +
+    (top || mid ? "ui-monospace, SF Mono, Menlo, monospace"
+                : "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif");
+  var text = (top || mid) ? L.n.t.toUpperCase() : L.n.t;
+  if (!top && !mid && text.length > 34) text = text.slice(0, 33) + "…";
+  ctx.letterSpacing = top ? (size * 0.15).toFixed(1) + "px"
+                    : mid ? (size * 0.11).toFixed(1) + "px" : "0px";
+
+  var w = ctx.measureText(text).width;
+  var pad = Math.max(9, 11 * L.p.s);
+
+  // Try a ring of positions around the node rather than one spot and a
+  // single fallback. Right of the node first because that reads most
+  // naturally, then left, then stepped above and below, then further out.
+  // Whichever is free first wins, so nothing is ever drawn over anything.
+  var spot = null;
+  var rings = [1, 1.7, 2.5, 3.4];
+  var lifts = [0, -1.15, 1.15, -2.3, 2.3, -3.5, 3.5];
+  for (var ri = 0; ri < rings.length && !spot; ri++) {
+    for (var li = 0; li < lifts.length && !spot; li++) {
+      for (var side = 0; side < 2 && !spot; side++) {
+        var off = (L.r + pad) * rings[ri];
+        var x = side === 0 ? L.p.x + off : L.p.x - off - w;
+        var y = L.p.y + size * 0.34 + lifts[li] * size;
+        if (x < 8 || x + w > W - 8 || y - size < 4 || y > H - 6) continue;
+        var b = [x - 4, y - size, x + w + 4, y + 5];
+        if (!hits(b, taken)) spot = { x: x, y: y, box: b };
+      }
+    }
+  }
+  // Nothing free anywhere: a leaf steps aside, but a limb or section name
+  // must not vanish — that was the old bug — so it takes its first choice.
+  if (!spot) {
+    if (!L.sel && !top && !mid) return;
+    var fx = L.p.x + L.r + pad, fy = L.p.y + size * 0.34;
+    if (fx + w > W - 8) fx = L.p.x - L.r - pad - w;
+    spot = { x: fx, y: fy, box: [fx - 4, fy - size, fx + w + 4, fy + 5] };
+  }
+  var lx = spot.x, ly = spot.y;
+  taken.push(spot.box);
+
+  var a = L.f * (L.sel ? 1 : top ? 0.98 : mid ? 0.88 : 0.66);
+  ctx.shadowColor = "rgba(4,4,8,.95)";
+  ctx.shadowBlur = 8;
+  ctx.fillStyle = L.n.done ? "rgba(120,140,132," + (a * 0.8).toFixed(3) + ")"
+                           : (top ? hot(a) : gold(a));
+  if (mid && !L.n.done) ctx.fillStyle = hot(a * 0.82);
+  ctx.fillText(text, lx, ly);
+  ctx.shadowBlur = 0;
+  ctx.letterSpacing = "0px";
+}
+
+function drawCore(p, r, t, f) {
+  var pulse = 1 + Math.sin(t * 1.5) * 0.06;
+  var R = r * pulse;
+  var g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, R * 5);
+  g.addColorStop(0, "rgba(255,240,205,.95)");
+  g.addColorStop(0.18, "rgba(255,206,120,.55)");
+  g.addColorStop(0.5, "rgba(240,150,50,.16)");
+  g.addColorStop(1, "rgba(240,140,40,0)");
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(p.x, p.y, R * 5, 0, 6.2832); ctx.fill();
+
+  ctx.beginPath(); ctx.arc(p.x, p.y, R, 0, 6.2832);
+  ctx.fillStyle = "rgba(255,245,220,.98)";
+  ctx.shadowColor = "rgba(255,190,90,1)"; ctx.shadowBlur = 34;
+  ctx.fill(); ctx.shadowBlur = 0;
+
+  // Two slow rings, tilted — the only ornament on the page.
+  for (var i = 0; i < 2; i++) {
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(t * (i ? -0.22 : 0.3) + i * 1.1);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, R * (2.6 + i * 0.9), R * (0.9 + i * 0.5), 0, 0, 6.2832);
+    ctx.strokeStyle = gold(f * (0.3 - i * 0.1));
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+/* ==================================================================
+   Flying to a node.
+================================================================== */
+function focusOn(id) {
+  if (!P[id]) return;
+  var to = P[id].slice();
+  var d = depthOf(id);
+  glide = { from: target.slice(), to: to,
+            fromD: dist, toD: Math.max(230, 640 - d * 70),
+            t0: performance.now(), ms: 780 };
+}
+function step() {
+  var k = (performance.now() - glide.t0) / glide.ms;
+  if (k >= 1) { k = 1; }
+  var e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+  for (var i = 0; i < 3; i++)
+    target[i] = glide.from[i] + (glide.to[i] - glide.from[i]) * e;
+  dist = glide.fromD + (glide.toD - glide.fromD) * e;
+  if (k >= 1) glide = null;
+}
+/* Camera axes in world space — used to nudge the framing sideways. */
+function camAxis(v) {
+  var cp = Math.cos(-pitch), sp = Math.sin(-pitch);
+  var y = v[1] * cp - v[2] * sp, z1 = v[1] * sp + v[2] * cp, x = v[0];
+  var cy = Math.cos(-yaw), sy = Math.sin(-yaw);
+  return [x * cy - z1 * sy, y, x * sy + z1 * cy];
+}
+
+function fit() {
+  // Fitting on a 3D radius fails here: the structure is elongated, so a
+  // node far from the centroid but pointing at the camera is foreshortened
+  // to nothing and the whole thing ends up tiny. Measure the actual
+  // projected box instead, and iterate — three passes converge easily.
+  var keys = Object.keys(P);
+  if (!keys.length) return;
+  var cx = 0, cy = 0, cz = 0;
+  keys.forEach(function (k) { cx += P[k][0]; cy += P[k][1]; cz += P[k][2]; });
+  cx /= keys.length; cy /= keys.length; cz /= keys.length;
+
+  var keepT = target.slice(), keepD = dist, keepY = yaw, keepP = pitch, keepZ = zoom;
+  yaw = 0.6; pitch = -0.3; zoom = 1;
+  target = [cx, cy, cz];
+  var d = 900;
+  var wantW = W * 0.76, wantH = H * 0.70;
+
+  for (var pass = 0; pass < 4; pass++) {
+    dist = d;
+    var minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9, meanD = 0;
+    keys.forEach(function (k) {
+      var q = project(P[k]);
+      minX = Math.min(minX, q.x); maxX = Math.max(maxX, q.x);
+      minY = Math.min(minY, q.y); maxY = Math.max(maxY, q.y);
+      meanD += q.d;
+    });
+    meanD /= keys.length;
+    d = Math.max(220, d * Math.max((maxX - minX) / wantW, (maxY - minY) / wantH));
+
+    // Re-centre: shift what the camera looks at by the screen-space offset.
+    var offX = (minX + maxX) / 2 - W / 2, offY = (minY + maxY) / 2 - H / 2;
+    var scale = (FOCAL * zoom) / Math.max(60, meanD);
+    var rt = camAxis([1, 0, 0]), up = camAxis([0, 1, 0]);
+    target = [target[0] + (offX / scale) * rt[0] + (offY / scale) * up[0],
+              target[1] + (offX / scale) * rt[1] + (offY / scale) * up[1],
+              target[2] + (offX / scale) * rt[2] + (offY / scale) * up[2]];
+  }
+
+  var to = target.slice();
+  target = keepT; dist = keepD; zoom = keepZ;
+  yaw = keepY; pitch = keepP;
+  yaw = 0.6; pitch = -0.3; zoom = 1;
+  glide = { from: keepT, to: to, fromD: keepD, toD: d,
+            t0: performance.now(), ms: 700 };
+}
+
+/* ==================================================================
+   Pointer: drag orbits, pinch dollies, tap selects.
+================================================================== */
+var pointers = new Map(), dragged = 0, downAt = 0, pinch0 = 0, dist0 = 0;
+var holdTimer = null, held = false;
+
+cv.addEventListener("pointerdown", function (ev) {
+  cv.setPointerCapture(ev.pointerId);
+  pointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+  dragged = 0; downAt = Date.now();
+
+  // Hold a point for a moment and it starts listening *into* that point:
+  // whatever you then say becomes something underneath it. A quick tap
+  // still just opens it.
+  clearTimeout(holdTimer);
+  var holdId = hit(ev.clientX, ev.clientY);
+  if (holdId && holdId !== "root" && pointers.size === 1) {
+    holdTimer = setTimeout(function () {
+      if (dragged >= 9 || !pointers.size) return;
+      held = true;
+      closePanels();
+      selected = holdId;
+      focusOn(holdId);
+      talkInto(holdId);
+    }, 480);
+  }
+
+  if (pointers.size === 2) {
+    var a = [];
+    pointers.forEach(function (v) { a.push(v); });
+    pinch0 = Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y);
+    dist0 = dist;
+  }
+});
+cv.addEventListener("pointermove", function (ev) {
+  var prev = pointers.get(ev.pointerId);
+  if (!prev) {
+    // Hover highlighting on a mouse.
+    var h = hit(ev.clientX, ev.clientY);
+    if (h !== hovered) { hovered = h; cv.style.cursor = h ? "pointer" : "grab"; }
+    return;
+  }
+  var dx = ev.clientX - prev.x, dy = ev.clientY - prev.y;
+  pointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+  dragged += Math.abs(dx) + Math.abs(dy);
+  if (dragged >= 9) clearTimeout(holdTimer);
+
+  if (pointers.size === 2) {
+    var a = [];
+    pointers.forEach(function (v) { a.push(v); });
+    var now = Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y);
+    if (pinch0 > 0) dist = Math.max(120, Math.min(2600, dist0 * (pinch0 / now)));
+    return;
+  }
+  glide = null;
+  yaw -= dx * 0.006;
+  pitch = Math.max(-1.45, Math.min(1.45, pitch - dy * 0.006));
+});
+function endPointer(ev) {
+  var had = pointers.has(ev.pointerId);
+  pointers.delete(ev.pointerId);
+  clearTimeout(holdTimer);
+  if (!had) return;
+  if (held) { held = false; if (pointers.size < 2) pinch0 = 0; return; }
+  if (dragged < 9 && Date.now() - downAt < 550) {
+    var id = hit(ev.clientX, ev.clientY);
+    if (id === "root") { toggleVoice(); }
+    else if (id) { select(id); focusOn(id); }
+  }
+  if (pointers.size < 2) pinch0 = 0;
+}
+cv.addEventListener("pointerup", endPointer);
+cv.addEventListener("pointercancel", endPointer);
+cv.addEventListener("wheel", function (ev) {
+  ev.preventDefault();
+  glide = null;
+  dist = Math.max(120, Math.min(2600, dist * (1 + (ev.deltaY > 0 ? 0.12 : -0.12))));
+}, { passive: false });
+
+function hit(sx, sy) {
+  var best = null, bestD = 1e9;
+  for (var k in store.nodes) {
+    if (!P[k]) continue;
+    var p = project(P[k]);
+    if (p.d <= 40) continue;
+    var dep = depthOf(k);
+    var r = Math.max(1.4, (k === "root" ? 13 : 8.4 - dep * 1.25) * p.s * 1.5);
+    var grab = Math.max(15, r + 11);
+    var dd = Math.hypot(sx - p.x, sy - p.y);
+    // Nearest to the camera wins a tie, so you select what you can see.
+    if (dd < grab && p.d < bestD) { best = k; bestD = p.d; }
+  }
+  return best;
+}
+
+/* ==================================================================
+   Panels
+================================================================== */
+var panel = document.getElementById("panel");
+var setupPanel = document.getElementById("setupPanel");
+var voicePanel = document.getElementById("voicePanel");
+var pName = document.getElementById("pName"), pCrumb = document.getElementById("pCrumb");
+var pItems = document.getElementById("pItems"), pForm = document.getElementById("pForm");
+var pInput = document.getElementById("pInput");
+var linking = false;
+
+function syncChrome() {
+  document.body.classList.toggle("panelopen", !!document.querySelector(".panel.on"));
+}
+function openPanel(el) {
+  panel.classList.remove("on");
+  setupPanel.classList.remove("on");
+  voicePanel.classList.remove("on");
+  el.classList.add("on");
+  syncChrome();
+}
+function closePanels() {
+  panel.classList.remove("on");
+  setupPanel.classList.remove("on");
+  voicePanel.classList.remove("on");
+  syncChrome();
+}
+function select(id) {
+  if (linking && id && id !== selected) {
+    store.links.push([selected, id]);
+    linking = false; save();
+    toast("Linked");
+    return;
+  }
+  selected = id;
+  var n = node(id);
+  if (!n) return;
+  var trail = [], c = n;
+  while (c && c.p) { c = node(c.p); if (c) trail.unshift(c.t); }
+  pCrumb.textContent = trail.join("  ›  ") || "Mainframe";
+  pName.textContent = n.t;
+  drawItems(n);
+  openPanel(panel);
+}
+function drawItems(n) {
+  pItems.innerHTML = "";
+  var ch = kids(n.id);
+  if (!ch.length) {
+    var e = document.createElement("div");
+    e.className = "sheet";
+    e.innerHTML = "<p class='dim'>Nothing under this yet. Add the first thing below, " +
+                  "or say “add something to " + n.t.toLowerCase() + "”.</p>";
+    pItems.appendChild(e);
+  }
+  ch.forEach(function (c) {
+    var row = document.createElement("div"); row.className = "row";
+    var tick = document.createElement("button");
+    tick.className = "tick" + (c.done ? " on" : "");
+    tick.type = "button";
+    tick.setAttribute("aria-label", c.done ? "Mark not done" : "Mark done");
+    var wrap = document.createElement("div"); wrap.className = "grow";
+    var txt = document.createElement("div");
+    txt.className = "rowtext" + (c.done ? " done" : "");
+    txt.contentEditable = "true"; txt.spellcheck = false; txt.textContent = c.t;
+    wrap.appendChild(txt);
+    var count = kids(c.id).length;
+    if (count) {
+      var sub = document.createElement("div");
+      sub.className = "rowsub";
+      sub.textContent = count + (count === 1 ? " point" : " points");
+      wrap.appendChild(sub);
+    }
+    var go = document.createElement("button");
+    go.className = "mini"; go.type = "button"; go.textContent = "›";
+    go.setAttribute("aria-label", "Open " + c.t);
+    var del = document.createElement("button");
+    del.className = "mini danger"; del.type = "button"; del.textContent = "×";
+    del.setAttribute("aria-label", "Delete " + c.t);
+
+    tick.addEventListener("click", function () {
+      c.done = !c.done; save();
+      tick.classList.toggle("on", c.done);
+      txt.classList.toggle("done", c.done);
+    });
+    txt.addEventListener("blur", function () {
+      var v = txt.textContent.trim();
+      if (v) { c.t = v; save(); } else txt.textContent = c.t;
+    });
+    txt.addEventListener("keydown", function (ev) {
+      if (ev.key === "Enter") { ev.preventDefault(); txt.blur(); }
+    });
+    go.addEventListener("click", function () { select(c.id); focusOn(c.id); });
+    del.addEventListener("click", function () {
+      removeNode(c.id); drawItems(n); layout();
+    });
+
+    row.appendChild(tick); row.appendChild(wrap);
+    row.appendChild(go); row.appendChild(del);
+    pItems.appendChild(row);
+  });
+}
+function removeNode(id) {
+  if (id === "root") return;
+  var doomed = [];
+  (function walk(x) {
+    doomed.push(x);
+    kids(x).forEach(function (c) { walk(c.id); });
+  })(id);
+  doomed.forEach(function (x) { delete store.nodes[x]; });
+  store.links = store.links.filter(function (l) {
+    return doomed.indexOf(l[0]) < 0 && doomed.indexOf(l[1]) < 0;
+  });
+  save();
+}
+function addNode(text, parentId) {
+  var id = uid();
+  store.nodes[id] = { id: id, t: text, p: parentId || "root", done: false };
+  save(); layout();
+  return id;
+}
+
+pForm.addEventListener("submit", function (ev) {
+  ev.preventDefault();
+  var v = pInput.value.trim();
+  if (!v || !selected) return;
+  addNode(v, selected);
+  pInput.value = "";
+  drawItems(node(selected));
+});
+pName.addEventListener("blur", function () {
+  var v = pName.textContent.trim(), n = node(selected);
+  if (!n) return;
+  if (v) { n.t = v; save(); } else pName.textContent = n.t;
+});
+pName.addEventListener("keydown", function (ev) {
+  if (ev.key === "Enter") { ev.preventDefault(); pName.blur(); }
+});
+document.getElementById("pUp").addEventListener("click", function () {
+  var n = node(selected);
+  if (n && n.p) { select(n.p); focusOn(n.p); }
+});
+document.getElementById("pDone").addEventListener("click", function () {
+  var n = node(selected);
+  if (!n) return;
+  n.done = !n.done; save();
+  toast(n.done ? "Marked done" : "Reopened");
+});
+document.getElementById("pLink").addEventListener("click", function () {
+  linking = true; closePanels();
+  toast("Tap the point to link to");
+});
+document.getElementById("pDelete").addEventListener("click", function () {
+  var n = node(selected);
+  if (!n || n.id === "root") return;
+  var up = n.p;
+  removeNode(n.id); layout(); closePanels();
+  toast("Deleted");
+  if (up) select(up);
+});
+document.getElementById("pClose").addEventListener("click", closePanels);
+document.getElementById("sClose").addEventListener("click", closePanels);
+document.getElementById("vClose").addEventListener("click", closePanels);
+document.getElementById("fitBtn").addEventListener("click", function () {
+  closePanels(); selected = null; fit();
+});
+document.getElementById("setupBtn").addEventListener("click", function () {
+  openPanel(setupPanel);
+});
+
+var toastEl = document.getElementById("toast"), toastT;
+function toast(msg) {
+  toastEl.textContent = msg;
+  toastEl.classList.add("on");
+  clearTimeout(toastT);
+  toastT = setTimeout(function () { toastEl.classList.remove("on"); }, 2400);
+}
+
+document.getElementById("exportBtn").addEventListener("click", function () {
+  var blob = new Blob([JSON.stringify(store, null, 1)],
+                      { type: "application/json" });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "vesper-mainframe.json";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+  toast("Exported");
+});
+document.getElementById("importBtn").addEventListener("click", function () {
+  document.getElementById("fileIn").click();
+});
+document.getElementById("fileIn").addEventListener("change", function (ev) {
+  var f = ev.target.files && ev.target.files[0];
+  if (!f) return;
+  var fr = new FileReader();
+  fr.onload = function () {
+    try {
+      var d = JSON.parse(fr.result);
+      if (!d || !d.nodes || !d.nodes.root) throw new Error("shape");
+      store = d;
+      if (!store.links) store.links = [];
+      save(); closePanels(); layout(); fit();
+      toast("Mainframe loaded");
+    } catch (e) { toast("That file isn't a mainframe"); }
+  };
+  fr.readAsText(f);
+  ev.target.value = "";
+});
+
+/* ==================================================================
+   Voice — it reads the map, and now it builds it too.
+================================================================== */
+var toggleVoice = function () {};
+var talkInto = function () {};
+(function () {
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var synth = window.speechSynthesis;
+  var stateEl = document.getElementById("vstate");
+  var saidEl = document.getElementById("vsaid");
+  var wakeOn = false, speaking = false, voiceOut = true, rec = null, fade;
+  // When you hold a point, it becomes the target: bare phrases land under
+  // it until the window lapses, so you can reel off several in a row.
+  var captureTarget = null, captureTimer = null;
+  var openMic = false, openTimer = null, voices = [], chosen = null;
+
+  function setState(text, cls) {
+    stateEl.textContent = text;
+    document.body.classList.toggle("listening", cls === "listening");
+    document.body.classList.toggle("speaking", cls === "speaking");
+  }
+  function show(text) {
+    saidEl.textContent = text;
+    saidEl.classList.toggle("on", !!text);
+    clearTimeout(fade);
+    fade = setTimeout(function () { saidEl.classList.remove("on"); }, 15000);
+  }
+
+  function findNode(t) {
+    var best = null, bestScore = 0;
+    for (var k in store.nodes) {
+      if (k === "root") continue;
+      var name = store.nodes[k].t.toLowerCase();
+      if (t.indexOf(name) > -1) {
+        // A whole-name match beats any word overlap.
+        if (name.length > bestScore) { bestScore = name.length + 1000; best = store.nodes[k]; }
+        continue;
+      }
+      var words = name.split(/[^a-z0-9]+/), score = 0;
+      for (var w = 0; w < words.length; w++)
+        if (words[w].length > 3 && t.indexOf(words[w]) > -1) score++;
+      if (score > bestScore) { bestScore = score; best = store.nodes[k]; }
+    }
+    return bestScore ? best : null;
+  }
+  function overview() {
+    var limbs = kids("root"), total = 0, open = 0;
+    for (var k in store.nodes) {
+      if (k === "root") continue;
+      total++;
+      if (!store.nodes[k].done) open++;
+    }
+    return "The mainframe holds " + total + " points across " + limbs.length +
+      " limbs: " + limbs.map(function (n) { return n.t; }).join(", ") +
+      ". " + open + " still open.";
+  }
+
+  /* --- building by voice ------------------------------------------
+     Each pattern returns the text to speak. They run before the
+     question answers, because "add X" is an instruction, not a query. */
+  function build(raw) {
+    var t = raw.toLowerCase().trim().replace(/[.?!]+$/, "");
+
+    // new project called X  /  create a project named X
+    var m = t.match(/^(?:new|create|start|make)\s+(?:a\s+)?(?:project|limb|branch|section)\s+(?:called|named)?\s*(.+)$/);
+    if (m && m[1]) {
+      var title = tidy(m[1]);
+      var id = addNode(title, "root");
+      select(id); focusOn(id);
+      return "Added " + title + " as a new limb.";
+    }
+
+    // add X to Y
+    m = t.match(/^(?:add|put|note)\s+(.+?)\s+(?:to|under|in|onto)\s+(.+)$/);
+    if (m) {
+      var what = tidy(m[1]), whereName = m[2].trim();
+      var where = findNode(whereName);
+      if (!where) return "I can't find anything called " + whereName + " on the map.";
+      addNode(what, where.id);
+      select(where.id); focusOn(where.id);
+      return "Added " + what + " under " + where.t + ".";
+    }
+
+    // add X  (goes under whatever is open, else the root)
+    m = t.match(/^(?:add|note|remember)\s+(.+)$/);
+    if (m) {
+      var parent = selected && node(selected) ? node(selected) : node("root");
+      var text = tidy(m[1]);
+      addNode(text, parent.id);
+      select(parent.id);
+      return "Added " + text + " under " + parent.t + ".";
+    }
+
+    // mark X done / tick off X
+    m = t.match(/^(?:mark|tick)\s+(?:off\s+)?(.+?)(?:\s+(?:as\s+)?(?:done|complete|finished))?$/);
+    if (m && /done|complete|finish|tick/.test(t)) {
+      var hitN = findNode(m[1].trim());
+      if (!hitN) return "I can't find that one.";
+      hitN.done = true; save();
+      if (selected === hitN.p) drawItems(node(selected));
+      return hitN.t + ", marked done.";
+    }
+
+    // delete X
+    m = t.match(/^(?:delete|remove|scrap)\s+(.+)$/);
+    if (m) {
+      var doomed = findNode(m[1].trim());
+      if (!doomed) return "I can't find that one.";
+      var count = 0;
+      (function walk(x) { count++; kids(x).forEach(function (c) { walk(c.id); }); })(doomed.id);
+      var name = doomed.t;
+      removeNode(doomed.id); layout(); closePanels(); selected = null;
+      return "Deleted " + name + (count > 1 ? " and the " + (count - 1) + " points under it." : ".");
+    }
+    return null;
+  }
+  function tidy(s) {
+    s = s.trim().replace(/^(?:a|an|the)\s+/, "").replace(/[.?!]+$/, "");
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  function reply(q) {
+    var built = build(q);
+    if (built) return built;
+
+    var t = " " + q.toLowerCase().replace(/[^a-z0-9\s'£$%.-]/g, " ") + " ";
+    function has() {
+      for (var i = 0; i < arguments.length; i++)
+        if (t.indexOf(arguments[i]) > -1) return true;
+      return false;
+    }
+    if (/^\s*(hi|hello|hey|good (morning|afternoon|evening))\b/.test(t) || !t.trim())
+      return "At your service. Ask for a status, name anything on the map, or tell me to add something.";
+    if (has("who are you", "what are you", "are you an ai", "are you real"))
+      return "I'm your Vesper. On this map I'm a fixed set of answers running on your phone — no cloud brain, nothing recorded. The one on your laptop is the clever one.";
+    if (has("thank", "cheers", "nice one")) return "A pleasure.";
+    if (has("what can you", "help", "how do i"))
+      return "Say the name of anything and I'll fly to it. Or build: new project called something, add a thing to Trendkept, mark a thing done.";
+    if (has("time", "the date", "what day")) {
+      var n = new Date();
+      return "It is " + n.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) +
+        " on " + n.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" }) + ".";
+    }
+    if (has("status", "overview", "everything", "the map", "how many", "what is open", "whats open"))
+      return overview();
+    if (has("will ", "predict", "forecast", "going up", "going down", "price target", "gonna", "moon"))
+      return "I don't predict, and nobody honestly can. Trend following doesn't forecast — it defines in advance what a trend is, where the stop sits, and what breaks it, then follows what happens.";
+    if (has("should i buy", "should i sell", "worth buying", "do i buy"))
+      return "That's the one question I refuse. I never tell you to buy or sell. I can tell you what your own rules say about a chart, and the decision stays yours.";
+
+    var found = findNode(t);
+    if (found) {
+      select(found.id); focusOn(found.id);
+      var ch = kids(found.id);
+      var line = found.t + ".";
+      if (ch.length) {
+        var openN = ch.filter(function (c) { return !c.done; });
+        line += " " + ch.length + " under it, " + openN.length + " open";
+        line += openN.length ? ": " + openN.slice(0, 3).map(function (c) { return c.t; }).join(", ") + "." : ".";
+      } else line += found.done ? " Done." : " Nothing under it yet.";
+      return line;
+    }
+    return "Nothing on the map matches that. Say status for the overview, or tell me to add it.";
+  }
+
+  function speak(text) {
+    show(text);
+    if (!voiceOut || !synth) return;
+    try {
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      if (chosen) u.voice = chosen;
+      u.rate = 0.98; u.pitch = 0.92;
+      u.onstart = function () { speaking = true; setState("Speaking", "speaking"); };
+      u.onend = function () {
+        speaking = false;
+        setState(wakeOn ? "Listening" : "Tap the core to talk",
+                 wakeOn ? "listening" : "");
+      };
+      synth.speak(u);
+    } catch (e) {}
+  }
+  function armCapture(id) {
+    captureTarget = id;
+    clearTimeout(captureTimer);
+    captureTimer = setTimeout(function () {
+      captureTarget = null;
+      setState(wakeOn ? "Listening" : "Tap the core to talk",
+               wakeOn ? "listening" : "");
+    }, 20000);
+    var n = node(id);
+    setState("Listening → " + (n ? n.t : ""), "listening");
+  }
+
+  // A question still gets answered, even while a point is targeted.
+  function isQuestion(t) {
+    return /\?\s*$/.test(t) ||
+      /^\s*(what|who|when|where|why|how|which|is|are|was|were|do|does|did|can|could|should|will|would|tell me|show me|status)\b/i.test(t);
+  }
+
+  function handle(said) {
+    show("\u201c" + said + "\u201d");
+    setState("Thinking", "speaking");
+
+    // Everything you say goes to the assistant on your laptop — the real
+    // model, with your map, the news, the room and the web in front of it.
+    // The local patterns below are only the fallback for when it can't be
+    // reached, so the map still does something useful offline.
+    var target = captureTarget && node(captureTarget) ? node(captureTarget) : null;
+    var payload = { text: said };
+    if (target) payload.context = "The user is pointing at \"" + target.t +
+      "\" on their map (" + crumbOf(target.id) + "). Anything they say that " +
+      "isn't a question or a command belongs under that.";
+
+    api("/ask", { method: "POST", body: JSON.stringify(payload) })
+      .then(function (r) {
+        if (!r.ok) throw new Error("http " + r.status);
+        return r.json();
+      })
+      .then(function (d) {
+        setOnline(true);
+        pull();                       // it may have rebuilt part of the map
+        if (target) armCapture(target.id);
+        speak(d.reply || "No answer came back.");
+      })
+      .catch(function () {
+        setOnline(false);
+        speak(local(said));
+      });
+  }
+
+  function crumbOf(id) {
+    var trail = [], c = node(id);
+    while (c && c.p) { c = node(c.p); if (c) trail.unshift(c.t); }
+    return trail.join(" > ") || "top level";
+  }
+
+  // The offline fallback: the old keyword matcher, unchanged.
+  function local(said) {
+    if (captureTarget && node(captureTarget)) {
+      var cmd = build(said);
+      if (cmd) { captureTarget = null; return cmd; }
+      if (isQuestion(said)) return reply(said);
+      var parent = node(captureTarget);
+      var text = tidy(said);
+      addNode(text, parent.id);
+      select(parent.id);
+      closePanels();
+      armCapture(parent.id);
+      return "Saved offline: " + text + " under " + parent.t + ".";
+    }
+    return reply(said);
+  }
+
+  talkInto = function (id) {
+    if (!node(id)) return;
+    if (!wakeOn) startWake();
+    openMic = true;
+    clearTimeout(openTimer);
+    openTimer = setTimeout(function () { openMic = false; }, 20000);
+    armCapture(id);
+    toast("Listening → " + node(id).t);
+  };
+
+  /* --- voices --- */
+  function loadVoices() {
+    if (!synth) return;
+    voices = synth.getVoices() || [];
+    var pref = ["daniel", "uk english male", "arthur", "oliver", "george"];
+    for (var i = 0; i < pref.length && !chosen; i++)
+      for (var j = 0; j < voices.length; j++)
+        if (voices[j].name.toLowerCase().indexOf(pref[i]) > -1) { chosen = voices[j]; break; }
+    if (!chosen)
+      for (var k = 0; k < voices.length; k++)
+        if (/en-GB/i.test(voices[k].lang)) { chosen = voices[k]; break; }
+    if (!chosen && voices.length) chosen = voices[0];
+    drawVoiceList();
+  }
+  if (synth) {
+    loadVoices();
+    synth.addEventListener("voiceschanged", loadVoices);
+  }
+  function drawVoiceList() {
+    var list = document.getElementById("vList");
+    var cur = document.getElementById("vCurrent");
+    if (!list) return;
+    cur.textContent = chosen ? chosen.name + " · " + chosen.lang : "no voices found";
+    list.innerHTML = "";
+    voices.filter(function (v) { return /^en/i.test(v.lang); })
+      .forEach(function (v) {
+        var row = document.createElement("div"); row.className = "row";
+        var b = document.createElement("button");
+        b.className = "tick" + (chosen === v ? " on" : "");
+        b.type = "button"; b.setAttribute("aria-label", "Use " + v.name);
+        var t = document.createElement("div");
+        t.className = "rowtext"; t.textContent = v.name;
+        var s = document.createElement("div");
+        s.className = "rowsub"; s.textContent = v.lang;
+        var wrap = document.createElement("div"); wrap.className = "grow";
+        wrap.appendChild(t); wrap.appendChild(s);
+        b.addEventListener("click", function () {
+          chosen = v; drawVoiceList();
+          speak("This is the voice I'll use.");
+        });
+        row.appendChild(b); row.appendChild(wrap);
+        list.appendChild(row);
+      });
+  }
+
+  /* --- recognition --- */
+  function build_rec() {
+    if (!SR) return null;
+    var r = new SR();
+    r.continuous = true; r.interimResults = false; r.lang = "en-GB";
+    r.onresult = function (ev) {
+      for (var i = ev.resultIndex; i < ev.results.length; i++) {
+        if (!ev.results[i].isFinal) continue;
+        var said = (ev.results[i][0].transcript || "").trim();
+        if (!said) continue;
+        var low = said.toLowerCase();
+        var named = /\b(vesper|hey vesper|javis|jervis)\b/.test(low);
+        if (named) {
+          var stripped = said.replace(/^\s*(hey\s+)?(vesper|javis|jervis)\s*[,.!]?\s*/i, "");
+          openMic = true;
+          clearTimeout(openTimer);
+          openTimer = setTimeout(function () { openMic = false; }, 12000);
+          handle(stripped || "hello");
+        } else if (openMic) {
+          clearTimeout(openTimer);
+          openTimer = setTimeout(function () { openMic = false; }, 12000);
+          handle(said);
+        }
+      }
+    };
+    r.onerror = function (e) {
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+        wakeOn = false;
+        setState("Microphone blocked — see Guide", "");
+        document.getElementById("fallbackForm").classList.add("on");
+      }
+    };
+    r.onend = function () {
+      if (wakeOn) { try { r.start(); } catch (e) {} }
+    };
+    return r;
+  }
+  function startWake() {
+    if (!SR) { setState("Voice needs Safari or Chrome", ""); return; }
+    if (!rec) rec = build_rec();
+    if (!rec) return;
+    wakeOn = true;
+    try { rec.start(); } catch (e) {}
+    setState("Listening", "listening");
+    keepAwake();
+  }
+  function stopWake() {
+    wakeOn = false;
+    if (rec) { try { rec.stop(); } catch (e) {} }
+    setState("Tap the core to talk", "");
+  }
+  toggleVoice = function () {
+    if (wakeOn) { stopWake(); }
+    else {
+      startWake();
+      openMic = true;
+      clearTimeout(openTimer);
+      openTimer = setTimeout(function () { openMic = false; }, 12000);
+      speak("Listening.");
+    }
+  };
+
+  var woken = false;
+  function wakeOnce() {
+    if (woken) return;
+    woken = true;
+    startWake();
+  }
+  document.addEventListener("pointerdown", wakeOnce, { once: true });
+  setTimeout(function () {
+    // Chrome allows this without a gesture; Safari will throw and wait
+    // for the touch handler above.
+    try { wakeOnce(); } catch (e) {}
+  }, 600);
+
+  var lock = null;
+  function keepAwake() {
+    if (!navigator.wakeLock || lock) return;
+    navigator.wakeLock.request("screen").then(function (l) {
+      lock = l;
+      l.addEventListener("release", function () { lock = null; });
+    }).catch(function () {});
+  }
+
+  document.getElementById("voiceBtn").addEventListener("click", function () {
+    openPanel(voicePanel); drawVoiceList();
+  });
+  document.getElementById("vMute").addEventListener("click", function (ev) {
+    voiceOut = !voiceOut;
+    ev.target.textContent = "Spoken replies: " + (voiceOut ? "on" : "off");
+    if (!voiceOut && synth) synth.cancel();
+  });
+  document.getElementById("vTest").addEventListener("click", function () {
+    speak("Good evening. The mainframe is online.");
+  });
+  document.getElementById("vRetry").addEventListener("click", function () {
+    rec = null; startWake();
+    document.getElementById("fallbackForm").classList.remove("on");
+    toast("Microphone restarted");
+  });
+  document.getElementById("fallbackForm").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var i = document.getElementById("fallbackInput");
+    var v = i.value.trim();
+    if (!v) return;
+    i.value = "";
+    closePanels();
+    handle(v);
+  });
+
+  if (!SR) {
+    setState("Voice needs Safari or Chrome", "");
+    document.getElementById("fallbackForm").classList.add("on");
+  }
+})();
+
+/* ==================================================================
+   Go.
+================================================================== */
+resize();
+layout();
+requestAnimationFrame(draw);
+pull(function () { fit(); });
+// Someone else (you, on another device, or Vesper acting on what you said)
+// may have changed the map; keep in step without hammering the laptop.
+setInterval(function () { if (!document.hidden) pull(); }, 15000);
+</script>

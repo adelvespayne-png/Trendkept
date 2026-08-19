@@ -1,0 +1,28 @@
+# Vesper — dependencies
+#
+# Only the first block is genuinely required. Everything below it is a
+# subsystem that switches itself off if you skip it, so install what you
+# actually want and ignore the rest.
+
+# --- reasoning (required) ---------------------------------------------------
+anthropic>=0.40.0
+
+# --- speech in (step 3-4) ---------------------------------------------------
+# sounddevice needs PortAudio on the system:
+#   Debian/Ubuntu:  sudo apt install portaudio19-dev
+#   macOS:          brew install portaudio
+#   Windows:        nothing — the wheel bundles it
+sounddevice>=0.4.6
+numpy>=1.24
+faster-whisper>=1.0.0
+openwakeword>=0.6.0
+onnxruntime>=1.16          # openwakeword's inference backend
+
+# --- vision (step 7, optional) ----------------------------------------------
+# ~200 MB of wheels including torch. Skip unless you want the camera.
+opencv-python>=4.9.0
+ultralytics>=8.1.0
+
+# --- speech out -------------------------------------------------------------
+# Piper is a binary, not a pip package — see README step 3.
+# ElevenLabs needs no package: the executor calls the REST endpoint directly.
