@@ -186,23 +186,68 @@ class Config:
     symptom_log: Path = field(
         default_factory=lambda: ROOT / os.environ.get("SYMPTOM_LOG", "symptoms.jsonl"))
 
-    # What counts as a red flag is between you and your doctor, so it lives
-    # here rather than in the code. Plain substrings, comma separated.
+    # What counts as a red flag is between you and your doctor, so all four
+    # lists live here rather than in the code. Within a rule `+` means AND
+    # and `|` means OR; rules are separated by commas.
+    #
+    # These are a starting point across the things that put people in
+    # hospital quickly — not a medical document, and worth going through
+    # with your GP so they match you rather than a generic adult.
+    redflag_emergency: str = field(default_factory=lambda: os.environ.get(
+        "REDFLAG_EMERGENCY",
+        # cardiac
+        "chest + pain|tight|tightness|crushing|pressure,"
+        "pain + arm|jaw|neck + spread|spreading|radiat,"
+        # stroke — FAST
+        "face + droop|drooping|numb,"
+        "speech + slurred|slurring|can't speak|cannot speak,"
+        "arm|leg + numb|weak + one side|left side|right side|suddenly,"
+        "sudden + confusion|vision loss|worst headache|blinding headache,"
+        # breathing / anaphylaxis
+        "can't breathe|cannot breathe|struggling to breathe|gasping,"
+        "throat + closing|swelling|tight,"
+        "lips|tongue|face + swelling|swollen,"
+        # collapse and bleeding
+        "passed out|fainted|blacked out|collapsed|unconscious,"
+        "bleeding + heavy|won't stop|will not stop|soaking,"
+        "seizure|fitting|convulsion,"
+        # sepsis-ish
+        "rash + doesn't fade|does not fade|glass test,"
+        "fever|temperature + confused|confusion|drowsy|slurred"))
+    redflag_crisis: str = field(default_factory=lambda: os.environ.get(
+        "REDFLAG_CRISIS",
+        "kill myself|end my life|end it all|don't want to be here|"
+        "dont want to be here|want to die|suicidal|self harm|hurt myself|"
+        "no point going on|better off without me"))
     redflag_urgent: str = field(default_factory=lambda: os.environ.get(
         "REDFLAG_URGENT",
-        # groups joined by +, alternatives by |, rules separated by commas
+        # rhabdomyolysis
         "urine|pee|peeing|wee|weeing + dark|brown|cola|tea|red|black,"
         "not passing|no urine|not been|barely + urine|pee|weeing,"
-        "chest pain,palpitations,heart racing,"
+        "swelling|swollen + bad|severe|really|very|huge,"
         "can't move|cannot move|can't walk|cannot walk,"
-        "confused|confusion,"
-        "swelling|swollen + bad|severe|really|very|huge"))
+        # cardiac / circulation, short of emergency
+        "palpitations,heart + racing|pounding|skipping|irregular,"
+        "breathless + lying down|at rest|walking,"
+        "calf + pain|swollen|hot,"
+        # infection
+        "fever|temperature + 39|40|shivering|rigors,"
+        "wound + hot|red|spreading|pus,"
+        # neuro / abdominal
+        "headache + sudden|worst|vomiting,"
+        "vision + blurred|double|lost,"
+        "abdominal|stomach|belly + severe|rigid|worst,"
+        "vomiting + blood|coffee,"
+        "stool|poo + black|tarry|blood"))
     redflag_watch: str = field(default_factory=lambda: os.environ.get(
         "REDFLAG_WATCH",
         "muscle|legs|arms|shoulders|back + pain|sore|ache|aching|hurts,"
         "weak|weakness,swollen|swelling,stiff,cramp|cramping,"
         "nausea|nauseous|sick,vomit|vomiting|threw up,dizzy|lightheaded,"
-        "dark|brown + urine|pee"))
+        "headache,tired|exhausted|wiped|drained,"
+        "dark|brown + urine|pee,"
+        "poor sleep|couldn't sleep|not sleeping|insomnia|slept badly|sleeping badly|bad sleep|barely slept,"
+        "low mood|anxious|anxiety|panicky|stressed"))
 
     # --- wake word -------------------------------------------------------
     wake_enabled: bool = field(default_factory=lambda: _bool("WAKE_ENABLED", True))

@@ -74,7 +74,7 @@ def main():
     out, err = ex.run("log_symptom", {"text": "my wee has gone brown"})
     d = json.loads(out)
     print("7. red flag ->", d["level"], "|", d["say_this_verbatim"][:46] + "...")
-    assert d["level"] == "urgent" and "A&E today" in d["say_this_verbatim"]
+    assert d["level"] == "urgent" and "A&E" in d["say_this_verbatim"]
     assert not err
     ex.run("log_symptom", {"text": "legs really sore"})
     body = json.loads(ex.run("read_body", {})[0])
@@ -86,9 +86,12 @@ def main():
     c2 = cfg_at(tmp); c2.models = "omniroute"; c2.anthropic_api_key = ""
     st4 = WorldState()
     b = Brain(st4, ToolExecutor(st4, c2, health=feed), c2)
-    r = asyncio.run(b.respond(user_text="my legs are really sore today"))
-    print("9. free chain + health question ->", r[:60] + "...")
-    assert "only discuss that with Claude" in r
+    # Something genuinely dangerous, with no private model configured: it
+    # must refuse rather than route it to whoever the gateway picked — and
+    # it must still give the fixed instruction, which needs no model at all.
+    r = asyncio.run(b.respond(user_text="my urine is dark brown"))
+    print("9. danger + no private model ->", r[:72] + "...")
+    assert "A&E" in r and "free providers" in r
 
     c3 = cfg_at(tmp); c3.models = "omniroute"; c3.anthropic_api_key = "k"
     seen = []
@@ -101,14 +104,53 @@ def main():
     Client.messages = Client()
     st5 = WorldState()
     b2 = Brain(st5, ToolExecutor(st5, c3, health=feed), c3, client=Client())
-    asyncio.run(b2.respond(user_text="how did I sleep"))
-    print("10. with a key, health went to:", seen, "(chain says omniroute)")
+    asyncio.run(b2.respond(user_text="my urine is dark brown"))
+    print("10. with a key, danger went to:", seen, "(chain says omniroute)")
     assert seen == ["claude-opus-5"]
 
     seen.clear()
+    asyncio.run(b2.respond(user_text="how did I sleep"))
+    print("11. routine body question stayed on the free chain:", seen or "gateway")
+    assert seen == [], "an ordinary question was escalated"
+
+    seen.clear()
     asyncio.run(b2.respond(user_text="add milk to the shopping"))
-    print("11. a normal question still uses the free chain:", seen or "gateway")
+    print("11b. and so did an ordinary one:", seen or "gateway")
     assert seen == []
+    # --- the broader danger list, and the routing split ---
+    from jarvis.core.brain import is_dangerous
+    checks = [("chest pain spreading to my arm", "emergency", True),
+              ("my face is drooping", "emergency", True),
+              ("I don't want to be here anymore", "crisis", True),
+              ("my urine is dark brown", "urgent", True),
+              ("my calf is swollen and hot", "urgent", True),
+              ("legs sore after the gym", "watch", False),
+              ("slept badly", "watch", False),
+              ("bit anxious today", "watch", False)]
+    for text, want, private in checks:
+        v = check(text, cfg)
+        assert v["level"] == want, (text, v["level"], want)
+        assert v["private"] is private, text
+        assert is_dangerous(text, cfg) is private, text
+    print("12. four severity levels, and only the serious ones leave the free chain")
+    print("    999 wording:", check("I fainted", cfg)["say_this_verbatim"]
+          if "say_this_verbatim" in check("I fainted", cfg)
+          else check("I fainted", cfg)["instruction"][:38] + "...")
+    print("    crisis wording:", check("I want to die", cfg)["instruction"][:46] + "...")
+
+    # --- a device pushing its own readings ---
+    c4 = cfg_at(tmp); c4.health_backend = "push"; c4.health_history = tmp/"push.json"
+    f4 = HealthFeed(WorldState(), c4)
+    for d in range(1, 15):
+        f4.baseline.add({"day": f"2026-08-{d:02d}", "resting_hr": 53 + (d % 3)})
+    good = f4.ingest({"resting_hr": 72, "hrv": 40})
+    print("13. bracelet pushed a reading ->", good["accepted"],
+          "| resting_hr", good["against_baseline"]["resting_hr"]["delta"], "above median")
+    assert good["accepted"]
+    print("14. junk rejected ->", f4.ingest({"nonsense": 1})["reason"])
+    assert not f4.ingest({"nonsense": 1})["accepted"]
+    print("15. partial readings welcome ->", f4.ingest({"resting_hr": 55})["metrics"])
+
     print("\nAll health checks passed.")
 
 main()

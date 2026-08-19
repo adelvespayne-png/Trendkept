@@ -13,6 +13,7 @@ last place to add a web framework for one route.
 
 Three endpoints:
   GET  /health   is the laptop awake? (the Shortcut probes this first)
+  POST /health   a wearable pushing a reading in
   POST /ask      {"text": "..."} -> {"reply": "..."}
   GET  /         a human-readable page, for checking it works from a browser
 
@@ -233,7 +234,7 @@ def _make_handler(bridge: AskServer):
 
         def _post(self) -> None:
             path = self.path.split("?", 1)[0].rstrip("/") or "/"
-            if path not in ("/ask", "/map/data"):
+            if path not in ("/ask", "/map/data", "/health"):
                 self._send(404, {"error": "no such endpoint"})
                 return
             if not self._check_token():
@@ -258,6 +259,17 @@ def _make_handler(bridge: AskServer):
             if not isinstance(payload, dict):
                 self._send(400, {"error": "expected a JSON object with a 'text' field"})
                 return
+            if path == "/health":
+                # A bracelet — bought, or built on an ESP32 — posting what it
+                # just measured. Same token as everything else.
+                feed = getattr(bridge.jarvis, "health", None)
+                if feed is None or not feed.available:
+                    self._send(404, {"error": "health is off; set HEALTH_BACKEND"})
+                    return
+                result = feed.ingest(payload)
+                self._send(200 if result.get("accepted") else 400, result)
+                return
+
             if path == "/map/data":
                 store = getattr(bridge.jarvis, "map", None)
                 if store is None:

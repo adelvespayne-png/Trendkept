@@ -46,10 +46,8 @@ def _is_gateway(rung: str) -> bool:
     return rung.strip().lower() in GATEWAY_RUNGS
 
 
-# Anything touching the body routes to the named health models and never to
-# the gateway. A free gateway hands each turn to whichever provider is up;
-# that is the wrong place for someone's symptoms, and "it was only one
-# sentence" is not a defence once it has been sent.
+# Words that mean the body is the subject, so the body tools come out. This
+# is NOT the same question as whether to leave the free gateway.
 HEALTH_WORDS = (
     "symptom", "urine", "pee", "wee", "muscle", "ache", "aching", "sore",
     "pain", "hurts", "weak", "swollen", "swelling", "cramp", "dizzy",
@@ -57,15 +55,33 @@ HEALTH_WORDS = (
     "sleep", "slept", "recovery", "rhabdo", "creatine kinase", " ck ",
     "kidney", "hydrat", "dehydrat", "blood", "training load", "overtrain",
     "my body", "how am i", "feel rough", "feeling rough", "unwell", "ill",
-    "doctor", "hospital", "a&e", "temperature", "fever",
+    "doctor", "hospital", "a&e", "temperature", "fever", "breath", "chest",
+    "faint", "collapse", "mood", "anxious", "panic",
 )
 
 
 def is_health(text: Optional[str]) -> bool:
+    """Is the body the subject? Decides which tools, not which provider."""
     if not text:
         return False
     t = " " + " ".join(text.lower().split()) + " "
     return any(w in t for w in HEALTH_WORDS)
+
+
+def is_dangerous(text: Optional[str], cfg) -> bool:
+    """Is this serious enough to leave the free gateway for?
+
+    A sore leg after the gym is not worth routing elsewhere — it is a normal
+    thing to say out loud, and sending every mention of sleep to a paid model
+    is both expensive and slightly absurd. Something that could put you in
+    hospital is a different matter, and that judgement is the red-flag
+    classifier's, not a keyword list's and not a model's.
+    """
+    if not text:
+        return False
+    from .redflag import classify, PRIVATE_LEVELS
+
+    return classify(text, cfg) in PRIVATE_LEVELS
 
 
 def _brief(exc: Exception) -> str:
@@ -396,26 +412,35 @@ class Brain:
         if not self.available:
             return None
 
-        # Health turns get their own chain, their own tools, and no gateway.
+        # Two separate questions. Is the body the subject (which tools)?
+        # And is it dangerous (which provider)? Only the second one is worth
+        # leaving the free chain over.
         health = is_health(user_text) or is_health(reason)
+        danger = is_dangerous(user_text, self.cfg)
         keep_ladder, keep_rung, keep_tools = self.ladder, self.rung, self.tools
         if health:
-            picked = [m.strip() for m in self.cfg.health_models.split(",")
-                      if m.strip() and not _is_gateway(m)]
-            if not picked or not self._client:
-                LOG.warning("a health turn arrived with no private model "
-                            "available; refusing to send it to the gateway")
-                return ("That's about your body, and I will only discuss that "
-                        "with Claude, not the free providers. Add an "
-                        "ANTHROPIC_API_KEY and I'll answer properly.")
-            self.ladder, self.rung = picked, 0
             self.tools = tool_definitions(
                 include_home=self.cfg.ha_enabled,
                 include_web=self.cfg.web_enabled,
                 include_map=self.executor.map is not None,
                 include_search=bool(self.cfg.search_backend()),
                 include_health=True)
-            LOG.info("health turn -> %s (gateway excluded)", picked[0])
+        if danger:
+            picked = [m.strip() for m in self.cfg.health_models.split(",")
+                      if m.strip() and not _is_gateway(m)]
+            if not picked or not self._client:
+                # Deliberately a refusal rather than a downgrade: this is the
+                # one case where sending it anyway is worse than not answering.
+                LOG.warning("something serious arrived with no private model; "
+                            "refusing to send it to the gateway")
+                from .redflag import check as _check
+
+                verdict = _check(user_text, self.cfg)
+                return (verdict["instruction"] + " (I won't discuss this "
+                        "through the free providers, so that is all I can "
+                        "say until there's an ANTHROPIC_API_KEY set.)")
+            self.ladder, self.rung = picked, 0
+            LOG.warning("possible danger -> %s (gateway excluded)", picked[0])
 
         try:
             return await self._turn(user_text, reason, channel, max_rounds,

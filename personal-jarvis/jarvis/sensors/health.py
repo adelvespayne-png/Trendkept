@@ -216,7 +216,17 @@ def _from_oura(cfg: Config) -> Optional[dict]:
     return out or None
 
 
-BACKENDS = {"file": _from_file, "oura": _from_oura}
+def _from_push(cfg: Config) -> Optional[dict]:
+    """Nothing to fetch — the device pushes to POST /health instead.
+
+    This is the backend for a bracelet you build yourself, or any watch with
+    a companion app that can make an HTTP request. The reading arrives at
+    the bridge and goes straight through `HealthFeed.ingest`.
+    """
+    return None
+
+
+BACKENDS = {"file": _from_file, "oura": _from_oura, "push": _from_push}
 
 
 # --------------------------------------------------------------------------
@@ -233,7 +243,7 @@ class HealthFeed:
         self._stop = threading.Event()
 
     def poll_once(self) -> Optional[dict]:
-        if not self.available:
+        if not self.available or self.backend == "push":
             return None
         reading = BACKENDS[self.backend](self.cfg)
         if not reading:
@@ -251,6 +261,30 @@ class HealthFeed:
                     out[m] = dev
         return out
 
+    def ingest(self, reading: dict) -> dict:
+        """A reading pushed in from a device. Returns what it made of it.
+
+        Accepts any subset of the metrics — a DIY bracelet sending only
+        heart rate is perfectly welcome, and gets a baseline like anything
+        else once it has a few days behind it.
+        """
+        clean: Dict[str, float] = {}
+        for m in METRICS:
+            v = reading.get(m)
+            if isinstance(v, (int, float)) and not isinstance(v, bool):
+                clean[m] = float(v)
+        if not clean:
+            return {"accepted": False,
+                    "reason": "no recognised metrics",
+                    "expected": list(METRICS)}
+        if reading.get("day"):
+            clean["day"] = str(reading["day"])
+        self.baseline.add(dict(clean))
+        devs = self.read(clean)
+        self.push(devs)
+        LOG.info("reading in: %s", ", ".join(sorted(k for k in clean if k != "day")))
+        return {"accepted": True, "metrics": sorted(clean), "against_baseline": devs}
+
     def push(self, deviations: dict) -> None:
         """Into the world state — deviations only, never the raw numbers."""
         self.state.update(health=deviations, health_at=time.time())
@@ -261,6 +295,9 @@ class HealthFeed:
         if not self.available:
             LOG.debug("health backend is %r; nothing to do", self.backend)
             return False
+        if self.backend == "push":
+            LOG.info("health: waiting for readings on POST /health")
+            return True
         self._stop.clear()
         self._thread = threading.Thread(target=self._loop, name="health",
                                         daemon=True)

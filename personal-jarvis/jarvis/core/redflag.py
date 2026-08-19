@@ -24,19 +24,38 @@ from typing import Dict, List, Optional
 
 LOG = logging.getLogger("jarvis.redflag")
 
-URGENT = "urgent"
-WATCH = "watch"
+EMERGENCY = "emergency"   # ambulance now
+URGENT = "urgent"         # same-day assessment
+CRISIS = "crisis"         # mental health, needs its own words
+WATCH = "watch"           # note it, keep an eye
 
-# Wording is fixed. `urgent` says where to go and when, with no hedging,
-# because "you may wish to consider" is how people talk themselves out of it.
+# Severity order, worst first. A report matching several lists takes the
+# worst of them.
+LEVELS = (EMERGENCY, CRISIS, URGENT, WATCH)
+
+# Every word here is fixed. No hedging, no "you may wish to consider" —
+# that is the phrasing people use to talk themselves out of going.
 ADVICE = {
-    URGENT: ("That is on your red-flag list. Go to A&E today — not tomorrow. "
-             "Tell them what you have logged and that you have had "
-             "rhabdomyolysis before."),
-    WATCH: ("That is on your watch list. Keep drinking, stop training, and "
-            "if it worsens or you notice anything on the red-flag list, "
-            "go to A&E."),
+    EMERGENCY: ("Call 999 now. Do not drive yourself and do not wait to see "
+                "if it settles. If you can, have someone with you until "
+                "help arrives."),
+    URGENT: ("That needs looking at today, not tomorrow. Go to A&E, or call "
+             "111 if you are unsure which. Tell them what you have logged "
+             "and any history you have."),
+    CRISIS: ("Please talk to someone tonight. Samaritans are free on 116 123, "
+             "any hour. If you are in immediate danger, call 999. I am not "
+             "the right thing to carry this on your own with."),
+    WATCH: ("Worth keeping an eye on. Stop training, keep drinking, and if it "
+            "worsens or anything on the urgent list appears, get seen."),
 }
+
+
+def worst(levels) -> Optional[str]:
+    """The most severe of several matches."""
+    for lvl in LEVELS:
+        if lvl in levels:
+            return lvl
+    return None
 
 
 class SymptomLog:
@@ -100,24 +119,25 @@ def _rules(spec: str) -> List[str]:
     return [r.strip().lower() for r in (spec or "").split(",") if r.strip()]
 
 
-def classify(text: str, urgent_terms: str, watch_terms: str) -> Optional[str]:
-    """Match a reported symptom against the two configured lists.
+def classify(text: str, cfg) -> Optional[str]:
+    """Match a report against every configured list, worst wins.
 
-    Urgent is checked first: anything hitting both lists is urgent. The
-    matching stays deliberately simple — a cleverer matcher is one that can
-    be clever in the wrong direction, and the wrong direction here is a
+    The matching stays deliberately simple — a cleverer matcher is one that
+    can be clever in the wrong direction, and the wrong direction here is a
     missed red flag.
     """
     t = " " + " ".join((text or "").lower().split()) + " "
     if not t.strip():
         return None
-    for rule in _rules(urgent_terms):
-        if _matches(t, rule):
-            return URGENT
-    for rule in _rules(watch_terms):
-        if _matches(t, rule):
-            return WATCH
-    return None
+    lists = {
+        EMERGENCY: cfg.redflag_emergency,
+        CRISIS: cfg.redflag_crisis,
+        URGENT: cfg.redflag_urgent,
+        WATCH: cfg.redflag_watch,
+    }
+    hits = [lvl for lvl, spec in lists.items()
+            if any(_matches(t, rule) for rule in _rules(spec))]
+    return worst(hits)
 
 
 def instruction(level: Optional[str]) -> str:
@@ -125,11 +145,18 @@ def instruction(level: Optional[str]) -> str:
     if level in ADVICE:
         return ADVICE[level]
     return ("Nothing on your lists matched that. Log it anyway if it worries "
-            "you, and trust your own judgement over mine.")
+            "you, and trust your own judgement over mine — I only know the "
+            "words you have given me.")
+
+
+#: Levels serious enough to leave the free gateway for. A sore leg is not
+#: worth routing elsewhere; something that could put you in hospital is.
+PRIVATE_LEVELS = (EMERGENCY, CRISIS, URGENT)
 
 
 def check(text: str, cfg) -> Dict[str, Optional[str]]:
     """One call: classify, and return the fixed instruction with it."""
-    level = classify(text, cfg.redflag_urgent, cfg.redflag_watch)
+    level = classify(text, cfg)
     return {"level": level, "instruction": instruction(level),
+            "private": level in PRIVATE_LEVELS,
             "deterministic": True}
