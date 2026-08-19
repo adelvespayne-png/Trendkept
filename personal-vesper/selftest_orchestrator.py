@@ -66,7 +66,8 @@ async def main():
 
     # 1. a direct question
     await j.ask("what's the weather in Bristol?")
-    assert SPOKEN == ["It is raining in Bristol."], SPOKEN
+    # Ambient remarks are addressed as well; nothing she says is exempt.
+    assert SPOKEN == ["It is raining in Bristol, sir."], SPOKEN
     print("1. user turn      ->", SPOKEN[-1])
 
     # 2. an ambient change, raised from a sensor thread like the real ones

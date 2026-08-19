@@ -89,7 +89,7 @@ async def main():
     print("7. it actually touched the map:", kids)
     assert "Buy the domain" in kids, "the tool call did not reach the map"
     print("8. and spoke through the answer tool:", reply)
-    assert reply == "Added it under Personal.", reply
+    assert reply == "Added it under Personal, sir.", reply
 
     # gateway down entirely -> quiet failure, not a crash
     cfg2 = Config(); cfg2.anthropic_api_key = "t"

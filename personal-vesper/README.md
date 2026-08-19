@@ -51,6 +51,23 @@ that runs with no laptop at all, but it is a map and nothing more: no voice,
 no tools, no health, no assistant. Handy on a phone away from home; not a
 substitute.
 
+## How she addresses you
+
+She says **"sir"** — once per reply, in every reply.
+
+Not only when the model remembers to. The system prompt asks for it, which
+works nearly always, and "nearly always" is precisely what gets noticed. So
+local code guarantees it on the way out: it holds on a backup provider that
+never saw the prompt in the same shape, in the fixed emergency text that no
+model writes, and in the notifications pushed to your phone.
+
+Once, though — never twice, never wedged into a code block, and never added
+to a reply that already says it.
+
+```
+ADDRESS=sir          # or "ma'am", or your name — blank switches it off
+```
+
 ## Quick start
 
 ```bash

@@ -281,6 +281,13 @@ class Config:
     alert_min_level: str = field(
         default_factory=lambda: os.environ.get("ALERT_MIN_LEVEL", "urgent"))
 
+    # --- how she addresses you -------------------------------------------
+    # Used in every reply, on every path. The system prompt asks for it and
+    # `address.py` guarantees it, because "nearly always" is exactly the
+    # thing that gets noticed. Blank switches it off entirely.
+    address: str = field(
+        default_factory=lambda: os.environ.get("ADDRESS", "sir"))
+
     # --- wake word -------------------------------------------------------
     wake_enabled: bool = field(default_factory=lambda: _bool("WAKE_ENABLED", True))
     # The SPOKEN trigger, which is not the same thing as the name. A wake word

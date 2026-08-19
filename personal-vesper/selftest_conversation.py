@@ -84,7 +84,7 @@ def main():
 
     asyncio.run(v._handle_wake())
     print("5. one wake word, three turns without repeating it ->", said)
-    assert said == ["Answer 1", "Answer 2"], said
+    assert said == ["Answer 1, sir", "Answer 2, sir"], said
 
     # --- 6. window off = one question and done ---
     said.clear()

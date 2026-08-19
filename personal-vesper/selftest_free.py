@@ -59,7 +59,8 @@ async def main():
 
     reply = await b.respond(user_text="add try the free chain to personal")
     print("3. answered:", reply)
-    assert reply == "Noted, on the free chain."
+    # Free providers get the address too — enforced locally, not by them.
+    assert reply == "Noted, on the free chain, sir."
     print("4. gateway round trips:", STATE["hits"], "| Anthropic calls: 0 (no client exists)")
 
     kids = [n["t"] for n in store.data["nodes"].values()

@@ -70,14 +70,16 @@ async def main():
     b = brain(["claude-fable-5","claude-opus-5"])
     r = await b.respond(user_text="hi")
     print("4. fable+opus down -> gateway answers:", r, "| gateway hits:", GATE["hits"])
-    assert r == "Gateway here." and GATE["hits"] == 1
+    # ...and the address survives a turn answered by the GATEWAY, which
+    # never saw the Anthropic system prompt.
+    assert r == "Gateway here, sir." and GATE["hits"] == 1
     assert "claude-sonnet-5" not in b._client.tried, "skipped past the gateway"
 
     b = brain(["claude-fable-5","claude-opus-5"], gateway_up=False)
     r = await b.respond(user_text="hi")
     print("5. gateway also down -> falls through to sonnet:", r,
           "| tried:", b._client.tried)
-    assert r == "Done." and b._client.tried[-1] == "claude-sonnet-5"
+    assert r == "Done, sir." and b._client.tried[-1] == "claude-sonnet-5"
 
     b = brain(["claude-fable-5","claude-opus-5","claude-sonnet-5"], gateway_up=False)
     r = await b.respond(user_text="hi")

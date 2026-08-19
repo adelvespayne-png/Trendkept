@@ -126,8 +126,15 @@ class ToolExecutor:
                 return
         except ValueError:
             pass
-        self.alerts.send(f"You said: {said}\n\n{instruction}",
-                         level=level, title=f"Vesper - {level}")
+        # A push notification never passes through the brain or the speaker,
+        # so it needs addressing here or it would be the one place her voice
+        # slipped — and it is the place you are most likely to be reading
+        # carefully.
+        from ..address import ensure as _address
+
+        self.alerts.send(
+            f"You said: {said}\n\n{_address(instruction, self.cfg.address)}",
+            level=level, title=f"Vesper - {level}")
 
     def _read_body(self, args: dict) -> str:
         from ..core.redflag import SymptomLog

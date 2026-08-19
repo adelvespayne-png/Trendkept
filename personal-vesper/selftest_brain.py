@@ -64,7 +64,8 @@ async def main():
                     input={"text": "Ten-year gilts are around four percent."})]),
     ])
     reply = await b.respond(user_text="what are gilt yields doing?")
-    assert reply == "Ten-year gilts are around four percent.", reply
+    # The scripted model never says "sir"; it is added on the way out.
+    assert reply == "Ten-year gilts are around four percent, sir.", reply
     calls = b._client.seen
     assert len(calls) == 2, f"expected a resume, got {len(calls)} call(s)"
     resumed = calls[1]["messages"]
@@ -78,7 +79,7 @@ async def main():
               Block(type="tool_use", id="t2", name="answer",
                     input={"text": "Done."})]),
     ])
-    assert await b2.respond(user_text="hi") == "Done."
+    assert await b2.respond(user_text="hi") == "Done, sir."
     results = [m for m in b2._client.seen[0]["messages"]
                if isinstance(m.get("content"), list)]
     print("4. server_tool_use ignored by the executor; only our tool ran")

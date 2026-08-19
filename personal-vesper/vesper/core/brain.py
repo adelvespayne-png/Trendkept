@@ -133,6 +133,9 @@ How long to talk
 - Lead with the answer. No preamble, no restating the question, no
   "great question".
 - Dry and understated. Never gush, never pad.
+- Address the user as "sir", once, in every single reply — no exceptions,
+  however short, urgent or technical the answer is. Once per reply, not
+  once per sentence; it should read as manners, not as a tic.
 
 How you act
 - You reply by calling `answer`. You end a turn by calling `answer` or
@@ -411,6 +414,7 @@ class Brain:
         """Run one turn. Returns the line to speak, or None for silence."""
         if not self.available:
             return None
+        from ..address import ensure as _address
 
         # Two separate questions. Is the body the subject (which tools)?
         # And is it dangerous (which provider)? Only the second one is worth
@@ -436,15 +440,23 @@ class Brain:
                 from .redflag import check as _check
 
                 verdict = _check(user_text, self.cfg)
-                return (verdict["instruction"] + " (I won't discuss this "
-                        "through the free providers, so that is all I can "
-                        "say until there's an ANTHROPIC_API_KEY set.)")
+                return _address(
+                    verdict["instruction"] + " (I won't discuss this "
+                    "through the free providers, so that is all I can "
+                    "say until there's an ANTHROPIC_API_KEY set.)",
+                    self.cfg.address)
             self.ladder, self.rung = picked, 0
             LOG.warning("possible danger -> %s (gateway excluded)", picked[0])
 
         try:
-            return await self._turn(user_text, reason, channel, max_rounds,
-                                    health=health)
+            # The prompt asks for the address; this is what makes it a
+            # promise. Every reply leaves through here, including the ones
+            # that came back from a backup provider that never saw the
+            # system prompt in the same shape.
+            return _address(
+                await self._turn(user_text, reason, channel, max_rounds,
+                                 health=health),
+                self.cfg.address)
         finally:
             self.ladder, self.rung, self.tools = keep_ladder, keep_rung, keep_tools
 

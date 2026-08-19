@@ -182,6 +182,13 @@ class Vesper:
         """Say it, and stop the moment you start talking over it."""
         if not text:
             return
+        # The brain already does this to its own replies. This catches the
+        # handful of lines that never went near the brain — the ones written
+        # here in plain code for when something is unavailable — so that
+        # "every time" holds even when there is no model in the loop at all.
+        # `ensure` is idempotent, so passing through both is harmless.
+        from .address import ensure as _address
+        text = _address(text, self.cfg.address)
         if not (self.cfg.barge_in and self.listener.available
                 and self.speaker.backend != "print"):
             await asyncio.to_thread(self.speaker.say, text)
