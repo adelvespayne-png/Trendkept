@@ -42,6 +42,18 @@ def _load_dotenv(path: Path) -> None:
 _load_dotenv(ROOT / ".env")
 
 
+def reload_env(path: Path = None) -> None:
+    """Re-read `.env` after something has written it at runtime.
+
+    The load above happens once, when this module is first imported. The
+    launcher writes a `.env` on a first run — which is *after* that — so
+    without this the Config built a moment later would not see the token it
+    had just generated, and a brand-new install would report no token and
+    refuse to serve its own map.
+    """
+    _load_dotenv(path or (ROOT / ".env"))
+
+
 def _bool(name: str, default: bool) -> bool:
     raw = os.environ.get(name)
     if raw is None:

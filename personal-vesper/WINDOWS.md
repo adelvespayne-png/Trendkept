@@ -1,13 +1,49 @@
-# Setting up on Windows (Surface Pro)
+# Setting up on Windows
 
+Works on any Windows laptop — Surface, ThinkPad, whatever you have.
 Start to finish. Times are honest, not optimistic.
 
-**Read this first:** stages 1 and 2 get you a working assistant in about
-twenty-five minutes, and cost nothing — no card, no API key. Stages 3 and 4
-are optional and add one thing each. Stop whenever you have enough; nothing
-later is needed for anything earlier.
+---
+
+## The short way: two double-clicks
+
+If you would rather not type commands at all, you do not have to.
+
+1. **Install Python** from [python.org/downloads](https://www.python.org/downloads/).
+   **Tick "Add python.exe to PATH"** on the first screen — it is easy to miss
+   and nothing works without it.
+2. Unzip Vesper somewhere sensible: `Documents\Vesper`.
+3. Double-click **`Install Vesper.bat`**. It builds Vesper her own private
+   environment inside that folder, installs what she needs, and generates
+   your private token. A few minutes, once.
+4. Double-click **`Vesper.bat`**. She starts, and the map opens in your
+   browser by itself.
+
+That is the whole thing. To uninstall, delete the folder — nothing was added
+to PATH, nothing was registered, and no admin rights were needed.
+
+**That window is Vesper.** Closing it stops her, and the map goes with it —
+the browser page is served by that window, not by the internet.
+
+Want her every time you log in? Press `Win+R`, type `shell:startup`, and put
+a shortcut to `Vesper.bat` in the folder that opens.
+
+Two things the short way leaves out, both optional:
+
+- **The free brain (OmniRoute)** — stage 1 below. Without it Vesper still
+  runs, maps, journals and monitors, but has nothing to think with.
+- **Talking to her** — stage 3 below adds the wake word and speech.
+
+---
+
+## The long way, in stages
 
 Every command goes in **PowerShell**. Open it with Win+X → *Terminal*.
+
+Stages 1 and 2 get you a working assistant in about twenty-five minutes, and
+cost nothing — no card, no API key. Stages 3 and 4 are optional and add one
+thing each. Stop whenever you have enough; nothing later is needed for
+anything earlier.
 
 ---
 

@@ -22,6 +22,35 @@ stop there.
 Linux. Windows needs no PortAudio, uses its own audio for playback, and has
 its own firewall step for the phone.
 
+## The app and the browser page are the same program
+
+Worth clearing up before anything else, because it sounds like a choice and
+isn't.
+
+Vesper runs **on your laptop**. Part of her has no screen — listening,
+thinking, speaking, watching your health numbers. The map needs a screen, and
+rather than invent a window system, she **serves it to your browser**: the
+program on your laptop is the web server, and the browser is just the glass.
+
+So installing her as a double-click app does not cost you the browser side.
+It is what *provides* the browser side, and it makes it easier — the launcher
+opens the map for you, already signed in.
+
+```
+  Vesper.bat  ─►  the assistant (voice, health, tools)
+                        │
+                        └─►  serves  ─►  http://127.0.0.1:8765/map
+                                              ▲            ▲
+                                       your browser    your phone
+```
+
+Close the window and both stop, because there was only ever one program.
+
+The one genuinely browser-only version is the **published map artifact** —
+that runs with no laptop at all, but it is a map and nothing more: no voice,
+no tools, no health, no assistant. Handy on a phone away from home; not a
+substitute.
+
 ## Quick start
 
 ```bash
