@@ -347,8 +347,14 @@ class Brain:
         served_by = None
 
         for _round in range(8):
+            # NOT a small hardcoded number. Reasoning models — every current
+            # Gemini among them — spend tokens thinking before they answer,
+            # and that spend counts against this budget. At 1500 the thinking
+            # ate it and the reply came back a stub, which reads exactly like
+            # a model with nothing to say.
             body = json.dumps({"model": model, "messages": messages,
-                               "tools": tools, "max_tokens": 1500}).encode()
+                               "tools": tools,
+                               "max_tokens": self.cfg.max_tokens}).encode()
             req = urllib.request.Request(self.cfg.fallback_base, data=body,
                                          method="POST", headers=headers)
 
@@ -366,7 +372,19 @@ class Brain:
             try:
                 data, decision = await asyncio.to_thread(fetch)
             except Exception as exc:
-                LOG.debug("gateway %s failed: %s", model, _brief(exc))
+                # Loud, and with the provider's own words. This used to be a
+                # debug line, so a gateway that rejected every request looked
+                # from the outside like an assistant that simply had nothing
+                # to say — with the explanation sitting in a log nobody reads.
+                detail = ""
+                body_read = getattr(exc, "read", None)
+                if callable(body_read):
+                    try:
+                        detail = body_read().decode("utf-8", "replace")[:300]
+                    except Exception:
+                        pass
+                LOG.warning("gateway %s failed: %s%s", model, _brief(exc),
+                            ("\n    " + detail) if detail else "")
                 return None, None
             served_by = decision or served_by
 
@@ -377,7 +395,15 @@ class Brain:
 
             calls = msg.get("tool_calls") or []
             if not calls:
-                return (msg.get("content") or "").strip() or None, served_by
+                said = (msg.get("content") or "").strip()
+                if not said:
+                    why = (data.get("choices") or [{}])[0].get("finish_reason")
+                    LOG.warning(
+                        "gateway %s returned an empty reply (finish_reason=%s)."
+                        " If that is 'length', raise VESPER_MAX_TOKENS —"
+                        " thinking models spend the budget before answering.",
+                        model, why)
+                return said or None, served_by
 
             messages.append({"role": "assistant",
                              "content": msg.get("content") or None,
@@ -428,6 +454,7 @@ class Brain:
                 include_web=self.cfg.web_enabled,
                 include_map=self.executor.map is not None,
                 include_search=bool(self.cfg.search_backend()),
+                include_music=bool(self.cfg.spotify_client_id),
                 include_health=True)
         if danger:
             picked = [m.strip() for m in self.cfg.health_models.split(",")

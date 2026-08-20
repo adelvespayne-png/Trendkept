@@ -92,11 +92,30 @@ class Speaker:
                         "falling back to piper")
             wanted = "piper"
 
-        if self.backend != "elevenlabs":
+        if wanted == "windows" and WINDOWS:
+            self.backend = "windows"
+        elif wanted == "windows":
+            LOG.warning("TTS_BACKEND=windows only works on Windows; "
+                        "falling back to piper")
+            wanted = "piper"
+
+        if self.backend not in ("elevenlabs", "windows"):
             piper = shutil.which("piper") or shutil.which("piper-tts")
-            if piper and self._player:
+            # Windows needs no paplay/aplay/afplay — `_play` routes through
+            # the OS there. Requiring one meant a Windows box with Piper
+            # properly installed still refused to use it.
+            if piper and (self._player or WINDOWS):
                 self._piper = piper
                 self.backend = "piper"
+            elif WINDOWS:
+                # Windows has had a speech engine built in for twenty years.
+                # Printing instead of using it was silly: it costs nothing,
+                # needs no download, no key and no account, and it is a great
+                # deal better than silence while someone decides whether to
+                # install Piper or pay a subscription.
+                self.backend = "windows"
+                LOG.info("piper not installed; using the voice built into "
+                         "Windows. Install Piper for a better one.")
             elif piper and not self._player:
                 LOG.warning("piper found but no audio player "
                             "(paplay/aplay/afplay/ffplay); speech will be printed")
@@ -119,6 +138,8 @@ class Speaker:
                     self._say_piper(text)
                 elif self.backend == "elevenlabs":
                     self._say_elevenlabs(text)
+                elif self.backend == "windows":
+                    self._say_windows(text)
                 else:
                     print(f"[vesper] {text}")
             except Exception as exc:
@@ -158,6 +179,42 @@ class Speaker:
         return was
 
     # -- backends --------------------------------------------------------
+
+    def _say_windows(self, text: str) -> None:
+        """The speech engine that ships with Windows (SAPI, via PowerShell).
+
+        No download, no key, no account. Not as good as Piper and nowhere
+        near ElevenLabs, but it is already on the machine and it talks.
+
+        The text goes via a FILE rather than on the command line: a spoken
+        reply can contain quotes, apostrophes and newlines, and every one of
+        those breaks a PowerShell one-liner in a different way.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            src = Path(tmp) / "say.txt"
+            src.write_text(text, encoding="utf-8")
+            script = (
+                "Add-Type -AssemblyName System.Speech;"
+                "$s = New-Object System.Speech.Synthesis.SpeechSynthesizer;"
+                # Prefer a British adult voice if the machine has one, but
+                # never fail over it — installed voices vary by machine and
+                # by Windows edition.
+                "try { $s.SelectVoiceByHints('NotSet','NotSet',0,"
+                "[System.Globalization.CultureInfo]::GetCultureInfo('en-GB')) }"
+                " catch { };"
+                f"$s.Speak([IO.File]::ReadAllText('{src}', "
+                "[Text.Encoding]::UTF8))"
+            )
+            self._proc = subprocess.Popen(
+                ["powershell", "-NoProfile", "-NonInteractive", "-Command", script],
+                stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+            _, err = self._proc.communicate(timeout=120)
+            code = self._proc.returncode
+            self._proc = None
+            if code != 0 and not self._interrupted:
+                raise RuntimeError(
+                    "the Windows voice failed: "
+                    + (err or b"").decode("utf-8", "replace").strip()[:200])
 
     def _say_piper(self, text: str) -> None:
         with tempfile.TemporaryDirectory() as tmp:
