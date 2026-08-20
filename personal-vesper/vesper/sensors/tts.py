@@ -172,14 +172,18 @@ class Speaker:
 
     def _say_elevenlabs(self, text: str) -> None:
         import json
+        import urllib.error
         import urllib.request
 
         voice = self.cfg.elevenlabs_voice_id or "21m00Tcm4TlvDq8ikWAM"
+        # Settable, because providers retire model names and a hardcoded one
+        # fails as a bare 400 that mentions neither the model nor the voice.
+        model = self.cfg.elevenlabs_model or "eleven_turbo_v2_5"
         req = urllib.request.Request(
             f"https://api.elevenlabs.io/v1/text-to-speech/{voice}",
             data=json.dumps({
                 "text": text,
-                "model_id": "eleven_turbo_v2_5",
+                "model_id": model,
             }).encode("utf-8"),
             headers={
                 "xi-api-key": self.cfg.elevenlabs_api_key,
@@ -188,8 +192,28 @@ class Speaker:
             },
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            audio = resp.read()
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                audio = resp.read()
+        except urllib.error.HTTPError as exc:
+            detail = ""
+            try:
+                detail = exc.read().decode("utf-8", "replace")[:400]
+            except Exception:
+                pass
+            hint = ""
+            if exc.code == 401:
+                hint = " — the API key looks wrong."
+            elif exc.code == 400 and "model" in detail.lower():
+                hint = (f" — the model {model!r} was rejected. Set "
+                        "ELEVENLABS_MODEL to one they still offer.")
+            elif exc.code == 400:
+                hint = (f" — usually the voice id. Yours is {voice!r}; check "
+                        "it against https://api.elevenlabs.io/v1/voices")
+            elif exc.code == 429:
+                hint = " — out of credits for this month."
+            raise RuntimeError(
+                f"ElevenLabs said {exc.code}{hint}\n    {detail}") from None
         if not self._player:
             raise RuntimeError("no audio player available")
         with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as fh:

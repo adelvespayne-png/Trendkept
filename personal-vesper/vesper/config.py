@@ -281,6 +281,19 @@ class Config:
     alert_min_level: str = field(
         default_factory=lambda: os.environ.get("ALERT_MIN_LEVEL", "urgent"))
 
+    # --- music ------------------------------------------------------------
+    # PKCE, so there is no client secret to keep anywhere. Playback control
+    # needs Spotify Premium — that is Spotify's rule; a free account can see
+    # what is playing but not change it.
+    spotify_client_id: str = field(
+        default_factory=lambda: os.environ.get("SPOTIFY_CLIENT_ID", ""))
+    spotify_auth_port: int = field(
+        default_factory=lambda: _int("SPOTIFY_AUTH_PORT", 8888))
+    # Live credentials to your account. Git-ignored, and written 0600.
+    spotify_token_path: Path = field(
+        default_factory=lambda: ROOT / os.environ.get("SPOTIFY_TOKENS",
+                                                      "spotify_tokens.json"))
+
     # --- how she addresses you -------------------------------------------
     # Used in every reply, on every path. The system prompt asks for it and
     # `address.py` guarantees it, because "nearly always" is exactly the
@@ -341,6 +354,10 @@ class Config:
         default_factory=lambda: os.environ.get("ELEVENLABS_API_KEY", ""))
     elevenlabs_voice_id: str = field(
         default_factory=lambda: os.environ.get("ELEVENLABS_VOICE_ID", ""))
+    # Their model names change and old ones get retired. Blank uses a
+    # sensible current default; set it if they reject that one.
+    elevenlabs_model: str = field(
+        default_factory=lambda: os.environ.get("ELEVENLABS_MODEL", ""))
 
     # --- vision ----------------------------------------------------------
     vision_enabled: bool = field(default_factory=lambda: _bool("VISION_ENABLED", False))
