@@ -12,10 +12,7 @@ cd /d "%~dp0"
 title Vesper
 
 if not exist ".venv\Scripts\python.exe" (
-  echo.
-  echo   Vesper is not set up yet.
-  echo   Double-click "Install Vesper.bat" first.
-  echo.
+  call "%~dp0_whereami.bat"
   pause
   exit /b 1
 )

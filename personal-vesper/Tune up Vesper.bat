@@ -16,10 +16,7 @@ setlocal
 cd /d "%~dp0"
 
 if not exist ".venv\Scripts\python.exe" (
-  echo.
-  echo   Vesper isn't installed in this folder yet.
-  echo   Double-click "Install Vesper.bat" first.
-  echo.
+  call "%~dp0_whereami.bat"
   pause
   exit /b 1
 )
