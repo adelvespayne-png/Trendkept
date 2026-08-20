@@ -181,7 +181,10 @@ def main() -> int:
         bad += len(wrong)
 
         brief = out["brief"]
-        for needle in ("My trading", "Watchlist", "Never: predictions"):
+        # The heading wording is allowed to change; what must survive is
+        # that the subtree reaches the trading branch AND still carries the
+        # rule that Vesper does not predict.
+        for needle in ("My trading", "Watchlist", "No predictions"):
             if needle not in brief:
                 bad += 1
                 print(f"  FAIL: brief prompt is missing {needle!r}")

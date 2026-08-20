@@ -1,108 +1,217 @@
-"""The fallback gateway, against a stand-in OmniRoute on localhost."""
-import asyncio, json, threading
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from vesper.config import Config
-from vesper.core.brain import Brain
-from vesper.core.world_state import WorldState
-from vesper.tools.tool_executor import ToolExecutor
+"""The gateway turn, which on a setup with no Anthropic key IS the brain.
 
-PORT = 20129
-SEEN = []
+Three things went wrong here at once and they all looked identical from the
+outside — Vesper saying nothing, or saying something thin:
 
-class Fake(BaseHTTPRequestHandler):
-    """Mimics OmniRoute: OpenAI-compatible, 429s the first alias, and on the
-    second uses tools — add to the map, then answer."""
-    def log_message(self, *a): pass
-    def _json(self, obj):
-        body = json.dumps(obj).encode()
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("X-OmniRoute-Decision", "lkgp/groq/llama-3.3-70b 412ms")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers(); self.wfile.write(body)
-    def do_POST(self):
-        n = int(self.headers.get("Content-Length", 0))
-        req = json.loads(self.rfile.read(n))
-        SEEN.append({"model": req["model"],
-                     "auth": self.headers.get("Authorization"),
-                     "roles": [m["role"] for m in req["messages"]],
-                     "tools": [t["function"]["name"] for t in req.get("tools", [])]})
-        if req["model"] == "auto/smart":          # quota exhausted
-            self.send_response(429); self.end_headers(); return
-        done = [m for m in req["messages"] if m["role"] == "tool"]
-        if not done:
-            return self._json({"choices": [{"message": {"role": "assistant",
-                "content": None, "tool_calls": [
-                  {"id": "c1", "type": "function", "function": {
-                     "name": "map_add",
-                     "arguments": json.dumps({"text": "Buy the domain",
-                                              "parent": "Personal"})}}]}}]})
-        return self._json({"choices": [{"message": {"role": "assistant",
-            "content": None, "tool_calls": [
-              {"id": "c2", "type": "function", "function": {
-                 "name": "answer",
-                 "arguments": json.dumps({"text": "Added it under Personal."})}}]}}]})
+  1. A busy model ("this model is currently experiencing high demand", a
+     503) was treated as a dead one. The ladder stepped down on the first
+     refusal, ran off the end, and the turn came back empty.
+  2. The gateway was handed the bare sentence: no clock, no room, no
+     channel note, and no memory of the turn before it. The Anthropic path
+     gets all four. So on a free-only setup Vesper genuinely had no context
+     to be intelligent with.
+  3. When every rung really was out, the turn returned None — silence the
+     user cannot tell apart from stupidity.
 
-class Err(Exception):
-    def __init__(s, m, c): super().__init__(m); s.status_code = c
-class Client:
-    messages = None
-    async def create(s, **kw): raise Err("rate limit", 429)
-Client.messages = Client()
+These are behaviour tests against a fake HTTP layer, not assertions that a
+flag is set somewhere. The last time I tested the flag instead of the
+behaviour the test passed over the top of a live bug.
+"""
 
-async def main():
-    httpd = ThreadingHTTPServer(("127.0.0.1", PORT), Fake)
-    threading.Thread(target=httpd.serve_forever, daemon=True).start()
+from __future__ import annotations
 
+import asyncio
+import json
+import sys
+import urllib.error
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+
+from vesper.config import Config  # noqa: E402
+from vesper.core import brain as brain_mod  # noqa: E402
+
+
+class FakeResponse:
+    def __init__(self, payload):
+        self._b = json.dumps(payload).encode()
+        self.headers = {}
+
+    def read(self):
+        return self._b
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+
+def busy(code=503):
+    return urllib.error.HTTPError(
+        "http://x", code, "Service Unavailable", {},
+        None)
+
+
+def reply(text):
+    return {"choices": [{"message": {"content": text},
+                         "finish_reason": "stop"}]}
+
+
+class Recorder:
+    """Stands in for urlopen. Plays a script, and keeps every request body."""
+
+    def __init__(self, script):
+        self.script = list(script)
+        self.sent = []
+
+    def __call__(self, req, timeout=None):
+        self.sent.append(json.loads(req.data.decode()))
+        step = self.script.pop(0) if self.script else reply("(ran out)")
+        if isinstance(step, Exception):
+            raise step
+        return FakeResponse(step)
+
+
+class FakeState:
+    def snapshot(self):
+        class S:
+            def describe(self, news=False):
+                return "the room is quiet"
+
+            def get(self, k):
+                return {}
+        return S()
+
+    def append_conversation(self, *a):
+        pass
+
+
+class FakeExecutor:
+    map = None
+    spoken = None
+    silent_reason = None
+
+    def reset_turn(self):
+        self.spoken = None
+
+    def run(self, name, args):
+        return "", False
+
+
+def make_brain(tmp: Path, models="a,b,c"):
     cfg = Config()
-    cfg.anthropic_api_key = "t"
-    cfg.fallback_base = f"http://127.0.0.1:{PORT}/v1/chat/completions"
-    cfg.fallback_token = "omni-key"
-    # Pinned here rather than inherited from the shipped default, so changing
-    # the defaults doesn't silently rewrite what this test is checking.
-    cfg.fallback_models = "auto/smart,auto"
+    cfg.fallback_enabled = True
+    cfg.fallback_models = models
+    cfg.fallback_base = "http://fake/v1/chat/completions"
+    cfg.fallback_token = "t"
+    cfg.models = "gateway"
+    cfg.anthropic_api_key = ""
+    cfg.log_path = tmp / "conv.jsonl"
+    b = brain_mod.Brain(FakeState(), FakeExecutor(), cfg=cfg, client=None)
+    b.tools = []
+    return b
+
+
+def check(name, ok, detail=""):
+    print(("  ok   " if ok else "  FAIL ") + name + (f"  {detail}" if detail else ""))
+    return ok
+
+
+def main() -> int:
     import tempfile
-    from pathlib import Path
-    from vesper.mapstore import MapStore
-    cfg.map_path = Path(tempfile.mkdtemp()) / "map.json"
-    st = WorldState()
-    store = MapStore(cfg.map_path)
-    b = Brain(st, ToolExecutor(st, cfg, mapstore=store), cfg, client=Client())
 
-    reply = await b.respond(user_text="what's the weather in Bristol?")
-    print("1. every Claude model gone -> gateway took the turn")
-    # A tool-using turn is several round trips on the same model, so compare
-    # the sequence of models, not the number of calls.
-    seq = [k for i, k in enumerate([s["model"] for s in SEEN])
-           if i == 0 or k != [s["model"] for s in SEEN][i - 1]]
-    print("2. models tried in order:", seq,
-          f"({len(SEEN)} round trips)")
-    assert seq == ["auto/smart", "auto"], SEEN
-    print("3. 429 on the first alias moved to the next: True")
-    print("4. bearer token sent:", SEEN[-1]["auth"])
-    print("5. system prompt carried over:", SEEN[-1]["roles"])
-    print("6. tools offered to the gateway:", SEEN[-1]["tools"])
-    assert "map_add" in SEEN[-1]["tools"] and "answer" in SEEN[-1]["tools"]
-    assert "web_search" not in SEEN[-1]["tools"], "server-side tool leaked across"
-    kids = [n["t"] for n in store.data["nodes"].values()
-            if n.get("p") and store.node(n["p"])["t"] == "Personal"]
-    print("7. it actually touched the map:", kids)
-    assert "Buy the domain" in kids, "the tool call did not reach the map"
-    print("8. and spoke through the answer tool:", reply)
-    assert reply == "Added it under Personal, sir.", reply
+    tmp = Path(tempfile.mkdtemp())
+    bad = 0
+    brain_mod._GATEWAY_BACKOFF = 0.001      # don't actually wait in a test
 
-    # gateway down entirely -> quiet failure, not a crash
-    cfg2 = Config(); cfg2.anthropic_api_key = "t"
-    cfg2.fallback_base = "http://127.0.0.1:1/v1/chat/completions"
-    b2 = Brain(WorldState(), ToolExecutor(WorldState(), cfg2), cfg2, client=Client())
-    print("9. gateway unreachable ->", await b2.respond(user_text="hi"))
+    import urllib.request as ur
+    keep = ur.urlopen
 
-    # switched off
-    cfg3 = Config(); cfg3.anthropic_api_key = "t"; cfg3.fallback_enabled = False
-    b3 = Brain(WorldState(), ToolExecutor(WorldState(), cfg3), cfg3, client=Client())
-    print("10. FALLBACK_ENABLED=false ->", await b3.respond(user_text="hi"))
+    # -- 1. a busy model is asked again, not abandoned --------------------
+    rec = Recorder([busy(), busy(), reply("Markets closed at four, sir.")])
+    ur.urlopen = rec
+    b = make_brain(tmp)
+    out = asyncio.run(b.respond("what did the market do", channel="text"))
+    bad += not check("a 503 is retried on the same model rather than dropped",
+                     len(rec.sent) == 3, f"{len(rec.sent)} requests")
+    bad += not check("and the answer comes back",
+                     out and "four" in out, repr(out))
+    bad += not check("all three went to the FIRST model, not down the ladder",
+                     {s["model"] for s in rec.sent} == {"a"},
+                     str({s["model"] for s in rec.sent}))
 
-    httpd.shutdown()
-    print("\nAll gateway checks passed.")
+    # -- 2. a genuine 400 still steps down immediately ---------------------
+    bad_req = urllib.error.HTTPError("http://x", 400, "Bad Request", {}, None)
+    rec = Recorder([bad_req, reply("Second model, sir.")])
+    ur.urlopen = rec
+    b = make_brain(tmp)
+    out = asyncio.run(b.respond("hello", channel="text"))
+    bad += not check("a 400 is not retried; it moves to the next model",
+                     [s["model"] for s in rec.sent] == ["a", "b"],
+                     str([s["model"] for s in rec.sent]))
 
-asyncio.run(main())
+    # -- 3. the gateway gets the same context the Anthropic path gets ------
+    rec = Recorder([reply("Noted, sir.")])
+    ur.urlopen = rec
+    b = make_brain(tmp)
+    asyncio.run(b.respond("what time is it", channel="text"))
+    sent = rec.sent[0]["messages"]
+    joined = " ".join(str(m.get("content") or "") for m in sent)
+    bad += not check("the clock is in the prompt", "Local time:" in joined)
+    bad += not check("the room is in the prompt", "the room is quiet" in joined)
+    bad += not check("the channel is named", "Channel:" in joined)
+    bad += not check("the user's words are still there",
+                     "what time is it" in joined)
+
+    # -- 4. and it remembers the turn before ------------------------------
+    rec = Recorder([reply("It was AAPL, sir.")])
+    ur.urlopen = rec
+    b2 = make_brain(tmp)
+    b2.history = [{"role": "user", "content": "look at AAPL"},
+                  {"role": "assistant", "content": "Above both averages."}]
+    asyncio.run(b2.respond("what was that symbol again", channel="text"))
+    roles = [(m["role"], str(m.get("content"))[:24]) for m in rec.sent[0]["messages"]]
+    bad += not check("the earlier turn is replayed to the gateway",
+                     any("look at AAPL" in c for _, c in roles), str(roles))
+    bad += not check("in order, before the new question",
+                     [r for r, _ in roles][:2] == ["system", "user"], str(roles))
+
+    # -- 5. everything out -> a sentence, not silence ----------------------
+    rec = Recorder([busy(), busy(), busy(),
+                    busy(), busy(), busy(),
+                    busy(), busy(), busy()])
+    ur.urlopen = rec
+    b = make_brain(tmp)
+    out = asyncio.run(b.respond("are you there", channel="text"))
+    bad += not check("a fully exhausted ladder says so out loud",
+                     bool(out) and "turned that turn down" in out, repr(out))
+    bad += not check("and it still calls him sir",
+                     bool(out) and "sir" in out.lower(), repr(out))
+
+    # -- 6. an ambient wake with nothing to add stays silent ---------------
+    rec = Recorder([busy()] * 9)
+    ur.urlopen = rec
+    b = make_brain(tmp)
+    out = asyncio.run(b.respond(None, reason="the room went quiet"))
+    bad += not check("an ambient wake with no model stays quiet", out is None,
+                     repr(out))
+
+    # -- 7. the token budget is the configured one, not a stub -------------
+    rec = Recorder([reply("Fine, sir.")])
+    ur.urlopen = rec
+    b = make_brain(tmp)
+    b.cfg.max_tokens = 4096
+    asyncio.run(b.respond("hello", channel="text"))
+    bad += not check("max_tokens comes from the config",
+                     rec.sent[0]["max_tokens"] == 4096,
+                     str(rec.sent[0].get("max_tokens")))
+
+    ur.urlopen = keep
+    print("\nFAIL" if bad else "\nPASS")
+    return 1 if bad else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

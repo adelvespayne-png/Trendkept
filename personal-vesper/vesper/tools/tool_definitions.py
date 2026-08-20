@@ -80,7 +80,8 @@ def tool_definitions(include_home: bool = True,
                      include_web: bool = True,
                      include_map: bool = True,
                      include_search: bool = True,
-                     include_health: bool = False) -> List[Dict[str, Any]]:
+                     include_health: bool = False,
+                     include_music: bool = False) -> List[Dict[str, Any]]:
     tools: List[Dict[str, Any]] = [
         {
             "name": "answer",
@@ -317,6 +318,42 @@ def tool_definitions(include_home: bool = True,
         # acts on our own `tool_use` blocks.
         tools.append({"type": "web_search_20260209", "name": "web_search"})
         tools.append({"type": "web_fetch_20260209", "name": "web_fetch"})
+
+    if include_music:
+        tools.append({
+            "name": "music",
+            "description": (
+                "Control Spotify. Use this whenever the user asks for music "
+                "— to play something, pause, skip, go back, change the "
+                "volume, or say what is on. Pass `query` only when they name "
+                "something specific to play; leave it out to resume whatever "
+                "was already queued."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "action": {
+                        "type": "string",
+                        "enum": ["play", "pause", "next", "previous",
+                                 "volume", "current"],
+                        "description": "What to do.",
+                    },
+                    "query": {
+                        "type": "string",
+                        "description": (
+                            "A song, artist or album to search for and play. "
+                            "Only with action=play."
+                        ),
+                    },
+                    "percent": {
+                        "type": "integer",
+                        "description": "0-100, only with action=volume.",
+                    },
+                },
+                "required": ["action"],
+                "additionalProperties": False,
+            },
+        })
 
     return tools
 

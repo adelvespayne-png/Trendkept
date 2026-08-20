@@ -36,6 +36,12 @@ LOG = logging.getLogger("vesper.brain")
 # Worth handing to another model; everything else is our own bug.
 _TRANSIENT_CODES = (429, 500, 502, 503, 529)
 
+# How many times to ask a BUSY gateway model again before giving up on it.
+# Three attempts at 1.5s then 3s costs under five seconds in the worst case
+# and rescues most of the "high demand, try again later" minute.
+_GATEWAY_TRIES = 3
+_GATEWAY_BACKOFF = 1.5
+
 
 # Ladder rungs that mean "hand this turn to the gateway" rather than to
 # Anthropic. Anything else is treated as an Anthropic model id.
@@ -288,7 +294,24 @@ class Brain:
                             model, _brief(exc))
         raise last if last else RuntimeError("no models configured")
 
-    async def _fallback(self, user_text: Optional[str]) -> Optional[str]:
+    def _history_for_gateway(self) -> List[Dict[str, Any]]:
+        """The session so far, in the gateway's dialect.
+
+        `_remember` only ever stores plain strings, so this is a straight
+        copy — but it has to happen, and for a long time it didn't. The
+        gateway turn was built from the current sentence alone, which is
+        why Vesper could answer a question and then have no idea what
+        "it" referred to one breath later.
+        """
+        out = []
+        for turn in self.history:
+            content = turn.get("content")
+            if isinstance(content, str) and content.strip():
+                out.append({"role": turn.get("role", "user"), "content": content})
+        return out
+
+    async def _fallback(self, user_text: Optional[str],
+                        opening: Optional[str] = None) -> Optional[str]:
         """Every Claude model is out. Hand the turn to the gateway.
 
         The default is OmniRoute running on your own machine, which fans a
@@ -312,7 +335,7 @@ class Brain:
 
         for model in rungs:
             self.executor.reset_turn()
-            text, served_by = await self._gateway(model, user_text)
+            text, served_by = await self._gateway(model, user_text, opening)
             if text:
                 LOG.warning("answered on the fallback gateway (%s%s)", model,
                             f" via {served_by}" if served_by else "")
@@ -320,7 +343,8 @@ class Brain:
             LOG.warning("%s couldn't take it; trying the next", model)
         return None
 
-    async def _gateway(self, model: str, user_text: str):
+    async def _gateway(self, model: str, user_text: str,
+                       opening: Optional[str] = None):
         """A full tool-using turn against an OpenAI-compatible gateway.
 
         Same tools, same executor, different dialect: their `tools` wrap the
@@ -339,10 +363,14 @@ class Brain:
         if token:
             headers["Authorization"] = "Bearer " + token
 
-        messages = [
-            {"role": "system", "content": SYSTEM},
-            {"role": "user", "content": user_text},
-        ]
+        # The same three things the Anthropic path gets, and for the same
+        # reason. The gateway used to be handed the bare sentence: no clock,
+        # no room, no channel, no memory of the sentence before it. On a
+        # setup with no Anthropic key this IS the brain, so starving it here
+        # made Vesper look stupid everywhere.
+        messages = [{"role": "system", "content": SYSTEM}]
+        messages += self._history_for_gateway()
+        messages.append({"role": "user", "content": opening or user_text})
         tools = _as_openai_tools(self.tools)
         served_by = None
 
@@ -369,22 +397,37 @@ class Brain:
                             or h.get("x-omniroute-route-class"))
                     return json.loads(r.read()), note
 
-            try:
-                data, decision = await asyncio.to_thread(fetch)
-            except Exception as exc:
-                # Loud, and with the provider's own words. This used to be a
-                # debug line, so a gateway that rejected every request looked
-                # from the outside like an assistant that simply had nothing
-                # to say — with the explanation sitting in a log nobody reads.
-                detail = ""
-                body_read = getattr(exc, "read", None)
-                if callable(body_read):
-                    try:
-                        detail = body_read().decode("utf-8", "replace")[:300]
-                    except Exception:
-                        pass
-                LOG.warning("gateway %s failed: %s%s", model, _brief(exc),
-                            ("\n    " + detail) if detail else "")
+            # "Currently experiencing high demand" is not a broken model, it
+            # is a busy one, and the honest response is to wait a moment and
+            # ask again. Dropping to the next rung instead walked the whole
+            # ladder off the end during one busy minute and came back with
+            # nothing to say — the exact complaint that sent me here.
+            data = decision = None
+            for attempt in range(_GATEWAY_TRIES):
+                try:
+                    data, decision = await asyncio.to_thread(fetch)
+                    break
+                except Exception as exc:
+                    # Loud, and with the provider's own words. This used to be
+                    # a debug line, so a gateway that rejected every request
+                    # looked from the outside like an assistant that simply
+                    # had nothing to say — with the explanation sitting in a
+                    # log nobody reads.
+                    detail = ""
+                    body_read = getattr(exc, "read", None)
+                    if callable(body_read):
+                        try:
+                            detail = body_read().decode("utf-8", "replace")[:300]
+                        except Exception:
+                            pass
+                    retrying = _transient(exc) and attempt < _GATEWAY_TRIES - 1
+                    LOG.warning("gateway %s failed: %s%s%s", model, _brief(exc),
+                                ("\n    " + detail) if detail else "",
+                                "; busy, asking again" if retrying else "")
+                    if not retrying:
+                        return None, None
+                    await asyncio.sleep(_GATEWAY_BACKOFF * (2 ** attempt))
+            if data is None:
                 return None, None
             served_by = decision or served_by
 
@@ -506,7 +549,7 @@ class Brain:
                 # A gateway rung came up. Give it the turn; if it can't take
                 # it either, carry on down the ladder from the next rung.
                 LOG.warning("ladder reached the gateway at rung %d", hop.index)
-                spoken = await self._fallback(user_text)
+                spoken = await self._fallback(user_text, opening)
                 if spoken:
                     self.rung = hop.index
                     self.degraded = hop.index > 0
@@ -515,11 +558,17 @@ class Brain:
                 self.rung = hop.index + 1
                 if self.rung >= len(self.ladder):
                     LOG.error("nothing left on the ladder")
-                    return None
+                    # Say so out loud. Silence here is indistinguishable from
+                    # stupidity: the user asked a question, every provider was
+                    # busy or refused, and all they heard was nothing.
+                    return ("Every model I can reach turned that turn down — "
+                            "usually busy, sometimes an expired key. The log "
+                            "line just above says which. Ask me again in a "
+                            "moment.") if user_text else None
                 continue
             except Exception as exc:
                 LOG.error("every model failed: %s", _brief(exc))
-                spoken = await self._fallback(user_text)
+                spoken = await self._fallback(user_text, opening)
                 if spoken:
                     self._remember(user_text, spoken)
                 return spoken

@@ -23,6 +23,7 @@ options. This is what opens it.
 from __future__ import annotations
 
 import logging
+import re
 import secrets
 import socket
 import sys
@@ -86,6 +87,15 @@ def _set(text: str, key: str, value: str) -> str:
     if not done:
         out.append(f"{key}={value}")
     return "\n".join(out) + "\n"
+
+
+def _get(text: str, key: str, default: str = "") -> str:
+    """Read `KEY=...` out of a .env's text — the file, not the environment."""
+    for line in text.splitlines():
+        s = line.strip()
+        if s.startswith(key + "=") and not s.startswith("#"):
+            return s[len(key) + 1:].strip()
+    return default
 
 
 def map_url(cfg=CONFIG, host: Optional[str] = None) -> str:
@@ -153,12 +163,108 @@ def setup(argv=None) -> int:
     return 0 if ok else 1
 
 
+# Flash-tier names, whoever makes them. A ladder of only these is the
+# cheapest, shallowest thing the key can reach, which is what "it barely
+# responds" actually means most of the time.
+_THIN = ("flash", "mini", "lite", "nano", "8b", "haiku", "small")
+
+
+def _thin_model(name: str) -> bool:
+    """Is this one model id a small-tier one?
+
+    Matched on whole segments, NOT as a substring. "gemini" contains "mini",
+    so a substring test called every Google model small — including the Pro
+    ones this had just put at the top, which made the tune-up rewrite its
+    own work every time it ran.
+    """
+    parts = re.split(r"[^a-z0-9]+", name.strip().lower())
+    return any(p in _THIN for p in parts)
+
+
+def _looks_thin(models: str) -> bool:
+    rungs = [m for m in (x.strip() for x in models.split(",")) if m]
+    return bool(rungs) and all(_thin_model(m) for m in rungs)
+
+
+def tuneup() -> int:
+    """Fix the two things that make an existing install feel stupid.
+
+    Both are the same class of problem: something that is only decided when
+    an install is BORN, on an install that was born before it was decided.
+
+      * the map, which is seeded once and then never touched again, so a
+        laptop set up last week still has the thin starting map;
+      * the model ladder in .env, which was written from an example that
+        put a Flash model first.
+
+    Nothing here is destructive. The map is backed up beside itself and
+    anything the owner added survives; .env is backed up before the one
+    line is changed, and a ladder that already leads with a proper model is
+    left alone.
+    """
+    from .config import Config
+
+    reload_env(ENV)
+    cfg = Config()
+    print()
+
+    # -- the map ---------------------------------------------------------
+    from .mapstore import MapStore
+
+    store = MapStore(Path(cfg.map_path))
+    added, kept = store.refresh_from_seed()
+    if added:
+        print(f"  Map: {added} points added, {kept} of your own kept.")
+    else:
+        print(f"  Map: already up to date ({kept} of your own).")
+    print(f"       {store.summary()}")
+
+    # -- the ladder ------------------------------------------------------
+    if not ENV.is_file():
+        print("\n  No .env yet — run the installer first.\n")
+        return 1
+    text = ENV.read_text(encoding="utf-8")
+    # Straight out of the file, NOT out of Config. `.env` is
+    # first-occurrence-wins and never overrides a variable already in the
+    # environment, so after this function has run once the Config in this
+    # process still reports the OLD ladder — and the tune-up would happily
+    # prepend the same two models a second time.
+    current = _get(text, "FALLBACK_MODELS", cfg.fallback_models)
+    if not _looks_thin(current):
+        print(f"\n  Models: leaving {current} alone — it already leads with "
+              "a full-size model.")
+    elif "generativelanguage.googleapis.com" not in cfg.fallback_base:
+        # Only Google's names are ours to rewrite; anywhere else and a
+        # guessed model id is worse than the thin one that at least works.
+        print(f"\n  Models: {current} is all small models, which is why the "
+              "answers feel thin.\n          I can only rename these "
+              "automatically for Google's API. Put a\n          bigger model "
+              "first in FALLBACK_MODELS by hand.")
+    else:
+        better = "gemini-3.1-pro-preview,gemini-2.5-pro," + current
+        try:
+            ENV.with_suffix(".bak3").write_text(text, encoding="utf-8")
+        except OSError as exc:
+            print(f"\n  Could not back up .env ({exc}); not touching it.")
+            return 1
+        ENV.write_text(_set(text, "FALLBACK_MODELS", better), encoding="utf-8")
+        print(f"\n  Models: was {current}\n"
+              f"          now {better}\n"
+              "          (the Pro models think properly; Flash stays on the "
+              "end as backup.\n           Old file kept as .env.bak3.)")
+
+    print("\n  Done. Close this window and start Vesper again.\n")
+    return 0
+
+
 def main(argv=None) -> int:
     import argparse
 
     p = argparse.ArgumentParser(description="Start Vesper and open its map.")
     p.add_argument("--setup", action="store_true",
                    help="first run: write .env and make a token")
+    p.add_argument("--tuneup", action="store_true",
+                   help="refresh the map and put a proper model first")
     p.add_argument("--no-browser", action="store_true",
                    help="start, but do not open the map")
     p.add_argument("--url", action="store_true",
@@ -168,6 +274,10 @@ def main(argv=None) -> int:
     if args.setup:
         setup_logging(CONFIG.log_level)
         return setup()
+
+    if args.tuneup:
+        setup_logging(CONFIG.log_level)
+        return tuneup()
 
     from .config import Config
 

@@ -49,7 +49,11 @@ class ToolExecutor:
             "map_read": self._map_read,
             "map_add": self._map_add,
             "map_update": self._map_update,
+            "music": self._music,
         }
+        # Built lazily: constructing it reads a token file, and most turns
+        # never touch music.
+        self._spotify = None
         # Set when a turn changed the map, so the page knows to redraw.
         self.map_dirty = False
         # Filled in by the brain for terminal tools.
@@ -135,6 +139,30 @@ class ToolExecutor:
         self.alerts.send(
             f"You said: {said}\n\n{_address(instruction, self.cfg.address)}",
             level=level, title=f"Vesper - {level}")
+
+    # -- music -------------------------------------------------------------
+
+    def _music(self, args: dict) -> str:
+        from .spotify import Spotify, SpotifyError
+
+        if self._spotify is None:
+            self._spotify = Spotify(self.cfg)
+        sp = self._spotify
+
+        if not sp.configured:
+            return ("Spotify is not set up. Put SPOTIFY_CLIENT_ID in .env, "
+                    "then run: python -m vesper.tools.spotify --login")
+        if not sp.available:
+            return ("Spotify is configured but not signed in. Run: "
+                    "python -m vesper.tools.spotify --login")
+        try:
+            return sp.do(str(args.get("action") or "current"),
+                         str(args.get("query") or ""),
+                         int(args.get("percent") or 50))
+        except SpotifyError as exc:
+            # Spotify's own refusals are already phrased for a person — pass
+            # them through rather than turning them into a stack trace.
+            return str(exc)
 
     def _read_body(self, args: dict) -> str:
         from ..core.redflag import SymptomLog
