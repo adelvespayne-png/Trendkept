@@ -42,6 +42,42 @@ def _load_dotenv(path: Path) -> None:
 _load_dotenv(ROOT / ".env")
 
 
+def _ensure_ca_bundle() -> None:
+    """Give OpenSSL a CA bundle it can actually read.
+
+    Some Windows Pythons — the install-manager ones especially — end up
+    without a usable certificate store, and then HTTPS fails with
+
+        CERTIFICATE_VERIFY_FAILED: unable to get local issuer certificate
+
+    for *some* hosts and not others, depending on which root signed them.
+    That is a maddening thing to debug, because the assistant plainly
+    reaches the internet and yet one service refuses to work.
+
+    `certifi` ships a current bundle and is already present as a transitive
+    dependency. Pointing OpenSSL at it via SSL_CERT_FILE fixes every urllib
+    call in one place, rather than threading a context through each of them.
+
+    An SSL_CERT_FILE you set yourself always wins.
+    """
+    if os.environ.get("SSL_CERT_FILE"):
+        return
+    try:
+        import certifi
+    except Exception:
+        return
+    try:
+        where = certifi.where()
+    except Exception:
+        return
+    if where and Path(where).is_file():
+        os.environ["SSL_CERT_FILE"] = where
+        LOG.debug("using certifi's CA bundle: %s", where)
+
+
+_ensure_ca_bundle()
+
+
 def reload_env(path: Path = None) -> None:
     """Re-read `.env` after something has written it at runtime.
 

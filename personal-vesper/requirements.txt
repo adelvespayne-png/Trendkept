@@ -10,6 +10,11 @@
 
 # --- reasoning (required) ---------------------------------------------------
 anthropic>=0.40.0
+# A current CA bundle. It arrives with anthropic anyway, but it is named
+# here because config.py now depends on it directly: some Windows Pythons
+# have no usable certificate store, and HTTPS then fails for whichever
+# hosts happen to be signed by a root they are missing.
+certifi>=2024.2.2
 
 # --- speech in, and the wake word -------------------------------------------
 # sounddevice needs PortAudio on the system:
