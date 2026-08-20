@@ -241,7 +241,20 @@ def tuneup() -> int:
               "automatically for Google's API. Put a\n          bigger model "
               "first in FALLBACK_MODELS by hand.")
     else:
-        better = "gemini-3.1-pro-preview,gemini-2.5-pro," + current
+        # ASK THE KEY. Google's names move, and a name can even be in the
+        # key's own listing and still answer 404 on use, so a list I wrote
+        # down last month is a liability -- `gemini-2.5-flash` is already
+        # "no longer available to new users". Discovery beats guessing.
+        from .providers import google_ladder
+
+        found = google_ladder(_get(text, "FALLBACK_TOKEN", cfg.fallback_token))
+        if not found:
+            print("\n  Models: couldn't reach Google to ask what your key can\n"
+                  "          use, so I've left the list alone. Check the\n"
+                  "          internet and run this again.")
+            print("\n  Done. Close this window and start Vesper again.\n")
+            return 0
+        better = ",".join(found)
         try:
             ENV.with_suffix(".bak3").write_text(text, encoding="utf-8")
         except OSError as exc:
@@ -250,8 +263,9 @@ def tuneup() -> int:
         ENV.write_text(_set(text, "FALLBACK_MODELS", better), encoding="utf-8")
         print(f"\n  Models: was {current}\n"
               f"          now {better}\n"
-              "          (the Pro models think properly; Flash stays on the "
-              "end as backup.\n           Old file kept as .env.bak3.)")
+              "          (asked your key what it can actually reach; the "
+              "strongest\n           first, one Flash on the end as backup. "
+              "Old file kept\n           as .env.bak3.)")
 
     print("\n  Done. Close this window and start Vesper again.\n")
     return 0

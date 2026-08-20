@@ -20,10 +20,12 @@ limit: five OpenAI models all sharing one quota is not a fallback plan.
 from __future__ import annotations
 
 import json
+import re
 import logging
 import sys
 import time
 import urllib.request
+import urllib.parse
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -185,3 +187,88 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
+# --- Google -----------------------------------------------------------------
+#
+# Google's model names move faster than any list I can write down, and a
+# stale name is not a soft failure: `gemini-2.5-flash` now answers 404 with
+# "no longer available to new users". Worse, a name can be IN the key's own
+# /v1beta/models listing and still 404 on use. So the ladder is discovered
+# from the key, and `replacement_for` below reads the model Google names in
+# its own error when one has moved.
+
+GOOGLE_MODELS = "https://generativelanguage.googleapis.com/v1beta/models"
+
+#: Rough tiering for Gemini names. Pro first: a ladder of only Flash models
+#: is the shallowest thing a key can reach, which reads to the user as an
+#: assistant that isn't really thinking.
+_G_TIER = (("pro", 100), ("ultra", 110), ("flash", 40), ("lite", 10))
+_G_REJECT = ("embedding", "aqa", "imagen", "veo", "tts", "vision",
+             "learnlm", "gemma", "-exp", "thinking-exp")
+
+
+def _g_score(name: str) -> tuple:
+    low = name.lower()
+    tier = 0
+    for frag, pts in _G_TIER:
+        if frag in low:
+            tier = max(tier, pts)
+    # Version number, so gemini-3.1 outranks gemini-2.5 within a tier.
+    m = re.search(r"gemini-(\d+)(?:\.(\d+))?", low)
+    ver = (int(m.group(1)), int(m.group(2) or 0)) if m else (0, 0)
+    # "latest" aliases are stable across renames -- a small nudge, not a rule.
+    return (tier, ver, 1 if low.endswith("latest") else 0)
+
+
+def google_models(token: str, timeout: float = 15.0) -> List[str]:
+    """Chat models this key can see. Never raises; [] means 'ask me later'."""
+    if not token:
+        return []
+    try:
+        req = urllib.request.Request(
+            f"{GOOGLE_MODELS}?key={urllib.parse.quote(token)}",
+            headers={"Accept": "application/json"})
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            data = json.loads(r.read())
+    except Exception as exc:
+        LOG.warning("could not list Google's models: %s", exc)
+        return []
+    out = []
+    for m in data.get("models", []):
+        name = (m.get("name") or "").split("/")[-1]
+        methods = m.get("supportedGenerationMethods") or []
+        if not name or any(b in name.lower() for b in _G_REJECT):
+            continue
+        if methods and "generateContent" not in methods:
+            continue
+        out.append(name)
+    return out
+
+
+def google_ladder(token: str, size: int = 4) -> List[str]:
+    """Best-first: the strongest tier the key can reach, Flash underneath."""
+    names = google_models(token)
+    if not names:
+        return []
+    ranked = sorted(set(names), key=_g_score, reverse=True)
+    # One Flash on the end as a backup for when the good one is busy --
+    # but never a ladder made only of Flash.
+    top = [n for n in ranked if _g_score(n)[0] >= 100][:size - 1]
+    flash = [n for n in ranked if _g_score(n)[0] == 40][:1]
+    return (top + flash) or ranked[:size]
+
+
+_MOVED = re.compile(r"use\s+models/([A-Za-z0-9._-]+)")
+
+
+def replacement_for(body: str) -> Optional[str]:
+    """The model Google names when the one you asked for has moved.
+
+    Its 404 says: "This model models/gemini-2.5-flash is no longer available
+    to new users. Please update your code to use models/gemini-3.6-flash".
+    That is a free, authoritative answer to "what should I have said" --
+    following it beats making the user edit a settings file.
+    """
+    m = _MOVED.search(body or "")
+    return m.group(1) if m else None

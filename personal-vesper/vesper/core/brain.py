@@ -112,6 +112,39 @@ def _as_openai_tools(tools: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return out
 
 
+#: What to say when every rung has refused. Keyed by what actually went
+#: wrong, because "nothing left on the ladder" tells the user nothing they
+#: can act on, and the provider always says which of these it was.
+_REFUSALS = {
+    "quota": ("I've used up the free Google allowance for today, sir. It "
+              "resets on their clock, usually overnight. Everything else "
+              "still works — only the answering needs it."),
+    "auth": ("My API key is being refused, sir. Either it's expired or it "
+             "was pasted wrong. Worth checking the key in the settings file."),
+    "gone": ("The models I'm set to use have been retired, sir. Run the "
+             "tune-up and I'll pick up whatever your key can reach now."),
+    "busy": ("Every model I can reach is busy, sir — that's usually a few "
+             "minutes, not an evening. Ask me again shortly."),
+}
+
+
+def _why_refused(exc: Exception, body: str = "") -> str:
+    """Classify a provider's refusal into something worth saying out loud."""
+    code = (getattr(exc, "status_code", None) or getattr(exc, "status", None)
+            or getattr(exc, "code", None))
+    # Both, not either: `body or ...` would drop the exception's own words
+    # whenever a response body was present, and the code sometimes lives
+    # only in one of them.
+    text = f"{body or ''} {exc}".lower()
+    if "quota" in text or "billing" in text or "credit balance" in text:
+        return "quota"
+    if code in (401, 403) or "api key" in text or "unauthenticated" in text:
+        return "auth"
+    if code == 404 or "no longer available" in text or "not found" in text:
+        return "gone"
+    return "busy"
+
+
 def _transient(exc: Exception) -> bool:
     code = getattr(exc, "status_code", None) or getattr(exc, "status", None)
     if code in _TRANSIENT_CODES:
@@ -190,6 +223,8 @@ class Brain:
             or [cfg.model]
         self.rung = 0                 # which model is currently answering
         self.degraded = False         # true once we're below the top rung
+        self.last_refusal = None      # why the last gateway rung said no
+        self._moved_to = None         # the rename a 404 pointed us at
         self._client = client
         self.available = client is not None
         # A chain that starts at the gateway needs no Anthropic key at all —
@@ -333,13 +368,29 @@ class Brain:
             from ..providers import ladder as gh_ladder
             rungs = gh_ladder(self.cfg) or rungs
 
-        for model in rungs:
+        self.last_refusal = None
+        tried = set()
+        queue = list(rungs)
+        while queue:
+            model = queue.pop(0)
+            if model in tried:
+                continue
+            tried.add(model)
             self.executor.reset_turn()
+            self._moved_to = None
             text, served_by = await self._gateway(model, user_text, opening)
             if text:
                 LOG.warning("answered on the fallback gateway (%s%s)", model,
                             f" via {served_by}" if served_by else "")
                 return text
+            # Google answers a retired name with a 404 that names its
+            # replacement. Following that beats making the user go and edit
+            # a settings file to find out what a model is called this month.
+            moved = self._moved_to
+            if moved and moved not in tried:
+                LOG.warning("%s has moved; Google says use %s", model, moved)
+                queue.insert(0, moved)
+                continue
             LOG.warning("%s couldn't take it; trying the next", model)
         return None
 
@@ -420,7 +471,21 @@ class Brain:
                             detail = body_read().decode("utf-8", "replace")[:300]
                         except Exception:
                             pass
-                    retrying = _transient(exc) and attempt < _GATEWAY_TRIES - 1
+                    # Remember WHY, so the sentence the user hears can name
+                    # the real problem. "Everything refused" is useless;
+                    # "your free Google allowance is spent for today" is not.
+                    self.last_refusal = _why_refused(exc, detail)
+                    from ..providers import replacement_for
+
+                    self._moved_to = replacement_for(detail)
+
+                    # A quota that is exhausted is not a queue that is busy.
+                    # Asking again three times inside five seconds cannot
+                    # refill a daily allowance, so don't waste the user's
+                    # time pretending it might.
+                    spent = self.last_refusal == "quota"
+                    retrying = (_transient(exc) and not spent
+                                and attempt < _GATEWAY_TRIES - 1)
                     LOG.warning("gateway %s failed: %s%s%s", model, _brief(exc),
                                 ("\n    " + detail) if detail else "",
                                 "; busy, asking again" if retrying else "")
@@ -558,13 +623,12 @@ class Brain:
                 self.rung = hop.index + 1
                 if self.rung >= len(self.ladder):
                     LOG.error("nothing left on the ladder")
-                    # Say so out loud. Silence here is indistinguishable from
-                    # stupidity: the user asked a question, every provider was
-                    # busy or refused, and all they heard was nothing.
-                    return ("Every model I can reach turned that turn down — "
-                            "usually busy, sometimes an expired key. The log "
-                            "line just above says which. Ask me again in a "
-                            "moment.") if user_text else None
+                    # Say so out loud, and say WHICH. Silence here is
+                    # indistinguishable from stupidity, and "everything
+                    # refused" is indistinguishable from useless -- the
+                    # provider told us whether it was quota, key or queue.
+                    return _REFUSALS.get(self.last_refusal or "busy",
+                                         _REFUSALS["busy"]) if user_text else None
                 continue
             except Exception as exc:
                 LOG.error("every model failed: %s", _brief(exc))

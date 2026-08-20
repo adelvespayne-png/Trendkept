@@ -48,10 +48,39 @@ class FakeResponse:
         return False
 
 
+class _Body:
+    """An HTTPError whose .read() returns a body, as urllib's really does."""
+
+    def __init__(self, blob):
+        self._b = blob.encode()
+
+    def read(self):
+        return self._b
+
+
+def http(code, msg, body=""):
+    e = urllib.error.HTTPError("http://x", code, msg, {}, None)
+    if body:
+        e.read = _Body(body).read
+    return e
+
+
 def busy(code=503):
-    return urllib.error.HTTPError(
-        "http://x", code, "Service Unavailable", {},
-        None)
+    return http(code, "Service Unavailable")
+
+
+# The three refusals from the owner's own log on 20 August, verbatim.
+QUOTA = http(429, "Too Many Requests", json.dumps({"error": {
+    "code": 429, "message": "You exceeded your current quota, please check "
+    "your plan and billing details. For more information on this error, head "
+    "to: https://ai.google.dev/gemini-api/docs/rate-limits."}}))
+RETIRED = http(404, "Not Found", json.dumps({"error": {
+    "code": 404, "message": "This model models/gemini-2.5-flash is no longer "
+    "available to new users. Please update your code to use "
+    "models/gemini-3.6-flash for the latest features and improvements.",
+    "status": "NOT_FOUND"}}))
+BADKEY = http(401, "Unauthorized", json.dumps({"error": {
+    "code": 401, "message": "API key not valid. Please pass a valid API key."}}))
 
 
 def reply(text):
@@ -186,7 +215,7 @@ def main() -> int:
     b = make_brain(tmp)
     out = asyncio.run(b.respond("are you there", channel="text"))
     bad += not check("a fully exhausted ladder says so out loud",
-                     bool(out) and "turned that turn down" in out, repr(out))
+                     bool(out) and "busy" in out.lower(), repr(out))
     bad += not check("and it still calls him sir",
                      bool(out) and "sir" in out.lower(), repr(out))
 
@@ -207,6 +236,48 @@ def main() -> int:
     bad += not check("max_tokens comes from the config",
                      rec.sent[0]["max_tokens"] == 4096,
                      str(rec.sent[0].get("max_tokens")))
+
+    # -- 8. an exhausted quota is not a busy queue ------------------------
+    # Asking three more times inside five seconds cannot refill a daily
+    # allowance. It should give up on that model at once, and the sentence
+    # the user hears should say WHICH problem it was.
+    rec = Recorder([QUOTA, QUOTA, QUOTA])
+    ur.urlopen = rec
+    b = make_brain(tmp)
+    out = asyncio.run(b.respond("are you there", channel="text"))
+    bad += not check("a spent quota is not retried on the same model",
+                     len(rec.sent) == 3, f"{len(rec.sent)} requests for 3 models")
+    bad += not check("and the reply names the quota, not 'everything refused'",
+                     bool(out) and "allowance" in out, repr(out))
+    bad += not check("it still calls him sir", bool(out) and "sir" in out.lower())
+
+    # -- 9. a retired model: follow the rename Google hands us -------------
+    rec = Recorder([RETIRED, reply("Evening, sir.")])
+    ur.urlopen = rec
+    b = make_brain(tmp, models="gemini-2.5-flash")
+    out = asyncio.run(b.respond("hello", channel="text"))
+    bad += not check("a 404 that names a replacement is followed",
+                     [s["model"] for s in rec.sent]
+                     == ["gemini-2.5-flash", "gemini-3.6-flash"],
+                     str([s["model"] for s in rec.sent]))
+    bad += not check("and the answer comes back from the new name",
+                     bool(out) and "Evening" in out, repr(out))
+
+    # -- 10. a bad key says so rather than blaming the weather -------------
+    rec = Recorder([BADKEY, BADKEY, BADKEY])
+    ur.urlopen = rec
+    b = make_brain(tmp)
+    out = asyncio.run(b.respond("hello", channel="text"))
+    bad += not check("a rejected key is reported as a key problem",
+                     bool(out) and "key" in out.lower(), repr(out))
+
+    # -- 11. a busy queue still reads as busy ------------------------------
+    rec = Recorder([busy()] * 9)
+    ur.urlopen = rec
+    b = make_brain(tmp)
+    out = asyncio.run(b.respond("hello", channel="text"))
+    bad += not check("a genuine 503 still says busy",
+                     bool(out) and "busy" in out.lower(), repr(out))
 
     ur.urlopen = keep
     print("\nFAIL" if bad else "\nPASS")
