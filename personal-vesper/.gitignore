@@ -12,6 +12,11 @@ health.json
 health_input.json
 symptoms.jsonl
 
+# The Health limb of the starting map. It names a real medical condition,
+# and this repo is public, so it ships in the download rather than here.
+# Without it a clone simply has no Health branch; see mapstore.current_seed.
+vesper/private_seed.json
+
 # --- what you said, did, and are working on --------------------------------
 map.json
 state.json

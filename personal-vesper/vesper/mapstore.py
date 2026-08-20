@@ -54,6 +54,45 @@ RESCUE_ID = "nrescued0"
 RESCUE_PARENT = "pr"
 
 
+#: A limb that is yours but not the world's.
+#:
+#: This repo is public, so the seed below is public too — and the Health
+#: branch names a real medical condition. Owner's call, August 2026: that
+#: one stays off GitHub. It lives in this file instead, which `.gitignore`
+#: excludes, and which ships in the download rather than in the repo.
+#:
+#: The mechanism matters as much as the decision. Health ids are
+#: seed-shaped (`hl3d`), so `_is_mine` correctly says they are not the
+#: user's own additions — and simply deleting them from SEED would make
+#: the next refresh sweep them off the owner's laptop as stale. Loading
+#: them here puts them back in `current_seed()`, so a refresh keeps them
+#: on the machine that has the file and never invents them on one that
+#: doesn't.
+PRIVATE_SEED = Path(__file__).resolve().parent / "private_seed.json"
+
+
+def current_seed() -> Dict[str, Any]:
+    """The starting map: the public seed, plus any private limb on disk."""
+    seed = json.loads(json.dumps(SEED))
+    try:
+        if PRIVATE_SEED.is_file():
+            extra = json.loads(PRIVATE_SEED.read_text(encoding="utf-8"))
+            nodes = extra.get("nodes")
+            if isinstance(nodes, dict):
+                for nid, node in nodes.items():
+                    if isinstance(node, dict) and node.get("p"):
+                        seed["nodes"][nid] = node
+                for pair in extra.get("links", []):
+                    if (len(pair) == 2
+                            and all(x in seed["nodes"] for x in pair)):
+                        seed["links"].append(list(pair))
+    except (OSError, ValueError) as exc:
+        # Never fatal. A broken private file must not stop Vesper starting.
+        LOG.warning("could not read the private seed (%s); "
+                    "carrying on without it", exc)
+    return seed
+
+
 #: The map a fresh install starts with. This is the one that counts —
 #: the laptop serves it, so the browser copy in `web/map.html` (which is
 #: only used when that file is opened straight from disk) has to match.
@@ -254,74 +293,6 @@ SEED = {
                   "p": "dec", "done": False},
         "deci": {"id": "deci", "t": "Rejected: panic about the open core. Pro sells the easy version",
                   "p": "dec", "done": False},
-        "hl": {"id": "hl", "t": "Health", "p": "root", "done": False},
-        "hl1": {"id": "hl1", "t": "The episode — rhabdomyolysis",
-                  "p": "hl", "done": False},
-        "hl1a": {"id": "hl1a", "t": "Get the discharge summary and the peak CK number",
-                  "p": "hl1", "done": False},
-        "hl1b": {"id": "hl1b", "t": "Did my kidneys recover fully?",
-                  "p": "hl1", "done": False},
-        "hl1c": {"id": "hl1c", "t": "Was there a clear trigger, or none they could name?",
-                  "p": "hl1", "done": False},
-        "hl1d": {"id": "hl1d", "t": "Should I be referred to look for an underlying cause?",
-                  "p": "hl1", "done": False},
-        "hl1e": {"id": "hl1e", "t": "What CK retest schedule does the GP want?",
-                  "p": "hl1", "done": False},
-        "hl2": {"id": "hl2", "t": "Red flags — A&E the same day",
-                  "p": "hl", "done": False},
-        "hl2a": {"id": "hl2a", "t": "Dark or cola-coloured urine, or much less of it",
-                  "p": "hl2", "done": False},
-        "hl2b": {"id": "hl2b", "t": "Muscle pain far beyond what the session justifies",
-                  "p": "hl2", "done": False},
-        "hl2c": {"id": "hl2c", "t": "Swelling, weakness, or nausea after effort",
-                  "p": "hl2", "done": False},
-        "hl2d": {"id": "hl2d", "t": "Say out loud: I have had rhabdomyolysis before",
-                  "p": "hl2", "done": False},
-        "hl3": {"id": "hl3", "t": "Prevention — what stops it recurring",
-                  "p": "hl", "done": False},
-        "hl3a": {"id": "hl3a", "t": "Build up gradually. The trigger is the jump, not the load",
-                  "p": "hl3", "done": False},
-        "hl3b": {"id": "hl3b", "t": "Never train through illness or a fever",
-                  "p": "hl3", "done": False},
-        "hl3c": {"id": "hl3c", "t": "Hydrate before, during and after",
-                  "p": "hl3", "done": False},
-        "hl3d": {"id": "hl3d", "t": "No hard sessions in heat",
-                  "p": "hl3", "done": False},
-        "hl3e": {"id": "hl3e", "t": "Check any supplement or medicine with the GP",
-                  "p": "hl3", "done": False},
-        "hl3f": {"id": "hl3f", "t": "Not training again until I am cleared",
-                  "p": "hl3", "done": False},
-        "hl5": {"id": "hl5", "t": "What Vesper watches",
-                  "p": "hl", "done": False},
-        "hl5a": {"id": "hl5a", "t": "The baseline is my own numbers, not a population average",
-                  "p": "hl5", "done": False},
-        "hl5b": {"id": "hl5b", "t": "An exertion spike against that baseline raises an alert",
-                  "p": "hl5", "done": False},
-        "hl5c": {"id": "hl5c", "t": "Still strained hours after effort raises an alert",
-                  "p": "hl5", "done": False},
-        "hl5d": {"id": "hl5d", "t": "Alerts push to my phone and break through silent mode",
-                  "p": "hl5", "done": False},
-        "hl5e": {"id": "hl5e", "t": "It describes what the numbers say. It never diagnoses",
-                  "p": "hl5", "done": False},
-        "hl6": {"id": "hl6", "t": "Privacy, and this one is absolute",
-                  "p": "hl", "done": False},
-        "hl6a": {"id": "hl6a", "t": "Health files stay on the laptop and are never committed",
-                  "p": "hl6", "done": False},
-        "hl6b": {"id": "hl6b", "t": "The Trendkept repo is public — that is why this matters",
-                  "p": "hl6", "done": False},
-        "hl6c": {"id": "hl6c", "t": "Anything serious is never sent to a free provider",
-                  "p": "hl6", "done": False},
-        "hl6d": {"id": "hl6d", "t": "If there is no private model, Vesper refuses rather than downgrades",
-                  "p": "hl6", "done": False},
-        "hl4": {"id": "hl4", "t": "Set up", "p": "hl", "done": False},
-        "hl4a": {"id": "hl4a", "t": "Medical ID on the phone",
-                  "p": "hl4", "done": False},
-        "hl4b": {"id": "hl4b", "t": "Tell whoever I train with",
-                  "p": "hl4", "done": False},
-        "hl4c": {"id": "hl4c", "t": "Choose a wearable",
-                  "p": "hl4", "done": False},
-        "hl4d": {"id": "hl4d", "t": "An ntfy topic on the phone so alerts arrive",
-                  "p": "hl4", "done": False},
         "mt": {"id": "mt", "t": "My trading", "p": "root", "done": False},
         "mta": {"id": "mta", "t": "My own money. Nothing here belongs to Trendkept",
                   "p": "mt", "done": False},
@@ -466,7 +437,6 @@ SEED = {
                   "p": "pr3", "done": False},
     },
     "links": [
-        ["hl4c", "hl4d"],
         ["nw2", "nw4"],
         ["biz1a", "logd"],
         ["con3a", "prod1b"],
@@ -474,8 +444,6 @@ SEED = {
         ["biz3d", "prod1"],
         ["con2d", "loga"],
         ["mt4", "prod1"],
-        ["hl6", "tkw"],
-        ["hl3d", "nw3"],
         ["mt7", "dec"],
         ["pr5", "prod3"],
     ],
@@ -500,7 +468,7 @@ class MapStore:
                 LOG.warning("map file has the wrong shape; starting fresh")
             except (OSError, ValueError) as exc:
                 LOG.error("could not read map (%s); starting fresh", exc)
-        return json.loads(json.dumps(SEED))
+        return current_seed()
 
     def save(self) -> None:
         with self._lock:
@@ -546,7 +514,7 @@ class MapStore:
         """
         with self._lock:
             old = self.data
-            new = json.loads(json.dumps(SEED))
+            new = current_seed()
             on, nn = old.get("nodes", {}), new["nodes"]
             mine = [nid for nid in on if nid not in nn and _is_mine(nid)]
             # Count before the merge; afterwards `nn` holds both sets and

@@ -23,8 +23,8 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-from vesper.mapstore import (RESCUE_ID, SEED, MapStore,  # noqa: E402
-                            _is_mine)
+from vesper.mapstore import (PRIVATE_SEED, RESCUE_ID, SEED,  # noqa: E402
+                            MapStore, _is_mine, current_seed)
 
 # The shape of the seed that shipped before this one: the ids that went
 # away (My trading was `mk*`, Personal was `me*`, the log was `log1..5`).
@@ -78,8 +78,8 @@ def main() -> int:
           f"-> {len(n)} nodes")
 
     bad += not check("every seed node is present",
-                     all(k in n for k in SEED["nodes"]),
-                     f"missing {sorted(set(SEED['nodes']) - set(n))[:5]}")
+                     all(k in n for k in current_seed()["nodes"]),
+                     f"missing {sorted(set(current_seed()['nodes']) - set(n))[:5]}")
     bad += not check("the owner's own nodes survived",
                      "nab12cd9" in n and "nzz98ab7" in n)
     bad += not check("kept count is exactly the owner's two", kept == 2,
@@ -89,10 +89,14 @@ def main() -> int:
     bad += not check("a node whose parent retired is re-hung, not dropped",
                      n.get("nab12cd9", {}).get("p") == RESCUE_ID,
                      f"parent={n.get('nab12cd9', {}).get('p')}")
+    # The limb ring must be exactly the seed's limbs — no more. Taken from
+    # the seed rather than written out, so it holds whether or not the
+    # private Health limb is on this machine.
+    seed_limbs = sorted(v["t"] for v in current_seed()["nodes"].values()
+                        if v["p"] == "root")
     bad += not check("and NOT onto the limb ring beside Trendkept",
                      sorted(v["t"] for v in n.values() if v["p"] == "root")
-                     == sorted(["Trendkept", "Health", "My trading",
-                                "News & weather", "Personal"]),
+                     == seed_limbs,
                      str([v["t"] for v in n.values() if v["p"] == "root"]))
     bad += not check("the rescue box sits under Personal",
                      n.get(RESCUE_ID, {}).get("p") == "pr",
@@ -141,7 +145,7 @@ def main() -> int:
 
     # -- 3. a map the owner has really used keeps all of it ---------------
     p2 = tmp / "used.json"
-    d2 = json.loads(json.dumps(SEED))
+    d2 = current_seed()
     for i, nid in enumerate(["nq1w2e3r", "nq1w2e3r4", "na9b8c7d"]):
         d2["nodes"][nid] = {"id": nid, "t": f"mine {i}", "p": "pr2",
                             "done": False}
@@ -173,6 +177,39 @@ def main() -> int:
     bad += not check("there are more leaves than headings",
                      len(leaves) > len(SEED["nodes"]) / 2,
                      f"{len(leaves)} leaves of {len(SEED['nodes'])}")
+
+    # -- 6. the private limb: on this laptop, never in the repo -----------
+    # The Health branch is git-ignored and ships in the download instead.
+    # Its ids are seed-shaped, so if `refresh_from_seed` used the public
+    # SEED alone it would sweep the whole branch off the owner's machine as
+    # stale the first time they ran the tune-up.
+    # Absent is CORRECT in a public clone, so this is not a failure either
+    # way — it decides which set of expectations applies.
+    have_private = PRIVATE_SEED.is_file()
+    print("  ..   private seed: "
+          + ("present — checking it survives a refresh"
+             if have_private else "absent — this is a public clone, as designed"))
+    bad += not check("the public seed never carries Health itself",
+                     "Health" not in [v["t"] for v in SEED["nodes"].values()
+                                      if v["p"] == "root"])
+    if have_private:
+        full = current_seed()["nodes"]
+        limbs = [v["t"] for v in full.values() if v["p"] == "root"]
+        bad += not check("with it, Health is a limb again",
+                         "Health" in limbs, str(limbs))
+
+        p6 = tmp / "withhealth.json"
+        p6.write_text(json.dumps(current_seed()), encoding="utf-8")
+        s6 = MapStore(p6)
+        hl = [k for k, v in s6.nodes().items() if k.startswith("hl")]
+        s6.refresh_from_seed()
+        after = s6.nodes()
+        bad += not check("a refresh KEEPS the whole Health branch",
+                         all(k in after for k in hl),
+                         f"lost {[k for k in hl if k not in after][:5]}")
+        bad += not check("including the cross-links into it",
+                         any(sorted(map(str, l)) == sorted(["hl3d", "nw3"])
+                             for l in s6.data["links"]))
 
     print("\nFAIL" if bad else "\nPASS")
     return 1 if bad else 0

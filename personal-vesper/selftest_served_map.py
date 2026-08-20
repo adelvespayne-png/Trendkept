@@ -158,8 +158,14 @@ def main() -> int:
         out = json.loads(line[2:])
 
         bad = 0
-        want = ["Trendkept", "Health", "My trading", "News & weather",
-                "Personal"]
+        # This is the SERVED map, so it is whatever `current_seed()` builds
+        # — the public seed plus the private Health limb when that file is
+        # present. A public clone has four limbs; this laptop has five.
+        from vesper.mapstore import PRIVATE_SEED
+
+        want = ["Trendkept", "My trading", "News & weather", "Personal"]
+        if PRIVATE_SEED.is_file():
+            want.append("Health")
 
         print(f"served {out['nodes']} nodes")
         if out["nodes"] < 90:

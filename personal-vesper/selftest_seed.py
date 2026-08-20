@@ -79,8 +79,9 @@ def main() -> int:
               f"only-python={sorted(set(b)-set(a))}")
 
     # The five limbs the owner asked for, by name, in order.
-    want = ["Trendkept", "Health", "My trading", "News & weather",
-            "Personal"]
+    # Health is deliberately NOT here: it ships as a private file, not
+    # in the public seed. See mapstore.PRIVATE_SEED.
+    want = ["Trendkept", "My trading", "News & weather", "Personal"]
     for name, seed in (("browser", jn), ("python", pn)):
         limbs = [n["t"] for n in seed.values() if n["p"] == "root"]
         if limbs != want:
