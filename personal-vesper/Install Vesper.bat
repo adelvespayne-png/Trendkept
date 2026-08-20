@@ -15,25 +15,53 @@ echo   Setting up Vesper. First run takes a few minutes.
 echo.
 
 REM --- find a Python -------------------------------------------------
-REM py.exe is the launcher that ships with python.org installs and is
-REM present even when python.exe is not on PATH -- which is the single
-REM most common way this goes wrong.
+REM Two ways Python arrives on Windows now, and they behave differently:
+REM
+REM   * the standalone .exe installer, which puts python.exe on PATH if you
+REM     ticked the box, and always installs the py launcher;
+REM   * the Python install manager (MSIX), python.org's newer default, which
+REM     provides `py` and deliberately does NOT touch PATH.
+REM
+REM Being FOUND is not the same as being USABLE: the install manager ships
+REM `py` before any runtime exists, so `where py` succeeds while `py
+REM --version` still fails. Check that it actually runs.
 set PY=
-where py >nul 2>nul && set PY=py
-if "%PY%"=="" ( where python >nul 2>nul && set PY=python )
+call :try py
+if "%PY%"=="" call :try python
+if "%PY%"=="" call :try python3
 
 if "%PY%"=="" (
-  echo   Python is not installed.
   echo.
-  echo   Get it from https://www.python.org/downloads/
-  echo   TICK "Add python.exe to PATH" on the first screen of the installer.
-  echo   Then close this window and double-click me again.
+  echo   No working Python found.
+  echo.
+  echo   Go to https://www.python.org/downloads/
+  echo.
+  echo   The big yellow button installs the Python INSTALL MANAGER. That
+  echo   works, but you must then run this once to get an actual Python:
+  echo.
+  echo       py install 3.14
+  echo.
+  echo   Simpler: use the smaller link on that page that says
+  echo   "Or get the standalone installer", and TICK
+  echo   "Add python.exe to PATH" on the first screen.
+  echo.
+  echo   Either way, close this window and double-click me again after.
   echo.
   pause
   exit /b 1
 )
 
 for /f "tokens=2" %%v in ('%PY% --version 2^>^&1') do echo   Found Python %%v
+goto :found
+
+:try
+where %1 >nul 2>nul || exit /b
+REM It exists. Does it answer?
+%1 --version >nul 2>nul || exit /b
+set PY=%1
+exit /b
+
+:found
 
 REM --- its own environment -------------------------------------------
 if not exist ".venv" (
