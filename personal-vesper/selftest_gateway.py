@@ -94,9 +94,11 @@ class Recorder:
     def __init__(self, script):
         self.script = list(script)
         self.sent = []
+        self.reqs = []
 
     def __call__(self, req, timeout=None):
         self.sent.append(json.loads(req.data.decode()))
+        self.reqs.append(req)
         step = self.script.pop(0) if self.script else reply("(ran out)")
         if isinstance(step, Exception):
             raise step
@@ -245,8 +247,13 @@ def main() -> int:
     ur.urlopen = rec
     b = make_brain(tmp)
     out = asyncio.run(b.respond("are you there", channel="text"))
-    bad += not check("a spent quota is not retried on the same model",
-                     len(rec.sent) == 3, f"{len(rec.sent)} requests for 3 models")
+    # ONE request, not three. A spent allowance belongs to the KEY, so every
+    # other model behind it will fail identically -- there is nothing to
+    # learn from asking them. (This assertion used to expect three, from
+    # when each model was tried before the reason was understood.)
+    bad += not check("a spent quota stops the whole provider, not just a model",
+                     len(rec.sent) == 1,
+                     f"{len(rec.sent)} requests across a 3-model list")
     bad += not check("and the reply names the quota, not 'everything refused'",
                      bool(out) and "allowance" in out, repr(out))
     bad += not check("it still calls him sir", bool(out) and "sir" in out.lower())
@@ -278,6 +285,50 @@ def main() -> int:
     out = asyncio.run(b.respond("hello", channel="text"))
     bad += not check("a genuine 503 still says busy",
                      bool(out) and "busy" in out.lower(), repr(out))
+
+    # -- 12. the whole point: one provider dry, the other answers ---------
+    # This is the fix for 20 August. Three Gemini names behind ONE key all
+    # died in the same second; a second PROVIDER has its own key and its own
+    # allowance, so it fails independently.
+    import vesper.providers as prov
+
+    keep_chain = prov.chain
+    prov.chain = lambda cfg=None: [
+        {"name": "google", "label": "Google AI Studio",
+         "base": "http://google/v1", "token": "g", "models": ["gem-a", "gem-b"]},
+        {"name": "github", "label": "GitHub Models",
+         "base": "http://github/v1", "token": "h", "models": ["openai/gpt-4.1"]},
+    ]
+    try:
+        rec = Recorder([QUOTA, reply("Good evening, sir.")])
+        ur.urlopen = rec
+        b = make_brain(tmp)
+        out = asyncio.run(b.respond("what time is it", channel="text"))
+        bad += not check("a spent Google quota hands the turn to GitHub",
+                         bool(out) and "Good evening" in out, repr(out))
+        bad += not check("it did NOT grind through the rest of Google's list",
+                         [s["model"] for s in rec.sent]
+                         == ["gem-a", "openai/gpt-4.1"],
+                         str([s["model"] for s in rec.sent]))
+        bad += not check("and each request went to its own endpoint",
+                         [r.full_url for r in rec.reqs]
+                         == ["http://google/v1", "http://github/v1"],
+                         str([r.full_url for r in rec.reqs]))
+        bad += not check("with its own key",
+                         [r.headers.get("Authorization") for r in rec.reqs]
+                         == ["Bearer g", "Bearer h"],
+                         str([r.headers.get("Authorization") for r in rec.reqs]))
+
+        # Both dry: the sentence must name the ACTIONABLE reason, not
+        # whichever provider happened to fail last.
+        rec = Recorder([QUOTA, BADKEY])
+        ur.urlopen = rec
+        b = make_brain(tmp)
+        out = asyncio.run(b.respond("hello", channel="text"))
+        bad += not check("with both out, the key problem is what gets said",
+                         bool(out) and "key" in out.lower(), repr(out))
+    finally:
+        prov.chain = keep_chain
 
     ur.urlopen = keep
     print("\nFAIL" if bad else "\nPASS")

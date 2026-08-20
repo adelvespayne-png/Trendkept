@@ -272,3 +272,71 @@ def replacement_for(body: str) -> Optional[str]:
     """
     m = _MOVED.search(body or "")
     return m.group(1) if m else None
+
+
+# --- the chain of providers -------------------------------------------------
+#
+# The lesson from the owner's 20 August log: three Gemini rungs all died in
+# the same second, because they were three names in front of ONE free
+# allowance. A ladder is only a ladder if the rungs can fail independently.
+# So the unit of fallback is a PROVIDER -- its own endpoint, its own key,
+# its own quota -- and models are just the rungs inside one.
+
+#: name -> (endpoint, which config field holds the key, how to get models)
+PROVIDERS = {
+    "google": {
+        "base": "https://generativelanguage.googleapis.com"
+                "/v1beta/openai/chat/completions",
+        "label": "Google AI Studio",
+    },
+    "github": {
+        "base": "https://models.github.ai/inference/chat/completions",
+        "label": "GitHub Models",
+    },
+}
+
+
+def _google_key(cfg: Config) -> str:
+    # GOOGLE_API_KEY if it is set, else the generic FALLBACK_TOKEN, which is
+    # where a single-provider setup already has it.
+    return cfg.google_token or cfg.fallback_token
+
+
+def chain(cfg: Config = CONFIG) -> List[dict]:
+    """The providers to try, in order, each with its own models and key.
+
+    Returns [] when no chain is configured, which means "use the single
+    FALLBACK_BASE" -- the behaviour every existing install already has.
+    """
+    names = [n.strip().lower() for n in cfg.fallback_chain.split(",")
+             if n.strip()]
+    if not names:
+        return []
+
+    out = []
+    for name in names:
+        spec = PROVIDERS.get(name)
+        if not spec:
+            LOG.warning("unknown provider %r in FALLBACK_CHAIN; skipping", name)
+            continue
+        if name == "google":
+            token = _google_key(cfg)
+            models = ([m.strip() for m in cfg.fallback_models.split(",")
+                       if m.strip()]
+                      if "generativelanguage" in cfg.fallback_base
+                      else []) or google_ladder(token)
+        elif name == "github":
+            token = cfg.github_token
+            models = ladder(cfg) if token else []
+        else:                                    # pragma: no cover
+            token, models = "", []
+        if not token:
+            LOG.info("%s has no key set; skipping that rung", spec["label"])
+            continue
+        if not models:
+            LOG.warning("%s gave no usable models; skipping that rung",
+                        spec["label"])
+            continue
+        out.append({"name": name, "label": spec["label"],
+                    "base": spec["base"], "token": token, "models": models})
+    return out

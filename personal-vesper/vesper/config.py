@@ -191,6 +191,21 @@ class Config:
     fallback_token: str = field(
         default_factory=lambda: os.environ.get("FALLBACK_TOKEN", ""))
 
+    # An ORDERED list of whole providers to try, not just models. One
+    # provider is one point of failure: when Google's free allowance is
+    # spent, every model behind it is spent at the same instant, so a
+    # longer list of Gemini names buys nothing. A second provider is a
+    # different bucket entirely.
+    #
+    # Blank keeps the old single-provider behaviour exactly, driven by
+    # FALLBACK_BASE / FALLBACK_TOKEN / FALLBACK_MODELS above.
+    # Otherwise: a comma-separated list of names from PROVIDERS in
+    # providers.py — currently `google` and `github`.
+    fallback_chain: str = field(
+        default_factory=lambda: os.environ.get("FALLBACK_CHAIN", ""))
+    google_token: str = field(
+        default_factory=lambda: os.environ.get("GOOGLE_API_KEY", ""))
+
     # --- GitHub Models (an alternative gateway) ---------------------------
     # Point FALLBACK_BASE at GitHub instead of OmniRoute and Vesper will read
     # GitHub's catalogue and pick the best model from each maker itself.

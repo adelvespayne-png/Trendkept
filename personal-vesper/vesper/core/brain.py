@@ -115,14 +115,18 @@ def _as_openai_tools(tools: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 #: What to say when every rung has refused. Keyed by what actually went
 #: wrong, because "nothing left on the ladder" tells the user nothing they
 #: can act on, and the provider always says which of these it was.
+#: Deliberately provider-neutral. Vesper may be running on one provider or
+#: several, and a sentence that names the wrong one is worse than a sentence
+#: that names none. Which provider said what goes in the log.
 _REFUSALS = {
-    "quota": ("I've used up the free Google allowance for today, sir. It "
-              "resets on their clock, usually overnight. Everything else "
-              "still works — only the answering needs it."),
+    "quota": ("The free allowance is spent on every provider I can reach, "
+              "sir. Google's resets at midnight Pacific, which is eight in "
+              "the morning here. Everything else still works — only the "
+              "answering needs it."),
     "auth": ("My API key is being refused, sir. Either it's expired or it "
-             "was pasted wrong. Worth checking the key in the settings file."),
+             "was pasted wrong. The log line above says which provider."),
     "gone": ("The models I'm set to use have been retired, sir. Run the "
-             "tune-up and I'll pick up whatever your key can reach now."),
+             "tune-up and I'll pick up whatever your keys can reach now."),
     "busy": ("Every model I can reach is busy, sir — that's usually a few "
              "minutes, not an evening. Ask me again shortly."),
 }
@@ -362,40 +366,78 @@ class Brain:
         if not (self.cfg.fallback_enabled and user_text):
             return None
 
-        rungs = [m.strip() for m in self.cfg.fallback_models.split(",") if m.strip()]
-        if "models.github.ai" in self.cfg.fallback_base or \
-                ("github" in self.cfg.fallback_base and self.cfg.github_token):
-            from ..providers import ladder as gh_ladder
-            rungs = gh_ladder(self.cfg) or rungs
+        from ..providers import chain as provider_chain
+
+        # A chain of whole providers when one is configured, otherwise the
+        # single endpoint every existing install already points at. Two
+        # providers is the point: three Gemini names in front of ONE free
+        # allowance all fail in the same second, which is exactly what the
+        # 20 August log showed.
+        stack = provider_chain(self.cfg)
+        if not stack:
+            rungs = [m.strip() for m in self.cfg.fallback_models.split(",")
+                     if m.strip()]
+            if "models.github.ai" in self.cfg.fallback_base or \
+                    ("github" in self.cfg.fallback_base and self.cfg.github_token):
+                from ..providers import ladder as gh_ladder
+                rungs = gh_ladder(self.cfg) or rungs
+            stack = [{"name": "gateway", "label": "the gateway",
+                      "base": self.cfg.fallback_base,
+                      "token": self.cfg.fallback_token or self.cfg.github_token,
+                      "models": rungs}]
 
         self.last_refusal = None
-        tried = set()
-        queue = list(rungs)
-        while queue:
-            model = queue.pop(0)
-            if model in tried:
-                continue
-            tried.add(model)
-            self.executor.reset_turn()
-            self._moved_to = None
-            text, served_by = await self._gateway(model, user_text, opening)
-            if text:
-                LOG.warning("answered on the fallback gateway (%s%s)", model,
-                            f" via {served_by}" if served_by else "")
-                return text
-            # Google answers a retired name with a 404 that names its
-            # replacement. Following that beats making the user go and edit
-            # a settings file to find out what a model is called this month.
-            moved = self._moved_to
-            if moved and moved not in tried:
-                LOG.warning("%s has moved; Google says use %s", model, moved)
-                queue.insert(0, moved)
-                continue
-            LOG.warning("%s couldn't take it; trying the next", model)
+        refusals: List[str] = []
+        for provider in stack:
+            tried = set()
+            queue = list(provider["models"])
+            while queue:
+                model = queue.pop(0)
+                if model in tried:
+                    continue
+                tried.add(model)
+                self.executor.reset_turn()
+                self._moved_to = None
+                text, served_by = await self._gateway(
+                    model, user_text, opening,
+                    base=provider["base"], token=provider["token"])
+                if text:
+                    LOG.warning("answered on %s (%s%s)", provider["label"],
+                                model, f" via {served_by}" if served_by else "")
+                    return text
+                # Google answers a retired name with a 404 that names its
+                # replacement. Following that beats making the user go and
+                # edit a settings file to learn this month's model name.
+                moved = self._moved_to
+                if moved and moved not in tried:
+                    LOG.warning("%s has moved; the provider says use %s",
+                                model, moved)
+                    queue.insert(0, moved)
+                    continue
+                LOG.warning("%s couldn't take it; trying the next", model)
+                # A spent allowance or a bad key belongs to the KEY, not the
+                # model, so every remaining name behind it will fail the same
+                # way. Stop and move to the next provider instead of proving
+                # it three more times.
+                if self.last_refusal in ("quota", "auth"):
+                    LOG.warning("%s is out (%s); moving to the next provider",
+                                provider["label"], self.last_refusal)
+                    break
+            if self.last_refusal:
+                refusals.append(self.last_refusal)
+        # Which reason to actually say. The last one to fail is not
+        # necessarily the useful one — "busy, try shortly" is worthless if
+        # the real story is that a key is being rejected.
+        for reason in ("auth", "quota", "gone", "busy"):
+            if reason in refusals:
+                self.last_refusal = reason
+                break
         return None
 
     async def _gateway(self, model: str, user_text: str,
-                       opening: Optional[str] = None):
+                       opening: Optional[str] = None,
+                       base: Optional[str] = None,
+                       token: Optional[str] = None):
         """A full tool-using turn against an OpenAI-compatible gateway.
 
         Same tools, same executor, different dialect: their `tools` wrap the
@@ -409,7 +451,8 @@ class Brain:
         import asyncio
         import urllib.request
 
-        token = self.cfg.fallback_token or self.cfg.github_token
+        base = base or self.cfg.fallback_base
+        token = token or self.cfg.fallback_token or self.cfg.github_token
         headers = {"Content-Type": "application/json", "Accept": "application/json"}
         if token:
             headers["Authorization"] = "Bearer " + token
@@ -434,7 +477,7 @@ class Brain:
             body = json.dumps({"model": model, "messages": messages,
                                "tools": tools,
                                "max_tokens": self.cfg.max_tokens}).encode()
-            req = urllib.request.Request(self.cfg.fallback_base, data=body,
+            req = urllib.request.Request(base, data=body,
                                          method="POST", headers=headers)
 
             def fetch():

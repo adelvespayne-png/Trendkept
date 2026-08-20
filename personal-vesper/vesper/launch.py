@@ -224,6 +224,32 @@ def tuneup() -> int:
         print("\n  No .env yet — run the installer first.\n")
         return 1
     text = ENV.read_text(encoding="utf-8")
+
+    # -- providers -------------------------------------------------------
+    # One provider is one point of failure: when a free allowance is spent,
+    # every model behind that key is spent in the same instant. So set up
+    # the chain whenever there is a second key to put in it.
+    gh = _get(text, "GITHUB_TOKEN", cfg.github_token)
+    goog = _get(text, "GOOGLE_API_KEY", "") or _get(text, "FALLBACK_TOKEN",
+                                                    cfg.fallback_token)
+    have = [n for n, tok in (("google", goog), ("github", gh)) if tok]
+    if len(have) > 1 and _get(text, "FALLBACK_CHAIN", "") != ",".join(have):
+        try:
+            ENV.with_suffix(".bak4").write_text(text, encoding="utf-8")
+            text = _set(text, "FALLBACK_CHAIN", ",".join(have))
+            if goog and not _get(text, "GOOGLE_API_KEY", ""):
+                text = _set(text, "GOOGLE_API_KEY", goog)
+            ENV.write_text(text, encoding="utf-8")
+            print(f"\n  Providers: {' then '.join(have)}. If one runs dry the "
+                  "other takes\n             the turn — different keys, "
+                  "different allowances.")
+        except OSError as exc:
+            print(f"\n  Could not write the provider chain ({exc}).")
+    elif len(have) == 1:
+        print(f"\n  Providers: {have[0]} only. One key means one allowance — "
+              "when it is\n             spent there is nothing behind it. "
+              "Adding GITHUB_TOKEN to\n             .env gives Vesper a "
+              "second, separate bucket.")
     # Straight out of the file, NOT out of Config. `.env` is
     # first-occurrence-wins and never overrides a variable already in the
     # environment, so after this function has run once the Config in this
@@ -249,9 +275,14 @@ def tuneup() -> int:
 
         found = google_ladder(_get(text, "FALLBACK_TOKEN", cfg.fallback_token))
         if not found:
-            print("\n  Models: couldn't reach Google to ask what your key can\n"
-                  "          use, so I've left the list alone. Check the\n"
-                  "          internet and run this again.")
+            # Could be no internet, could be a key Google won't accept. Say
+            # both rather than guessing, and say what still works.
+            print("\n  Models: couldn't get an answer from Google — either no\n"
+                  "          internet, or that key isn't accepted. Left the\n"
+                  "          list alone.")
+            if "github" in have:
+                print("          GitHub is still in the chain, so Vesper can\n"
+                      "          still answer. Re-run this when Google is back.")
             print("\n  Done. Close this window and start Vesper again.\n")
             return 0
         better = ",".join(found)
