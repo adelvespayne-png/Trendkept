@@ -365,11 +365,31 @@ def doctor() -> int:
     print(f"    {ENV}   {'(found)' if ENV.is_file() else 'MISSING'}")
 
     print("\n  Keys")
-    for label, key in (("Google", _get(text, "GOOGLE_API_KEY", "")
-                        or _get(text, "FALLBACK_TOKEN", "")),
-                       ("GitHub", _get(text, "GITHUB_TOKEN", "")),
-                       ("Anthropic", _get(text, "ANTHROPIC_API_KEY", ""))):
+    for label, name in (("Google", "GOOGLE_API_KEY"),
+                        ("GitHub", "GITHUB_TOKEN"),
+                        ("Anthropic", "ANTHROPIC_API_KEY")):
+        key = _get(text, name, "")
+        if not key and name == "GOOGLE_API_KEY":
+            key = _get(text, "FALLBACK_TOKEN", "")
         print(f"    {label:<10} {_mask(key)}")
+
+    # The duplicate check, done HERE so nobody has to run a command that
+    # prints the secret to find out. `.env` is first-occurrence-wins, so a
+    # blank line above a filled one silently wins and the key looks unset.
+    dupes = []
+    for name in ("GOOGLE_API_KEY", "GITHUB_TOKEN", "ANTHROPIC_API_KEY",
+                 "FALLBACK_TOKEN", "FALLBACK_CHAIN", "FALLBACK_MODELS"):
+        hits = [ln for ln in text.splitlines()
+                if ln.strip().startswith(name + "=") and not ln.strip().startswith("#")]
+        if len(hits) > 1:
+            blank = sum(1 for h in hits if not h.split("=", 1)[1].strip())
+            dupes.append((name, len(hits), blank))
+    if dupes:
+        print("\n  DUPLICATE SETTINGS — the FIRST one wins, the rest are ignored")
+        for name, count, blank in dupes:
+            note = f", {blank} of them empty" if blank else ""
+            print(f"    {name} appears {count} times{note}")
+        print("    Open .env and delete the spare lines, keeping the filled one.")
 
     configured = _get(text, "FALLBACK_CHAIN", "")
     print("\n  Provider chain")

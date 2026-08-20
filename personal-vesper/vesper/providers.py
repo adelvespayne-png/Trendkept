@@ -204,8 +204,13 @@ GOOGLE_MODELS = "https://generativelanguage.googleapis.com/v1beta/models"
 #: is the shallowest thing a key can reach, which reads to the user as an
 #: assistant that isn't really thinking.
 _G_TIER = (("pro", 100), ("ultra", 110), ("flash", 40), ("lite", 10))
+# Models that are in the catalogue but cannot hold a chat turn. The owner's
+# tune-up put `gemini-3-pro-image-preview` on the ladder because it scores
+# as "pro" -- an image generator, sitting in a chain meant for conversation.
+# Filtering the family word is not enough; the JOB has to be excluded too.
 _G_REJECT = ("embedding", "aqa", "imagen", "veo", "tts", "vision",
-             "learnlm", "gemma", "-exp", "thinking-exp")
+             "learnlm", "gemma", "-exp", "thinking-exp",
+             "image", "audio", "computer-use", "robotics", "guard")
 
 
 def _g_score(name: str) -> tuple:
