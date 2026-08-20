@@ -287,18 +287,92 @@ def replacement_for(body: str) -> Optional[str]:
 # So the unit of fallback is a PROVIDER -- its own endpoint, its own key,
 # its own quota -- and models are just the rungs inside one.
 
-#: name -> (endpoint, which config field holds the key, how to get models)
+#: Providers that exist, with the endpoint that lists what a key can reach.
+#: Every one of these speaks the OpenAI dialect, which is the only reason a
+#: single `_gateway` can talk to all of them.
 PROVIDERS = {
     "google": {
         "base": "https://generativelanguage.googleapis.com"
                 "/v1beta/openai/chat/completions",
         "label": "Google AI Studio",
     },
-    "github": {
-        "base": "https://models.github.ai/inference/chat/completions",
-        "label": "GitHub Models",
+    "groq": {
+        "base": "https://api.groq.com/openai/v1/chat/completions",
+        "models": "https://api.groq.com/openai/v1/models",
+        "label": "Groq",
+    },
+    "cerebras": {
+        "base": "https://api.cerebras.ai/v1/chat/completions",
+        "models": "https://api.cerebras.ai/v1/models",
+        "label": "Cerebras",
     },
 }
+
+#: Providers that USED to be here. Keeping them named, with the reason, so
+#: that anyone whose .env still points at one gets told what happened
+#: instead of a bare connection error.
+#:
+#: GitHub Models was recommended in this file for exactly one evening
+#: before its catalogue answered 410 Gone on the owner's laptop. It was
+#: retired on 30 July 2026 -- playground, catalogue, inference API and BYOK
+#: all withdrawn. The lesson is in `chain()`: a free tier is a business
+#: decision someone else can reverse, so the code has to survive one
+#: disappearing.
+RETIRED = {
+    "github": "GitHub Models was retired on 30 July 2026 — the whole "
+              "inference API is gone, so a token for it cannot help.",
+}
+
+#: Not chat models, whoever makes them.
+_OPENAI_REJECT = ("whisper", "tts", "embed", "guard", "moderation", "rerank",
+                  "vision", "image", "audio", "distil", "safety", "prompt")
+
+
+def openai_models(models_url: str, token: str, timeout: float = 15.0) -> List[str]:
+    """What this key can reach, from an OpenAI-style /models endpoint."""
+    if not (models_url and token):
+        return []
+    try:
+        req = urllib.request.Request(
+            models_url, headers={"Accept": "application/json",
+                                 "Authorization": "Bearer " + token})
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            data = json.loads(r.read())
+    except Exception as exc:
+        LOG.warning("could not list models at %s: %s", models_url, exc)
+        return []
+    out = []
+    for m in data.get("data", data if isinstance(data, list) else []):
+        mid = (m.get("id") or "") if isinstance(m, dict) else str(m)
+        if mid and not any(b in mid.lower() for b in _OPENAI_REJECT):
+            out.append(mid)
+    return out
+
+
+def _openai_score(name: str) -> tuple:
+    """Bigger and newer first. Parameter count is the strongest signal."""
+    low = name.lower()
+    m = re.search(r"(\d+)\s*b\b", low)
+    size = int(m.group(1)) if m else 0
+    bonus = 0
+    for frag, pts in (("versatile", 30), ("instruct", 10), ("70", 0),
+                      ("maverick", 25), ("scout", 10), ("qwen", 5),
+                      ("deepseek", 20), ("llama-4", 25), ("llama-3.3", 15)):
+        if frag in low:
+            bonus += pts
+    return (size, bonus, low)
+
+
+def openai_ladder(models_url: str, token: str, size: int = 3) -> List[str]:
+    names = openai_models(models_url, token)
+    return sorted(set(names), key=_openai_score, reverse=True)[:size]
+
+
+def _key_for(cfg: Config, name: str) -> str:
+    """The key for a provider, from its own env var."""
+    import os
+
+    return os.environ.get(f"{name.upper()}_API_KEY", "")
 
 
 def _google_key(cfg: Config) -> str:
@@ -320,6 +394,9 @@ def chain(cfg: Config = CONFIG) -> List[dict]:
 
     out = []
     for name in names:
+        if name in RETIRED:
+            LOG.error("%s", RETIRED[name])
+            continue
         spec = PROVIDERS.get(name)
         if not spec:
             LOG.warning("unknown provider %r in FALLBACK_CHAIN; skipping", name)
@@ -330,11 +407,9 @@ def chain(cfg: Config = CONFIG) -> List[dict]:
                        if m.strip()]
                       if "generativelanguage" in cfg.fallback_base
                       else []) or google_ladder(token)
-        elif name == "github":
-            token = cfg.github_token
-            models = ladder(cfg) if token else []
-        else:                                    # pragma: no cover
-            token, models = "", []
+        else:
+            token = _key_for(cfg, name)
+            models = openai_ladder(spec.get("models", ""), token)
         if not token:
             LOG.info("%s has no key set; skipping that rung", spec["label"])
             continue

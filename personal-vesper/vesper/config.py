@@ -205,6 +205,10 @@ class Config:
         default_factory=lambda: os.environ.get("FALLBACK_CHAIN", ""))
     google_token: str = field(
         default_factory=lambda: os.environ.get("GOOGLE_API_KEY", ""))
+    groq_token: str = field(
+        default_factory=lambda: os.environ.get("GROQ_API_KEY", ""))
+    cerebras_token: str = field(
+        default_factory=lambda: os.environ.get("CEREBRAS_API_KEY", ""))
 
     # --- GitHub Models (an alternative gateway) ---------------------------
     # Point FALLBACK_BASE at GitHub instead of OmniRoute and Vesper will read

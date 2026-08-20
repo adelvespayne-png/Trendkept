@@ -229,10 +229,19 @@ def tuneup() -> int:
     # One provider is one point of failure: when a free allowance is spent,
     # every model behind that key is spent in the same instant. So set up
     # the chain whenever there is a second key to put in it.
-    gh = _get(text, "GITHUB_TOKEN", cfg.github_token)
+    from .providers import RETIRED
+
     goog = _get(text, "GOOGLE_API_KEY", "") or _get(text, "FALLBACK_TOKEN",
                                                     cfg.fallback_token)
-    have = [n for n, tok in (("google", goog), ("github", gh)) if tok]
+    have = [n for n, tok in (("google", goog),
+                             ("groq", _get(text, "GROQ_API_KEY", "")),
+                             ("cerebras", _get(text, "CEREBRAS_API_KEY", "")))
+            if tok]
+    # A key for a service that has shut down is worse than no key: it looks
+    # like a working second provider right up until the turn that needs it.
+    if _get(text, "GITHUB_TOKEN", ""):
+        print(f"\n  NOTE: {RETIRED['github']}")
+        print("        You can delete GITHUB_TOKEN from .env.")
     if len(have) > 1 and _get(text, "FALLBACK_CHAIN", "") != ",".join(have):
         try:
             ENV.with_suffix(".bak4").write_text(text, encoding="utf-8")
