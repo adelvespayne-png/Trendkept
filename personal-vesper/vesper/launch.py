@@ -302,6 +302,117 @@ def tuneup() -> int:
     return 0
 
 
+def _mask(tok: str) -> str:
+    if not tok:
+        return "(not set)"
+    return f"{tok[:6]}...{tok[-4:]}  ({len(tok)} chars)" if len(tok) > 12 \
+        else "(set, suspiciously short)"
+
+
+def _probe(base: str, token: str, model: str, timeout: float = 30.0):
+    """Send the smallest real request there is. Returns (ok, one-line why)."""
+    import json
+    import urllib.error
+    import urllib.request
+
+    body = json.dumps({"model": model,
+                       "messages": [{"role": "user", "content": "hi"}],
+                       "max_tokens": 16}).encode()
+    req = urllib.request.Request(
+        base, data=body, method="POST",
+        headers={"Content-Type": "application/json",
+                 "Accept": "application/json",
+                 "Authorization": "Bearer " + token})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            data = json.loads(r.read())
+        msg = ((data.get("choices") or [{}])[0].get("message") or {})
+        said = (msg.get("content") or "").strip()
+        # Parenthesised deliberately: `return a, b if c else d` binds as
+        # `return (a, (b if c else d))`, which was nesting a whole tuple
+        # into the message slot on the empty branch.
+        return (True, f"answered: {said[:40]!r}" if said
+                else "answered (the call worked, reply was empty)")
+    except urllib.error.HTTPError as exc:
+        detail = ""
+        try:
+            blob = json.loads(exc.read().decode("utf-8", "replace"))
+            detail = (blob.get("error") or {}).get("message", "")
+        except Exception:
+            pass
+        return False, f"HTTP {exc.code} — {detail[:150] or exc.reason}"
+    except Exception as exc:
+        return False, f"{type(exc).__name__}: {str(exc)[:120]}"
+
+
+def doctor() -> int:
+    """Print exactly what Vesper can and cannot reach, and why.
+
+    Written because "it still says the allowance is spent" has at least
+    four different causes -- no second provider configured, a token that
+    was never pasted in, a token with the wrong permission, or a second
+    provider that is genuinely also out -- and they are indistinguishable
+    from the outside. Guessing at that over chat is slow and usually wrong.
+    """
+    from .config import Config
+    from .providers import PROVIDERS, chain
+
+    reload_env(ENV)
+    cfg = Config()
+    text = ENV.read_text(encoding="utf-8") if ENV.is_file() else ""
+
+    print("\n  Settings file")
+    print(f"    {ENV}   {'(found)' if ENV.is_file() else 'MISSING'}")
+
+    print("\n  Keys")
+    for label, key in (("Google", _get(text, "GOOGLE_API_KEY", "")
+                        or _get(text, "FALLBACK_TOKEN", "")),
+                       ("GitHub", _get(text, "GITHUB_TOKEN", "")),
+                       ("Anthropic", _get(text, "ANTHROPIC_API_KEY", ""))):
+        print(f"    {label:<10} {_mask(key)}")
+
+    configured = _get(text, "FALLBACK_CHAIN", "")
+    print("\n  Provider chain")
+    print(f"    FALLBACK_CHAIN = {configured or '(blank — single provider mode)'}")
+
+    stack = chain(cfg)
+    if not stack:
+        print(f"    Resolved to: nothing. Falling back to the single endpoint:")
+        print(f"      {cfg.fallback_base}")
+        print(f"      models: {cfg.fallback_models}")
+        print("\n    ONE PROVIDER MEANS ONE ALLOWANCE. When it is spent there")
+        print("    is nothing behind it. Add GITHUB_TOKEN to .env and run the")
+        print("    tune-up to get a second one.")
+        stack = [{"label": "the gateway", "base": cfg.fallback_base,
+                  "token": cfg.fallback_token or cfg.github_token,
+                  "models": [m.strip() for m in cfg.fallback_models.split(",")
+                             if m.strip()]}]
+    else:
+        for i, prov in enumerate(stack, 1):
+            print(f"    {i}. {prov['label']}: {len(prov['models'])} model(s), "
+                  f"first is {prov['models'][0]}")
+
+    print("\n  Live test — one tiny request to each")
+    any_ok = False
+    for prov in stack:
+        model = prov["models"][0] if prov["models"] else None
+        if not model:
+            print(f"    {prov['label']:<20} no models to try")
+            continue
+        ok, why = _probe(prov["base"], prov["token"], model)
+        any_ok |= ok
+        print(f"    {prov['label']:<20} {'OK  ' if ok else 'FAIL'}  {why}")
+
+    print()
+    if any_ok:
+        print("  At least one provider answered, so Vesper can think.")
+    else:
+        print("  Nothing answered. Vesper will speak, and will tell you why,")
+        print("  but cannot reason until one of the above works.")
+    print()
+    return 0 if any_ok else 1
+
+
 def main(argv=None) -> int:
     import argparse
 
@@ -310,6 +421,8 @@ def main(argv=None) -> int:
                    help="first run: write .env and make a token")
     p.add_argument("--tuneup", action="store_true",
                    help="refresh the map and put a proper model first")
+    p.add_argument("--doctor", action="store_true",
+                   help="print what Vesper can reach, and test each provider")
     p.add_argument("--no-browser", action="store_true",
                    help="start, but do not open the map")
     p.add_argument("--url", action="store_true",
@@ -323,6 +436,10 @@ def main(argv=None) -> int:
     if args.tuneup:
         setup_logging(CONFIG.log_level)
         return tuneup()
+
+    if args.doctor:
+        setup_logging(CONFIG.log_level)
+        return doctor()
 
     from .config import Config
 
