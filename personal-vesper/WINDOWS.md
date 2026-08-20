@@ -40,17 +40,31 @@ Two things the short way leaves out, both optional:
 
 Every command goes in **PowerShell**. Open it with Win+X → *Terminal*.
 
-Stages 1 and 2 get you a working assistant in about twenty-five minutes, and
-cost nothing — no card, no API key. Stages 3 and 4 are optional and add one
-thing each. Stop whenever you have enough; nothing later is needed for
-anything earlier.
+Stages 1 and 2 get you a working assistant in about twenty-five minutes.
+Stages 3 and 4 are optional and add one thing each. Stop whenever you have
+enough; nothing later is needed for anything earlier.
 
 ---
 
 ## Stage 1 — the brain (~10 min)
 
-Vesper ships set to run on free providers, so this comes first: OmniRoute
-*is* the brain. No account, no card, no key.
+Vesper ships pointed at OmniRoute, a gateway you run on your own machine.
+
+**Read this before spending time on it.** OmniRoute is a *router*, not a
+supply of models. Installed, it connects to nothing: its log says
+`matched no connected models; returning an empty pool`, and Vesper gets
+silence. To make it useful you sign in to its dashboard and connect
+providers — several have free tiers, but each is an account you go and make.
+
+So the honest choice is:
+
+| | Cost | Effort |
+|---|---|---|
+| **OmniRoute** | free tiers, if you sign up for them | Node, npm, a dashboard, provider accounts |
+| **An Anthropic key** | pay per use, a few pounds a month | one line in `.env` |
+
+If you want to be talking to her tonight, skip to stage 2 and use a key. Come
+back to this when you feel like tinkering.
 
 ### 1. Install Node
 
@@ -122,10 +136,20 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 Copy-Item .env.example .env
 ```
 
-That's it — no key to paste. The shipped settings run on OmniRoute, free.
+Then decide what she thinks with, and set **both** lines:
 
-> `ANTHROPIC_API_KEY` stays **blank**. Claude Pro does not cover the API;
-> they are separate purchases. Leave it empty and nothing can ever bill you.
+```
+ANTHROPIC_API_KEY=sk-ant-...
+VESPER_MODELS=claude-opus-5
+```
+
+The second line matters — the shipped default is `omniroute`, so without it
+she looks for the gateway and ignores your key.
+
+> Claude Pro does **not** cover the API; they are separate purchases. Set a
+> spend cap at console.anthropic.com so it cannot surprise you. Leave the key
+> blank and nothing can ever bill you — she just cannot hold a conversation
+> until OmniRoute has providers connected.
 
 ### 5. Talk to it
 
