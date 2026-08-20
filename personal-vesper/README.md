@@ -314,10 +314,14 @@ room; headphones make it exact.
 ### 7. Vision
 
 ```bash
-pip install opencv-python ultralytics
+pip install -r requirements-vision.txt
 # set VISION_ENABLED=true in .env
 python -m vesper.sensors.vision
 ```
+
+Kept out of the main install on purpose: `ultralytics` pulls in torch, which
+is roughly 2 GB of wheels. Everything else works without it, so this is only
+worth installing if you actually want her to know who is in the room.
 
 **Manual setup:**
 

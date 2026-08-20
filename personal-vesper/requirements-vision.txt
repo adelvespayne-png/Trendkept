@@ -1,0 +1,12 @@
+# The camera, kept separate on purpose.
+#
+#     pip install -r requirements-vision.txt
+#
+# ultralytics pulls in torch: roughly 2 GB of wheels, and a long download on
+# a normal connection. Everything else in Vesper works without it — vision
+# switches itself off when these are missing, like every other subsystem.
+#
+# Worth it if you want her to know who is in the room. Not worth it just to
+# try her out.
+opencv-python>=4.9.0
+ultralytics>=8.1.0
