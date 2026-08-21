@@ -157,20 +157,21 @@ class Vesper:
         try:
             first = True
             while True:
-                if not first:
-                    LOG.debug("holding the conversation open")
-                    heard = await asyncio.to_thread(
-                        self.listener.wait_for_speech,
-                        self.cfg.follow_up_seconds, self.cfg.barge_in_over)
-                    if not heard:
-                        LOG.info("conversation closed")
-                        break
-
-                LOG.info("listening…")
-                text = await asyncio.to_thread(self.listener.listen_once)
+                # ONE stream, not two. This used to wait_for_speech and
+                # then open a second stream to record -- so the moment you
+                # started talking it closed the mic, opened another, and
+                # recalibrated, losing the first word or two of the
+                # sentence you had just begun. Recording straight through
+                # with a long start window keeps the run-up and hears the
+                # whole thing.
+                window = (None if first else self.cfg.follow_up_seconds)
+                LOG.info("listening…" if first
+                         else "holding the conversation open")
+                text = await asyncio.to_thread(
+                    self.listener.listen_once, window)
                 if not text:
-                    if first:
-                        LOG.info("nothing heard after the wake word")
+                    LOG.info("nothing heard after the wake word" if first
+                             else "conversation closed")
                     break
                 await self.ask(text)
                 first = False

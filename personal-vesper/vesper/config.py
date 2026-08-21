@@ -405,6 +405,12 @@ class Config:
     # How long a pause ends the command, and the hard ceiling on one command.
     stt_silence_seconds: float = field(
         default_factory=lambda: _float("STT_SILENCE_SECONDS", 1.2))
+    # How long to wait for you to START talking. This was three seconds,
+    # hardcoded, and it is why she stopped hearing you after the first
+    # thing: you take a breath, think, and she has already given up.
+    # Raise it if she cuts you off before you begin.
+    stt_start_seconds: float = field(
+        default_factory=lambda: _float("STT_START_SECONDS", 8.0))
     stt_max_seconds: float = field(
         default_factory=lambda: _float("STT_MAX_SECONDS", 15.0))
 

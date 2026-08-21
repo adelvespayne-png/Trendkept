@@ -159,31 +159,64 @@ class Listener:
     def available(self) -> bool:
         return self.cfg.stt_enabled and self.mic.available
 
-    def record(self) -> bytes:
-        """Capture until a pause, or until the ceiling. Returns raw PCM."""
+    def record(self, start_window: Optional[float] = None) -> bytes:
+        """Capture until a pause, or until the ceiling. Returns raw PCM.
+
+        `start_window` is how long to wait for you to BEGIN. It used to be
+        three seconds, hardcoded, and that was the whole of the "it can't
+        hear me after the first thing" bug: after a reply you would take a
+        breath, think for a moment, and by the time you spoke it had
+        already given up. Three seconds is fine for the instant after a
+        wake word and far too short for the pause in a conversation.
+        """
         if not self.mic.available:
             return b""
 
-        # Calibrate the noise floor from the first moment of audio, so a
-        # noisy room doesn't read as continuous speech.
+        wait_for_start = (self.cfg.stt_start_seconds if start_window is None
+                          else start_window)
+
         frames: list = []
+        pre: list = []                 # a rolling half-second, kept below
         started = time.monotonic()
+        levels: list = []
         floor: Optional[float] = None
+        threshold = 0.0
         quiet_for = 0.0
         spoke = False
+        # Frames to measure the room over. One frame was enough to be
+        # poisoned by a door, a cough, or the tail of Vesper's own voice
+        # still coming out of the speaker -- and a floor set from that is
+        # a floor your actual speech never gets over.
+        calibrate = max(int(300 / FRAME_MS), 3)
 
         with self.mic.stream() as stream:
             while True:
                 block, _overflow = stream.read(FRAME_SAMPLES)
                 pcm = bytes(block)
                 level = _rms(pcm)
-
-                if floor is None:
-                    floor = max(level, 60)
-                    threshold = floor * 2.2
                 elapsed = time.monotonic() - started
 
+                if floor is None:
+                    levels.append(level)
+                    pre.append(pcm)
+                    if len(levels) < calibrate:
+                        continue
+                    # The QUIETEST of the calibration frames, not the mean:
+                    # if anything loud happened while measuring, the low
+                    # frames are the honest reading of the room.
+                    floor = max(min(levels), 60)
+                    threshold = floor * 2.2
+                    continue
+
                 if level > threshold:
+                    if not spoke and pre:
+                        # Keep the run-up. Speech is loudest a syllable in,
+                        # so the frame that crosses the threshold is
+                        # usually the SECOND one -- without this the
+                        # recording starts mid-word and the transcriber
+                        # loses the first thing you said.
+                        frames.extend(pre[-int(500 / FRAME_MS):])
+                        pre = []
                     spoke = True
                     quiet_for = 0.0
                     frames.append(pcm)
@@ -192,11 +225,15 @@ class Listener:
                     frames.append(pcm)
                     if quiet_for >= self.cfg.stt_silence_seconds:
                         break
-                elif elapsed > 3.0:
-                    LOG.debug("no speech detected")
-                    return b""
+                else:
+                    pre.append(pcm)
+                    if len(pre) > int(1000 / FRAME_MS):
+                        pre.pop(0)
+                    if elapsed > wait_for_start:
+                        LOG.debug("no speech within %.1fs", wait_for_start)
+                        return b""
 
-                if elapsed > self.cfg.stt_max_seconds:
+                if elapsed > self.cfg.stt_max_seconds + wait_for_start:
                     LOG.debug("hit max utterance length")
                     break
 
@@ -244,10 +281,10 @@ class Listener:
             LOG.debug("listening for speech failed", exc_info=True)
         return False
 
-    def listen_once(self) -> str:
+    def listen_once(self, start_window: Optional[float] = None) -> str:
         if not self.available:
             return ""
-        pcm = self.record()
+        pcm = self.record(start_window=start_window)
         if not pcm:
             return ""
         LOG.debug("transcribing %.1fs of audio", len(pcm) / FRAME_BYTES * FRAME_MS / 1000)

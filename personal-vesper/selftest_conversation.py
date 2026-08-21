@@ -76,7 +76,11 @@ def main():
         available = True
         def __init__(s, lines, follows):
             s.lines, s.follows = list(lines), list(follows)
-        def listen_once(s): return s.lines.pop(0) if s.lines else ""
+            s.windows = []
+        def listen_once(s, start_window=None):
+            s.windows.append(start_window)
+            return s.lines.pop(0) if s.lines else ""
+
         def wait_for_speech(s, *a, **k):
             return s.follows.pop(0) if s.follows else False
     v.listener = FakeListener(turns, [True, True, False])
@@ -84,6 +88,14 @@ def main():
 
     asyncio.run(v._handle_wake())
     print("5. one wake word, three turns without repeating it ->", said)
+    # The fix for "she can't hear me after the first thing": a follow-up
+    # gets the long window, and it is recorded in ONE stream rather than
+    # waiting then re-opening (which lost the start of the sentence).
+    w = v.listener.windows
+    print("   start windows per turn:", w)
+    assert w and w[0] is None, f"first turn should use the default: {w}"
+    assert all(x == v.cfg.follow_up_seconds for x in w[1:]), \
+        f"follow-ups should get the long window: {w}"
     assert said == ["Answer 1, sir", "Answer 2, sir"], said
 
     # --- 6. window off = one question and done ---
