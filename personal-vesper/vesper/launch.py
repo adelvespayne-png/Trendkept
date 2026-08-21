@@ -465,9 +465,16 @@ def _probe(base: str, token: str, model: str, timeout: float = 30.0):
     import urllib.error
     import urllib.request
 
+    # NOT 16. Reasoning models -- gpt-oss and every current Gemini among
+    # them -- spend tokens thinking before they write anything, and that
+    # spend comes out of this budget. At 16 the thinking ate it and the
+    # probe reported "the call worked, reply was empty", which reads as a
+    # half-failure when the provider was in fact perfectly healthy. Same
+    # trap as the 1500-token gateway budget earlier.
     body = json.dumps({"model": model,
-                       "messages": [{"role": "user", "content": "hi"}],
-                       "max_tokens": 16}).encode()
+                       "messages": [{"role": "user",
+                                     "content": "Reply with the word: ok"}],
+                       "max_tokens": 512}).encode()
     req = urllib.request.Request(
         base, data=body, method="POST",
         headers={"Content-Type": "application/json",
