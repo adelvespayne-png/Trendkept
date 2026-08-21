@@ -186,6 +186,22 @@ def _looks_thin(models: str) -> bool:
     return bool(rungs) and all(_thin_model(m) for m in rungs)
 
 
+def _unusable(models: str) -> list:
+    """Rungs that cannot hold a chat turn at all, whatever they score.
+
+    The owner's ladder carried `gemini-3-pro-image-preview` for two days
+    because the tune-up only ever rewrote a ladder that was ENTIRELY
+    small-tier. Theirs led with a proper Pro model, so it was declared fine
+    and the image generator sat there untouched. "Leads with something
+    good" is not the same as "contains nothing broken".
+    """
+    from .providers import _G_REJECT, _OPENAI_REJECT
+
+    bad = set(_G_REJECT) | set(_OPENAI_REJECT)
+    return [m for m in (x.strip() for x in models.split(",")) if m
+            and any(b in m.lower() for b in bad)]
+
+
 def tuneup() -> int:
     """Fix the two things that make an existing install feel stupid.
 
@@ -261,17 +277,28 @@ def tuneup() -> int:
         except OSError as exc:
             print(f"\n  Could not write the provider chain ({exc}).")
     elif len(have) == 1:
+        others = [x for x in ("groq", "cerebras") if x not in have]
+        suggest = (others[0].upper() + "_API_KEY") if others else "another key"
         print(f"\n  Providers: {have[0]} only. One key means one allowance — "
               "when it is\n             spent there is nothing behind it. "
-              "Adding GITHUB_TOKEN to\n             .env gives Vesper a "
-              "second, separate bucket.")
+              f"Put a {suggest}\n             in .env for a second, separate "
+              "bucket (free, no card).")
     # Straight out of the file, NOT out of Config. `.env` is
     # first-occurrence-wins and never overrides a variable already in the
     # environment, so after this function has run once the Config in this
     # process still reports the OLD ladder — and the tune-up would happily
     # prepend the same two models a second time.
     current = _get(text, "FALLBACK_MODELS", cfg.fallback_models)
-    if not _looks_thin(current):
+    junk = _unusable(current)
+    google = "generativelanguage.googleapis.com" in cfg.fallback_base
+    if junk and google:
+        print(f"\n  Models: {', '.join(junk)}\n          cannot hold a "
+              "conversation — that is an image or audio\n          model. "
+              "Rebuilding the list from your key.")
+        rebuild = True
+    else:
+        rebuild = _looks_thin(current)
+    if not rebuild:
         print(f"\n  Models: leaving {current} alone — it already leads with "
               "a full-size model.")
     elif "generativelanguage.googleapis.com" not in cfg.fallback_base:
@@ -475,8 +502,8 @@ def doctor() -> int:
         print(f"      {cfg.fallback_base}")
         print(f"      models: {cfg.fallback_models}")
         print("\n    ONE PROVIDER MEANS ONE ALLOWANCE. When it is spent there")
-        print("    is nothing behind it. Add GITHUB_TOKEN to .env and run the")
-        print("    tune-up to get a second one.")
+        print("    is nothing behind it. Put a GROQ_API_KEY in .env (free,")
+        print("    no card) and run the tune-up to get a second one.")
         stack = [{"label": "the gateway", "base": cfg.fallback_base,
                   "token": cfg.fallback_token or cfg.github_token,
                   "models": [m.strip() for m in cfg.fallback_models.split(",")
