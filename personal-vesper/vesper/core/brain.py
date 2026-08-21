@@ -140,6 +140,9 @@ _REFUSALS = {
              "tune-up and I'll pick up whatever your keys can reach now."),
     "busy": ("Every model I can reach is busy, sir — that's usually a few "
              "minutes, not an evening. Ask me again shortly."),
+    "rejected": ("Every provider refused the request itself, sir — not a "
+                 "capacity problem, something about the way I'm asking. "
+                 "Start me with --verbose and the log will quote them."),
 }
 
 
@@ -157,6 +160,10 @@ def _why_refused(exc: Exception, body: str = "") -> str:
         return "auth"
     if code == 404 or "no longer available" in text or "not found" in text:
         return "gone"
+    if code == 400:
+        # OUR request, not their capacity. Reporting this as "busy" tells
+        # the user to wait for something that is never going to change.
+        return "rejected"
     return "busy"
 
 
@@ -460,7 +467,10 @@ class Brain:
         # Which reason to actually say. The last one to fail is not
         # necessarily the useful one — "busy, try shortly" is worthless if
         # the real story is that a key is being rejected.
-        for reason in ("auth", "quota", "gone", "busy"):
+        # "rejected" ranks high: it is the only one the user cannot wait
+        # out, so hiding it behind "busy" sends them off to wait for
+        # something that will never change on its own.
+        for reason in ("auth", "rejected", "quota", "gone", "busy"):
             if reason in refusals:
                 self.last_refusal = reason
                 break
@@ -502,6 +512,7 @@ class Brain:
         messages += self._history_for_gateway()
         messages.append({"role": "user", "content": opening or user_text})
         tools = _as_openai_tools(self.tools)
+        dropped_tools = False
         served_by = None
 
         for _round in range(8):
@@ -563,6 +574,18 @@ class Brain:
                     # refill a daily allowance, so don't waste the user's
                     # time pretending it might.
                     spent = self.last_refusal == "quota"
+                    # A 400 while we are sending tools is very often the
+                    # model saying it cannot do function calling -- most
+                    # free-tier models can't. Losing the tools costs the
+                    # map and the weather; keeping them costs the whole
+                    # answer. So drop them and ask once more.
+                    if (self.last_refusal == "rejected" and tools
+                            and not dropped_tools):
+                        LOG.warning("%s refused the request with tools; "
+                                    "trying again without them", model)
+                        dropped_tools = True
+                        tools = []
+                        break
                     retrying = (_transient(exc) and not spent
                                 and attempt < _GATEWAY_TRIES - 1)
                     LOG.warning("gateway %s failed: %s%s%s", model, _brief(exc),
@@ -572,6 +595,8 @@ class Brain:
                         return None, None
                     await asyncio.sleep(_GATEWAY_BACKOFF * (2 ** attempt))
             if data is None:
+                if dropped_tools and not tools:
+                    continue          # same model, second time, no tools
                 return None, None
             served_by = decision or served_by
 

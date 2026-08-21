@@ -715,12 +715,34 @@ def piper_setup(home: Optional[Path] = None) -> int:
     text = _set(text, "TTS_BACKEND", "piper")
     text = _set(text, "PIPER_BIN", str(exe))
     text = _set(text, "PIPER_MODEL", str(voice))
+
+    # Without this, installing Piper changes nothing you can hear. The map
+    # page speaks replies with the BROWSER's voice (speechSynthesis);
+    # Piper is the laptop's. SERVER_SPEAK_ALOUD is off by default so a
+    # question asked from the phone doesn't make the laptop announce the
+    # answer to an empty room -- sensible, but it also means the one
+    # interface the owner actually uses would never play the voice they
+    # just installed.
+    spoke = _get(text, "SERVER_SPEAK_ALOUD", "").lower()
+    if spoke not in ("true", "1", "yes", "on"):
+        text = _set(text, "SERVER_SPEAK_ALOUD", "true")
+        aloud = ("\n  Also on:      SERVER_SPEAK_ALOUD=true — otherwise the "
+                 "map page speaks\n                with the BROWSER's voice "
+                 "and Piper is never heard.\n                Set it back to "
+                 "false if you ask from your phone a lot.")
+    else:
+        aloud = ""
+
     ENV.write_text(text, encoding="utf-8")
     print("  Settings:     TTS_BACKEND=piper, PIPER_BIN and PIPER_MODEL "
           "written\n                (old .env kept as .env.bak5)")
+    if aloud:
+        print(aloud)
 
-    print("\n  Done. Start Vesper again and she'll use the new voice.")
-    print("  To go back: set TTS_BACKEND=windows in .env.\n")
+    print("\n  Done — but CLOSE VESPER AND START HER AGAIN.")
+    print("  Refreshing the browser only reloads the page; the settings are")
+    print("  read once when the black window starts.")
+    print("\n  To go back: set TTS_BACKEND=windows in .env.\n")
     return 0
 
 

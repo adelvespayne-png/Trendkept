@@ -383,6 +383,39 @@ def main() -> int:
     bad += not check("a working rung is never cooled down",
                      not b2._cooldown, str(b2._cooldown))
 
+    # -- 15. a model that cannot do tools still gets to answer ------------
+    # The doctor's probe sends no tools and Groq answered; a real turn
+    # sends all of them and came back "every model is busy". Most free
+    # models cannot do function calling and say so with a 400 -- which
+    # was being classified as busy, telling the user to wait for something
+    # that would never change.
+    NOTOOLS = http(400, "Bad Request", json.dumps({"error": {
+        "message": "tool use is not supported for this model", "code": 400}}))
+    rec = Recorder([NOTOOLS, reply("Evening, sir.")])
+    ur.urlopen = rec
+    b = make_brain(tmp, models="openai/gpt-oss-120b")
+    b.tools = [{"name": "answer", "description": "say it",
+                "input_schema": {"type": "object", "properties": {}}}]
+    out = asyncio.run(b.respond("hello", channel="text"))
+    bad += not check("a 400 with tools is retried without them",
+                     len(rec.sent) == 2 and not rec.sent[1].get("tools"),
+                     f"{len(rec.sent)} requests")
+    bad += not check("on the SAME model, not the next one",
+                     len({s["model"] for s in rec.sent}) == 1)
+    bad += not check("and the answer comes back",
+                     bool(out) and "Evening" in out, repr(out))
+
+    # A 400 that survives losing the tools is reported as a rejection, not
+    # as "busy" -- the user must not be told to wait for a request bug.
+    rec = Recorder([NOTOOLS, NOTOOLS, NOTOOLS, NOTOOLS])
+    ur.urlopen = rec
+    b = make_brain(tmp, models="only-one")
+    b.tools = [{"name": "answer", "description": "say it",
+                "input_schema": {"type": "object", "properties": {}}}]
+    out = asyncio.run(b.respond("hello", channel="text"))
+    bad += not check("a persistent 400 does not read as 'busy'",
+                     bool(out) and "busy" not in out.lower(), repr(out))
+
     ur.urlopen = keep
     print("\nFAIL" if bad else "\nPASS")
     return 1 if bad else 0
