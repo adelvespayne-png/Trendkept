@@ -223,6 +223,12 @@ def tuneup() -> int:
     if not ENV.is_file():
         print("\n  No .env yet — run the installer first.\n")
         return 1
+    added = add_missing_settings()
+    if added:
+        print(f"\n  Settings: added {len(added)} line(s) your .env was "
+              f"missing —\n            {', '.join(added[:6])}"
+              + (" ..." if len(added) > 6 else "")
+              + "\n            They are blank; fill in the ones you want.")
     text = ENV.read_text(encoding="utf-8")
 
     # -- providers -------------------------------------------------------
@@ -309,6 +315,65 @@ def tuneup() -> int:
 
     print("\n  Done. Close this window and start Vesper again.\n")
     return 0
+
+
+def _keys_in(text: str) -> "dict":
+    """Every setting a .env-shaped file defines: name -> value, in order."""
+    out = {}
+    for line in text.splitlines():
+        s = line.strip()
+        if s and not s.startswith("#") and "=" in s:
+            name, _, value = s.partition("=")
+            name = name.strip()
+            if name and name not in out:
+                out[name] = value.strip()
+    return out
+
+
+def add_missing_settings() -> list:
+    """Give an existing .env the settings a newer .env.example added.
+
+    `ensure_env` deliberately never touches an existing .env -- someone's
+    keys live in it. The cost of that is drift: a .env written in July has
+    no GROQ_API_KEY line, so the owner opens it looking for one, cannot
+    find it, and has to be told to type the name from memory. Appending the
+    missing names BLANK is safe (blank means that subsystem is simply off)
+    and it means the line is there to fill in next time.
+
+    Returns the names added.
+    """
+    if not (ENV.is_file() and EXAMPLE.is_file()):
+        return []
+    try:
+        env_text = ENV.read_text(encoding="utf-8")
+        example = EXAMPLE.read_text(encoding="utf-8")
+    except OSError:
+        return []
+
+    have = _keys_in(env_text)
+    defaults = _keys_in(example)
+    missing = [k for k in defaults if k not in have]
+    if not missing:
+        return []
+
+    block = ["", "", "# ---------------------------------------------------",
+             "# Added by the tune-up: settings that exist in the current",
+             "# .env.example but were not in your file yet. Blank means the",
+             "# feature is simply off, so these are safe to leave empty.",
+             "# ---------------------------------------------------"]
+    # The example's VALUE, not a blank. Config reads these with
+    # `os.environ.get(NAME, default)`, and an empty string is a value --
+    # so appending `VESPER_MODELS=` would override the default with
+    # nothing and take the model ladder out entirely. Keys are blank in
+    # the example anyway, which is what makes this safe for secrets.
+    block += [f"{k}={defaults[k]}" for k in missing]
+    try:
+        ENV.write_text(env_text.rstrip("\n") + "\n" + "\n".join(block) + "\n",
+                       encoding="utf-8")
+    except OSError as exc:
+        LOG.warning("could not add the missing settings: %s", exc)
+        return []
+    return missing
 
 
 def _mask(tok: str) -> str:
