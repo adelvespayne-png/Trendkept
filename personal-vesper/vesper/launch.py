@@ -411,6 +411,35 @@ def add_missing_settings() -> list:
     return missing
 
 
+#: What a key from each service actually looks like. A key of the wrong
+#: SHAPE is the failure that wastes the most time, because the error comes
+#: back from the provider as a plausible-sounding 401/403/429 rather than
+#: "that is not one of our keys" -- so the obvious reading is "my account
+#: has a problem" when the real answer is "that string is not an API key".
+_KEY_SHAPES = {
+    "GOOGLE_API_KEY": ("AIza", "a Google AI Studio key starts 'AIza' and is "
+                               "about 39 characters. A longer string "
+                               "starting 'AQ.' is an OAuth token, not an "
+                               "API key — get one from aistudio.google.com "
+                               "> Get API key"),
+    "GROQ_API_KEY": ("gsk_", "a Groq key starts 'gsk_' — from "
+                             "console.groq.com > API Keys"),
+    "ANTHROPIC_API_KEY": ("sk-ant-", "an Anthropic key starts 'sk-ant-'"),
+    "GITHUB_TOKEN": ("github_pat_", "a fine-grained GitHub token starts "
+                                    "'github_pat_'"),
+}
+
+
+def _shape_warning(name: str, key: str) -> str:
+    """Flag a key that cannot be what it claims to be."""
+    if not key:
+        return ""
+    prefix, why = _KEY_SHAPES.get(name, ("", ""))
+    if prefix and not key.startswith(prefix):
+        return f"\n               ^ WRONG SHAPE: {why}"
+    return ""
+
+
 def _mask(tok: str) -> str:
     if not tok:
         return "(not set)"
@@ -474,13 +503,20 @@ def doctor() -> int:
     print(f"    {ENV}   {'(found)' if ENV.is_file() else 'MISSING'}")
 
     print("\n  Keys")
+    # Every provider that can actually serve a turn, so a key that is
+    # simply absent is visible as absent. Groq was missing from this list
+    # while its rung was failing, which made "is the key even set?"
+    # unanswerable from the one output meant to answer exactly that.
     for label, name in (("Google", "GOOGLE_API_KEY"),
-                        ("GitHub", "GITHUB_TOKEN"),
-                        ("Anthropic", "ANTHROPIC_API_KEY")):
+                        ("Groq", "GROQ_API_KEY"),
+                        ("Cerebras", "CEREBRAS_API_KEY"),
+                        ("Anthropic", "ANTHROPIC_API_KEY"),
+                        ("GitHub", "GITHUB_TOKEN")):
         key = _get(text, name, "")
         if not key and name == "GOOGLE_API_KEY":
             key = _get(text, "FALLBACK_TOKEN", "")
-        print(f"    {label:<10} {_mask(key)}")
+        note = _shape_warning(name, key)
+        print(f"    {label:<10} {_mask(key)}{note}")
 
     # The duplicate check, done HERE so nobody has to run a command that
     # prints the secret to find out. `.env` is first-occurrence-wins, so a
