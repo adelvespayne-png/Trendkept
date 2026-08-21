@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -103,6 +104,29 @@ def is_dangerous(text: Optional[str], cfg) -> bool:
     return classify(text, cfg) in PRIVATE_LEVELS
 
 
+_LIMIT_RE = re.compile(r"limit\s+(\d+),\s*requested\s+(\d+)", re.I)
+
+
+def _budget_from(detail: str, asked: int):
+    """Work out a max_tokens that fits, from the provider's own numbers.
+
+    Groq answers 413 with "Limit 8000, Requested 10021" -- which is the
+    whole arithmetic handed to us. `requested` is prompt + max_tokens, so
+    the prompt is `requested - asked` and what is left for the answer is
+    `limit - prompt`. Guessing a smaller number and trying again would
+    take several round trips to land; this lands in one.
+
+    Returns the new budget, or None if the prompt alone cannot fit.
+    """
+    m = _LIMIT_RE.search(detail or "")
+    if not m:
+        return None
+    limit, requested = int(m.group(1)), int(m.group(2))
+    prompt = requested - asked
+    room = limit - prompt - 64          # a little headroom for their count
+    return room if room >= 256 else None
+
+
 def _brief(exc: Exception) -> str:
     return f"{type(exc).__name__}: {str(exc)[:160]}"
 
@@ -165,6 +189,8 @@ def _why_refused(exc: Exception, body: str = "") -> str:
         return "auth"
     if code == 404 or "no longer available" in text or "not found" in text:
         return "gone"
+    if code == 413 or "too large" in text or "reduce your message" in text:
+        return "toobig"
     if code == 400:
         # OUR request, not their capacity. Reporting this as "busy" tells
         # the user to wait for something that is never going to change.
@@ -262,6 +288,8 @@ class Brain:
                                                   # it is worth asking again
         self._last_good: Optional[tuple] = None   # (endpoint, model) that
                                                   # answered most recently
+        self._budgets: Dict[str, int] = {}        # endpoint -> a max_tokens
+                                                  # known to fit there
         self._client = client
         self.available = client is not None
         # A chain that starts at the gateway needs no Anthropic key at all —
@@ -543,6 +571,12 @@ class Brain:
         messages.append({"role": "user", "content": opening or user_text})
         tools = _as_openai_tools(self.tools)
         dropped_tools = False
+        # Start from a budget already known to fit this endpoint. Their
+        # per-minute limit does not change between questions, so paying a
+        # 413 to rediscover it on every turn is a wasted round trip --
+        # and on a tight free tier that is EVERY turn.
+        budget = min(self.cfg.max_tokens,
+                     self._budgets.get(base, self.cfg.max_tokens))
         served_by = None
 
         for _round in range(8):
@@ -553,7 +587,7 @@ class Brain:
             # a model with nothing to say.
             body = json.dumps({"model": model, "messages": messages,
                                "tools": tools,
-                               "max_tokens": self.cfg.max_tokens}).encode()
+                               "max_tokens": budget}).encode()
             req = urllib.request.Request(base, data=body,
                                          method="POST", headers=headers)
 
@@ -605,6 +639,30 @@ class Brain:
                     # refill a daily allowance, so don't waste the user's
                     # time pretending it might.
                     spent = self.last_refusal == "quota"
+                    # 413: the request does not fit the provider's
+                    # per-minute budget. They tell us the exact numbers, so
+                    # recompute and try again rather than giving up on a
+                    # model that is perfectly willing to answer a smaller
+                    # question. If even that will not fit, the tools are
+                    # the bulk of it -- drop them and the prompt halves.
+                    code = (getattr(exc, "status", None)
+                            or getattr(exc, "code", None))
+                    if code == 413:
+                        fits = _budget_from(detail, budget)
+                        if fits and fits < budget:
+                            LOG.warning("%s: request too big; retrying with "
+                                        "max_tokens %d instead of %d",
+                                        model, fits, budget)
+                            budget = fits
+                            self._budgets[base] = fits
+                            break
+                        if tools and not dropped_tools:
+                            LOG.warning("%s: still too big; dropping the "
+                                        "tools to make room", model)
+                            dropped_tools = True
+                            tools = []
+                            break
+
                     # A 400 while we are sending tools is very often the
                     # model saying it cannot do function calling -- most
                     # free-tier models can't. Losing the tools costs the
@@ -626,8 +684,8 @@ class Brain:
                         return None, None
                     await asyncio.sleep(_GATEWAY_BACKOFF * (2 ** attempt))
             if data is None:
-                if dropped_tools and not tools:
-                    continue          # same model, second time, no tools
+                if (dropped_tools and not tools) or budget < self.cfg.max_tokens:
+                    continue     # same model, smaller request, ask again
                 return None, None
             served_by = decision or served_by
 

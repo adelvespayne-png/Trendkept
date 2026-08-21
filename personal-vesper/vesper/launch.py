@@ -596,14 +596,56 @@ def doctor() -> int:
                 any_ok = True
                 break
 
+    # -- the real thing --------------------------------------------------
+    # The probe above sends a bare question with no tools. A real turn
+    # sends the whole toolset, the context block and the history -- and
+    # the gap between those two has now hidden a live bug twice: the
+    # probe said OK while every actual question came back "every model is
+    # busy". So do a real one, through the same brain the user talks to.
+    print("\n  A real turn — same path as talking to her")
+    real, why = _real_turn()
+    if real:
+        print(f"    OK    she said: {real[:80]!r}")
+    else:
+        print(f"    FAIL  {why}")
+        print("    Run  Vesper.bat --verbose  and the log will quote the "
+              "provider.")
+
     print()
-    if any_ok:
-        print("  At least one provider answered, so Vesper can think.")
+    if real:
+        print("  Working. Close this and start Vesper.")
+    elif any_ok:
+        print("  A provider answers a bare question but not a real turn —")
+        print("  so the problem is in the REQUEST, not the connection.")
     else:
         print("  Nothing answered. Vesper will speak, and will tell you why,")
         print("  but cannot reason until one of the above works.")
     print()
-    return 0 if any_ok else 1
+    return 0 if real else 1
+
+
+def _real_turn():
+    """Ask the actual brain one question. Returns (reply, why-not)."""
+    import asyncio
+
+    try:
+        from .core.brain import Brain
+        from .core.world_state import WorldState
+        from .tools.tool_executor import ToolExecutor
+        from .config import Config
+
+        cfg = Config()
+        state = WorldState()
+        brain = Brain(state, ToolExecutor(state, cfg=cfg), cfg=cfg)
+        if not brain.available:
+            return None, "no reasoning configured at all"
+        said = asyncio.run(brain.respond("Say the single word: ok",
+                                         channel="text"))
+        if said:
+            return said, ""
+        return None, "she returned nothing at all"
+    except Exception as exc:
+        return None, f"{type(exc).__name__}: {str(exc)[:200]}"
 
 
 # The last Windows build of Piper. Confirmed reachable at this exact URL;
@@ -681,6 +723,15 @@ def piper_setup(home: Optional[Path] = None) -> int:
                   "do automatically.\n")
             return 1
         print(f"  Program:      installed ({exe})")
+
+    # Piper is useless without its pronunciation data, and the failure is
+    # a raw Windows crash code rather than a message, so check it here.
+    if not (exe.parent / "espeak-ng-data").is_dir():
+        print(f"\n  WARNING: no espeak-ng-data folder beside {exe.name}.")
+        print("  Piper will crash without it. Delete the piper folder and")
+        print("  run this again to get a clean copy.\n")
+        return 1
+    print("  Speech data:  espeak-ng-data present")
 
     # -- the voice -------------------------------------------------------
     voice = next(iter(sorted(where.rglob(VOICE_NAME))), None)

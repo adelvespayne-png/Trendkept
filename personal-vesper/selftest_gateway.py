@@ -452,6 +452,51 @@ def main() -> int:
     finally:
         prov.chain = keep_chain2
 
+    # -- 17. Groq's 413, verbatim from the owner's log --------------------
+    # "Limit 8000, Requested 10021". We were asking for max_tokens=8000
+    # and Groq counts that against a per-MINUTE budget of 8000, so the
+    # request could never fit however short the question. Their message
+    # contains the whole arithmetic, so read it rather than guess.
+    TOOBIG = http(413, "Payload Too Large", json.dumps({"error": {"message":
+        "Request too large for model `openai/gpt-oss-120b` in organization "
+        "`org_x` service tier `on_demand` on tokens per minute (TPM): "
+        "Limit 8000, Requested 10021, please reduce your message size and "
+        "try again."}}))
+    b = make_brain(tmp, models="openai/gpt-oss-120b")
+    b.cfg.max_tokens = 8000
+    rec = Recorder([TOOBIG, reply("Fifteen and cloudy, sir.")])
+    ur.urlopen = rec
+    out = asyncio.run(b.respond("what's the weather", channel="text"))
+    bad += not check("a 413 is refitted from the provider's own numbers",
+                     [s["max_tokens"] for s in rec.sent] == [8000, 5915],
+                     str([s["max_tokens"] for s in rec.sent]))
+    bad += not check("on the same model, and it answers",
+                     bool(out) and "cloudy" in out, repr(out))
+
+    rec2 = Recorder([reply("Still cloudy, sir.")])
+    ur.urlopen = rec2
+    asyncio.run(b.respond("and now", channel="text"))
+    bad += not check("the fitting budget is remembered for next time",
+                     [s["max_tokens"] for s in rec2.sent] == [5915],
+                     str([s["max_tokens"] for s in rec2.sent]))
+
+    # If even a refit will not fit, the tools are the bulk -- drop them.
+    TIGHT = http(413, "Payload Too Large", json.dumps({"error": {"message":
+        "tokens per minute (TPM): Limit 8000, Requested 12000, please "
+        "reduce your message size."}}))
+    b2 = make_brain(tmp, models="tight")
+    b2.cfg.max_tokens = 1000
+    b2.tools = [{"name": "answer", "description": "x" * 400,
+                 "input_schema": {"type": "object", "properties": {}}}]
+    rec3 = Recorder([TIGHT, reply("Managed it, sir.")])
+    ur.urlopen = rec3
+    out3 = asyncio.run(b2.respond("hello", channel="text"))
+    bad += not check("an impossible refit drops the tools instead",
+                     len(rec3.sent) == 2 and not rec3.sent[1].get("tools"),
+                     f"{len(rec3.sent)} requests")
+    bad += not check("and still answers", bool(out3) and "Managed" in out3,
+                     repr(out3))
+
     ur.urlopen = keep
     print("\nFAIL" if bad else "\nPASS")
     return 1 if bad else 0

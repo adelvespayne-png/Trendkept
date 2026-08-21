@@ -228,12 +228,32 @@ class Speaker:
     def _say_piper(self, text: str) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             wav = Path(tmp) / "out.wav"
-            subprocess.run(
+            # RUN IT FROM ITS OWN FOLDER. Piper loads espeak-ng-data from a
+            # path relative to the working directory, and we were starting
+            # it from wherever Vesper happened to be. On Windows the miss
+            # is not a polite error -- it crashes with 0xC0000409
+            # (STATUS_STACK_BUFFER_OVERRUN), which looks like a broken
+            # download rather than a missing folder it never looked in.
+            here = Path(self._piper).parent
+            proc = subprocess.run(
                 [self._piper, "--model", self.cfg.piper_model,
                  "--output_file", str(wav)],
                 input=text.encode("utf-8"),
-                check=True, capture_output=True, timeout=60,
+                capture_output=True, timeout=60, cwd=str(here),
             )
+            if proc.returncode != 0 or not wav.is_file():
+                err = (proc.stderr or b"").decode("utf-8", "replace").strip()
+                hint = ""
+                if not (here / "espeak-ng-data").is_dir():
+                    hint = (f" — there is no espeak-ng-data folder in {here}, "
+                            "which Piper needs. Re-run Get Piper.bat.")
+                elif not Path(self.cfg.piper_model).is_file():
+                    hint = f" — no voice file at {self.cfg.piper_model}."
+                elif not Path(str(self.cfg.piper_model) + ".json").is_file():
+                    hint = (" — the voice's .json companion is missing; "
+                            "Piper needs both files.")
+                raise RuntimeError(
+                    f"piper exited {proc.returncode}{hint} {err[:200]}".strip())
             self._play(str(wav))
 
     def _say_elevenlabs(self, text: str) -> None:
