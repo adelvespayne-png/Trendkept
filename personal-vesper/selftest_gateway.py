@@ -187,14 +187,14 @@ def main() -> int:
     rec = Recorder([reply("Noted, sir.")])
     ur.urlopen = rec
     b = make_brain(tmp)
-    asyncio.run(b.respond("what time is it", channel="text"))
+    asyncio.run(b.respond("tell me about the Visa position", channel="text"))
     sent = rec.sent[0]["messages"]
     joined = " ".join(str(m.get("content") or "") for m in sent)
     bad += not check("the clock is in the prompt", "Local time:" in joined)
     bad += not check("the room is in the prompt", "the room is quiet" in joined)
     bad += not check("the channel is named", "Channel:" in joined)
     bad += not check("the user's words are still there",
-                     "what time is it" in joined)
+                     "Visa position" in joined)
 
     # -- 4. and it remembers the turn before ------------------------------
     rec = Recorder([reply("It was AAPL, sir.")])
@@ -215,7 +215,7 @@ def main() -> int:
                     busy(), busy(), busy()])
     ur.urlopen = rec
     b = make_brain(tmp)
-    out = asyncio.run(b.respond("are you there", channel="text"))
+    out = asyncio.run(b.respond("summarise the V trade", channel="text"))
     bad += not check("a fully exhausted ladder says so out loud",
                      bool(out) and "busy" in out.lower(), repr(out))
     bad += not check("and it still calls him sir",
@@ -246,7 +246,7 @@ def main() -> int:
     rec = Recorder([QUOTA, QUOTA, QUOTA])
     ur.urlopen = rec
     b = make_brain(tmp)
-    out = asyncio.run(b.respond("are you there", channel="text"))
+    out = asyncio.run(b.respond("summarise the V trade", channel="text"))
     # All three, and NOT one. This assertion has now been wrong in both
     # directions, which is worth recording: first it expected three because
     # nobody had thought about it, then I "fixed" it to expect one on the
@@ -304,7 +304,7 @@ def main() -> int:
         rec = Recorder([QUOTA, QUOTA, reply("Good evening, sir.")])
         ur.urlopen = rec
         b = make_brain(tmp)
-        out = asyncio.run(b.respond("what time is it", channel="text"))
+        out = asyncio.run(b.respond("tell me about Visa", channel="text"))
         bad += not check("a spent Google quota hands the turn to GitHub",
                          bool(out) and "Good evening" in out, repr(out))
         bad += not check("it exhausts Google's models before moving on",
@@ -342,7 +342,7 @@ def main() -> int:
     rec = Recorder([QUOTA, QUOTA, QUOTA, reply("Good evening, sir.")])
     ur.urlopen = rec
     b = make_brain(tmp, models=theirs)
-    out = asyncio.run(b.respond("what time is it", channel="text"))
+    out = asyncio.run(b.respond("how did the V trade go", channel="text"))
     bad += not check("a 429 on one model still tries the next",
                      len(rec.sent) == 4, f"gave up after {len(rec.sent)}")
     bad += not check("and the working rung answers",

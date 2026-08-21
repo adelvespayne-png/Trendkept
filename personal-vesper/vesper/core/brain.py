@@ -290,6 +290,14 @@ class Brain:
                                                   # answered most recently
         self._budgets: Dict[str, int] = {}        # endpoint -> a max_tokens
                                                   # known to fit there
+
+        # What she knows about you, as opposed to what was said in the
+        # last twenty turns. This is the difference between an assistant
+        # and a chatbot with a good week.
+        from .memory import Memory
+
+        self.memory = Memory(Path(cfg.memory_path))
+        self.depth = "quick"          # what the current turn was judged to be
         self._client = client
         self.available = client is not None
         # A chain that starts at the gateway needs no Anthropic key at all —
@@ -350,6 +358,13 @@ class Brain:
                 f"Reason: {reason}")
         else:
             parts.append("The user is speaking to you directly.")
+
+        # Everything above is about NOW. This is about them, and it is the
+        # part that makes an answer feel like it came from someone who
+        # knows you rather than from a search box.
+        recalled = self.memory.block(reason or "", limit=6) if reason else ""
+        if recalled:
+            parts.append(recalled)
         return "\n".join(parts)
 
     # -- the ladder --------------------------------------------------------
@@ -776,17 +791,68 @@ class Brain:
             self.ladder, self.rung = picked, 0
             LOG.warning("possible danger -> %s (gateway excluded)", picked[0])
 
+        # How hard is this one worth thinking about? Routed per question,
+        # because treating "what's the time" and "should I restructure the
+        # pricing" identically is the same failure twice -- a committee for
+        # one and a shrug for the other.
+        from . import depth as _depth
+
+        want = (self.cfg.thinking or "auto").lower()
+        self.depth = (_depth.classify(user_text, channel) if want == "auto"
+                      else want)
+
+        # A reflex needs no provider, no key and no network.
+        if self.depth == _depth.REFLEX and user_text:
+            quick = self._reflex(user_text)
+            if quick:
+                LOG.info("answered from reflex, no model call")
+                self._remember(user_text, quick)
+                self._learn(user_text, quick)
+                self.ladder, self.rung, self.tools = keep_ladder, keep_rung, keep_tools
+                return _address(quick, self.cfg.address)
+
         try:
             # The prompt asks for the address; this is what makes it a
             # promise. Every reply leaves through here, including the ones
             # that came back from a backup provider that never saw the
             # system prompt in the same shape.
-            return _address(
-                await self._turn(user_text, reason, channel, max_rounds,
-                                 health=health),
-                self.cfg.address)
+            said = await self._turn(user_text, reason, channel, max_rounds,
+                                    health=health)
+            if said and user_text:
+                self._learn(user_text, said)
+            return _address(said, self.cfg.address)
         finally:
             self.ladder, self.rung, self.tools = keep_ladder, keep_rung, keep_tools
+
+    # -- answering without a model at all ---------------------------------
+
+    def _reflex(self, user_text: Optional[str]) -> Optional[str]:
+        """Questions Vesper already holds the answer to.
+
+        No model beats a clock at telling the time, and every one of them
+        is slower. Roughly a fifth of what anyone actually asks an
+        assistant is of this shape, and answering it instantly is a large
+        part of what makes something feel sharp rather than sluggish.
+        """
+        from . import depth as _depth
+
+        what = _depth.reflex_kind(user_text)
+        if not what:
+            return None
+        if what == "time":
+            return time.strftime("It's %H:%M, sir.")
+        if what == "date":
+            return time.strftime("It's %A the %d of %B, sir.")
+        if what == "ping":
+            return "Here, sir."
+        if what == "memory":
+            hits = self.memory.recall(user_text or "", limit=6)
+            if not hits:
+                return ("Nothing yet, sir — I only start keeping things "
+                        "once you've told me a few.")
+            lines = "; ".join(h["text"].rstrip(".") for h in hits[:5])
+            return f"{self.memory.summary()} Among them, sir: {lines}."
+        return None
 
     async def _turn(self, user_text, reason, channel, max_rounds,
                     health: bool = False) -> Optional[str]:
@@ -794,6 +860,13 @@ class Brain:
         opening = self._context_block(reason, channel, health=health)
         if user_text:
             opening += f'\n\nThe user said: "{user_text}"'
+            recalled = self.memory.block(user_text, limit=8)
+            if recalled:
+                opening += "\n\n" + recalled
+            if self.depth == "deep":
+                from .depth import DEEP_INSTRUCTIONS
+
+                opening += "\n\n" + DEEP_INSTRUCTIONS
         else:
             opening += ("\n\nDecide whether to say anything. Calling "
                         "stay_silent is a perfectly good outcome.")
@@ -913,6 +986,27 @@ class Brain:
                 }) + "\n")
         except OSError as exc:
             LOG.warning("could not write conversation log: %s", exc)
+
+    def _learn(self, user_text: Optional[str], spoken: Optional[str]) -> None:
+        """Keep anything durable the user just told us.
+
+        Pattern-matched rather than model-extracted, so it costs nothing
+        and runs on every single turn. The model pass exists too
+        (`memory.EXTRACT_PROMPT`) but a call per turn to decide whether a
+        turn was memorable is a call you make hundreds of times to catch a
+        handful of facts.
+        """
+        if not user_text:
+            return
+        from .memory import notice
+
+        try:
+            for kind, text in notice(user_text):
+                got = self.memory.remember(text, kind=kind, source="said")
+                if got:
+                    LOG.info("remembered (%s): %s", kind, text[:70])
+        except Exception as exc:      # never let memory break a reply
+            LOG.warning("could not store a memory: %s", exc)
 
     def load_recent(self, turns: int = 6) -> None:
         """Warm the session with the tail of the last run's log."""

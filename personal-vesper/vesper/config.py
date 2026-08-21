@@ -492,6 +492,22 @@ class Config:
     proactive_cooldown: float = field(
         default_factory=lambda: _float("PROACTIVE_COOLDOWN", 120.0))
 
+    # What Vesper remembers about you between conversations. Plain JSON,
+    # readable and editable -- if she has learned something wrong you can
+    # open it and delete the line.
+    memory_path: Path = field(
+        default_factory=lambda: ROOT / os.environ.get("MEMORY_PATH",
+                                                      "memory.json"))
+    # How hard she thinks. `auto` routes per question: reflexes answer
+    # instantly with no model call, ordinary questions take one, and a
+    # question with real substance gets tools and a checking pass.
+    #   auto | quick | deep
+    thinking: str = field(
+        default_factory=lambda: os.environ.get("VESPER_THINKING", "auto"))
+    # Whether a deep answer gets checked against the question before it is
+    # spoken. Costs one extra call on hard questions only.
+    self_check: bool = field(default_factory=lambda: _bool("SELF_CHECK", True))
+
     map_path: Path = field(
         default_factory=lambda: ROOT / os.environ.get("MAP_PATH", "map.json"))
     state_path: Path = field(

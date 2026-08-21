@@ -19,6 +19,7 @@ vesper/private_seed.json
 
 # --- what you said, did, and are working on --------------------------------
 map.json
+memory.json
 state.json
 conversations.jsonl
 reminders.jsonl
