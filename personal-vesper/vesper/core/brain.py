@@ -42,6 +42,17 @@ _TRANSIENT_CODES = (429, 500, 502, 503, 529)
 _GATEWAY_TRIES = 3
 _GATEWAY_BACKOFF = 1.5
 
+# How long to stop asking a rung that just refused, by reason. Without
+# this every single question re-walks the same dead rungs: the owner's
+# ladder is three Pro models with no free tier and a Flash model that
+# times out, so each turn spent well over a minute proving that again
+# before reaching the provider that works. A minute of silence per
+# question makes a working assistant feel broken.
+_COOLDOWN = {"gone": 24 * 3600,   # retired: it is not coming back today
+             "auth": 900,         # a key does not fix itself in a minute
+             "quota": 1800,       # a daily allowance, checked twice an hour
+             "busy": 60}          # genuinely transient
+
 
 # Ladder rungs that mean "hand this turn to the gateway" rather than to
 # Anthropic. Anything else is treated as an Anthropic model id.
@@ -229,6 +240,8 @@ class Brain:
         self.degraded = False         # true once we're below the top rung
         self.last_refusal = None      # why the last gateway rung said no
         self._moved_to = None         # the rename a 404 pointed us at
+        self._cooldown: Dict[tuple, float] = {}   # (endpoint, model) -> when
+                                                  # it is worth asking again
         self._client = client
         self.available = client is not None
         # A chain that starts at the gateway needs no Anthropic key at all —
@@ -388,9 +401,19 @@ class Brain:
 
         self.last_refusal = None
         refusals: List[str] = []
+        now = time.time()
         for provider in stack:
             tried = set()
-            queue = list(provider["models"])
+            # Skip what refused recently -- but never skip EVERYTHING. If
+            # the whole ladder is cooling down, try it anyway: a stale
+            # cooldown must not be the reason the user gets silence.
+            fresh = [m for m in provider["models"]
+                     if self._cooldown.get((provider["base"], m), 0) <= now]
+            queue = fresh or list(provider["models"])
+            if fresh and len(fresh) < len(provider["models"]):
+                LOG.info("%s: skipping %d rung(s) still cooling down",
+                         provider["label"],
+                         len(provider["models"]) - len(fresh))
             while queue:
                 model = queue.pop(0)
                 if model in tried:
@@ -404,6 +427,7 @@ class Brain:
                 if text:
                     LOG.warning("answered on %s (%s%s)", provider["label"],
                                 model, f" via {served_by}" if served_by else "")
+                    self._cooldown.pop((provider["base"], model), None)
                     return text
                 # Google answers a retired name with a 404 that names its
                 # replacement. Following that beats making the user go and
@@ -415,6 +439,8 @@ class Brain:
                     queue.insert(0, moved)
                     continue
                 LOG.warning("%s couldn't take it; trying the next", model)
+                wait = _COOLDOWN.get(self.last_refusal or "busy", 60)
+                self._cooldown[(provider["base"], model)] = time.time() + wait
                 # A REJECTED KEY belongs to the key, so nothing behind it
                 # can work -- stop, and move to the next provider.
                 #

@@ -356,6 +356,33 @@ def main() -> int:
     bad += not check("but a rejected key stops the provider at once",
                      len(rec.sent) == 1, f"{len(rec.sent)} requests")
 
+    # -- 14. a refusal is remembered, so the next turn is fast ------------
+    # Without this every question re-walks the same dead rungs. On the
+    # owner's ladder that was three 429s and a timeout before reaching the
+    # provider that works -- long enough that the phone bridge refused the
+    # next question with "I'm in the middle of something".
+    b = make_brain(tmp, models=theirs)
+    rec = Recorder([QUOTA, QUOTA, QUOTA, reply("Evening, sir.")])
+    ur.urlopen = rec
+    asyncio.run(b.respond("first", channel="text"))
+    rec2 = Recorder([reply("Evening again, sir.")])
+    ur.urlopen = rec2
+    out = asyncio.run(b.respond("second", channel="text"))
+    bad += not check("the first turn learns which rungs are dead",
+                     len(rec.sent) == 4, f"{len(rec.sent)}")
+    bad += not check("and the second goes straight to the one that works",
+                     [s["model"] for s in rec2.sent] == ["gemini-3.7-flash"],
+                     str([s["model"] for s in rec2.sent]))
+    bad += not check("still answering", bool(out) and "Evening" in out)
+
+    # A rung that answers is proven good, so it must never be cooled down.
+    b2 = make_brain(tmp, models="good,other")
+    for _ in range(3):
+        ur.urlopen = Recorder([reply("Fine, sir.")])
+        asyncio.run(b2.respond("hello", channel="text"))
+    bad += not check("a working rung is never cooled down",
+                     not b2._cooldown, str(b2._cooldown))
+
     ur.urlopen = keep
     print("\nFAIL" if bad else "\nPASS")
     return 1 if bad else 0

@@ -71,8 +71,15 @@ class AskServer:
 
     def ask(self, text: str) -> str:
         """Run one turn on the asyncio loop and wait for the answer."""
-        if not self._turn.acquire(timeout=1.0):
-            return "I'm in the middle of something. Ask me again in a moment."
+        # Queue, don't refuse. One second was never long enough: a turn can
+        # legitimately take most of a minute when a provider is slow, so
+        # every question asked during one came back "ask me again in a
+        # moment" -- which is a refusal dressed as politeness, and it
+        # happened on nearly every question when the ladder was walking
+        # dead rungs. Waiting is what the user wanted anyway.
+        if not self._turn.acquire(timeout=self.cfg.server_queue_wait):
+            return ("I'm still working on the last one, sir — it's taking "
+                    "longer than it should. Give me a moment and ask again.")
         try:
             future = asyncio.run_coroutine_threadsafe(
                 self.vesper.brain.respond(user_text=text, channel="voice"),

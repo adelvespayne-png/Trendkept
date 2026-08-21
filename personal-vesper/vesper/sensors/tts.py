@@ -100,7 +100,16 @@ class Speaker:
             wanted = "piper"
 
         if self.backend not in ("elevenlabs", "windows"):
-            piper = shutil.which("piper") or shutil.which("piper-tts")
+            # An explicit path first: a setting that says exactly where the
+            # program is cannot be defeated by a stale PATH in an open
+            # window. `which` stays as the fallback for a normal install.
+            piper = ""
+            if cfg.piper_bin and Path(cfg.piper_bin).is_file():
+                piper = cfg.piper_bin
+            elif cfg.piper_bin:
+                LOG.warning("PIPER_BIN is set but there is no file at %s",
+                            cfg.piper_bin)
+            piper = piper or shutil.which("piper") or shutil.which("piper-tts")
             # Windows needs no paplay/aplay/afplay — `_play` routes through
             # the OS there. Requiring one meant a Windows box with Piper
             # properly installed still refused to use it.

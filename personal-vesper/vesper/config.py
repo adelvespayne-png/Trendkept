@@ -403,6 +403,16 @@ class Config:
         default_factory=lambda: _float("STT_MAX_SECONDS", 15.0))
 
     tts_backend: str = field(default_factory=lambda: os.environ.get("TTS_BACKEND", "piper"))
+    # The full path to piper.exe. Set this and PATH stops mattering --
+    # which removes the step where a PATH change only reaches windows
+    # opened afterwards, and someone reasonably concludes it didn't work.
+    piper_bin: str = field(
+        default_factory=lambda: os.environ.get("PIPER_BIN", ""))
+    # How long a second question waits for the first to finish before
+    # being told to come back. Long enough to cover a slow turn, short
+    # enough that a genuinely stuck one still gets a reply.
+    server_queue_wait: float = field(
+        default_factory=lambda: _float("SERVER_QUEUE_WAIT", 90.0))
     piper_model: str = field(
         default_factory=lambda: os.environ.get("PIPER_MODEL", "en_GB-alan-medium"))
     elevenlabs_api_key: str = field(

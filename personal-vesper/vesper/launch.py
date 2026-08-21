@@ -606,6 +606,124 @@ def doctor() -> int:
     return 0 if any_ok else 1
 
 
+# The last Windows build of Piper. Confirmed reachable at this exact URL;
+# the project's newer work is Linux-first, so this is the one that runs on
+# a ThinkPad. Pinned rather than "latest" on purpose: a release URL that
+# resolves to whatever is newest is a URL that breaks without warning.
+PIPER_ZIP = ("https://github.com/rhasspy/piper/releases/download/"
+             "2023.11.14-2/piper_windows_amd64.zip")
+VOICE_BASE = ("https://huggingface.co/rhasspy/piper-voices/resolve/main/"
+              "en/en_GB/alan/medium/")
+VOICE_NAME = "en_GB-alan-medium.onnx"
+
+
+def _download(url: str, dest: Path) -> bool:
+    import urllib.request
+
+    from .providers import USER_AGENT
+
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+        with urllib.request.urlopen(req, timeout=180) as r, \
+                dest.open("wb") as fh:
+            while True:
+                chunk = r.read(262144)
+                if not chunk:
+                    break
+                fh.write(chunk)
+        return dest.stat().st_size > 0
+    except Exception as exc:
+        print(f"    could not download {url.rsplit('/', 1)[-1]}: {exc}")
+        dest.unlink(missing_ok=True)
+        return False
+
+
+def piper_setup(home: Optional[Path] = None) -> int:
+    """Fetch Piper, find the voice, and wire both into .env.
+
+    Written as a single double-click because the manual version has four
+    steps that each fail quietly: download the right zip, extract it, put
+    it on PATH, then remember that PATH only reaches windows opened
+    afterwards. The owner got as far as the voice files and stopped, which
+    is exactly where that sequence loses people.
+
+    Nothing here needs PATH at all -- it writes the full path to piper.exe
+    into PIPER_BIN instead.
+    """
+    import zipfile
+
+    home = home or Path.home()
+    where = home / "Documents" / "piper"
+    where.mkdir(parents=True, exist_ok=True)
+    print(f"\n  Piper folder: {where}")
+
+    # -- the program -----------------------------------------------------
+    exe = next(iter(sorted(where.rglob("piper.exe"))), None)
+    if exe:
+        print(f"  Program:      already here ({exe.name})")
+    else:
+        print("  Program:      downloading (about 20 MB)...")
+        zip_path = where / "piper_windows_amd64.zip"
+        if not _download(PIPER_ZIP, zip_path):
+            print("\n  Could not fetch Piper. Check the internet and try "
+                  "again.\n")
+            return 1
+        try:
+            with zipfile.ZipFile(zip_path) as z:
+                z.extractall(where)
+        except zipfile.BadZipFile:
+            print("\n  The download was not a usable zip. Try again.\n")
+            return 1
+        zip_path.unlink(missing_ok=True)
+        exe = next(iter(sorted(where.rglob("piper.exe"))), None)
+        if not exe:
+            print("\n  Unpacked, but no piper.exe inside. Nothing I can "
+                  "do automatically.\n")
+            return 1
+        print(f"  Program:      installed ({exe})")
+
+    # -- the voice -------------------------------------------------------
+    voice = next(iter(sorted(where.rglob(VOICE_NAME))), None)
+    if voice:
+        print(f"  Voice:        already here ({voice.name})")
+    else:
+        print("  Voice:        downloading (about 60 MB)...")
+        voice = where / VOICE_NAME
+        if not (_download(VOICE_BASE + VOICE_NAME, voice)
+                and _download(VOICE_BASE + VOICE_NAME + ".json",
+                              where / (VOICE_NAME + ".json"))):
+            print("\n  Could not fetch the voice.\n")
+            return 1
+        print(f"  Voice:        installed ({voice})")
+
+    if not (voice.with_suffix(".onnx.json")).is_file() \
+            and not Path(str(voice) + ".json").is_file():
+        print("\n  The voice's .json companion is missing; Piper needs "
+              "both files.\n")
+        return 1
+
+    # -- the settings ----------------------------------------------------
+    if not ENV.is_file():
+        print("\n  No .env — run the installer first.\n")
+        return 1
+    text = ENV.read_text(encoding="utf-8")
+    try:
+        ENV.with_suffix(".bak5").write_text(text, encoding="utf-8")
+    except OSError as exc:
+        print(f"\n  Could not back up .env ({exc}); not touching it.\n")
+        return 1
+    text = _set(text, "TTS_BACKEND", "piper")
+    text = _set(text, "PIPER_BIN", str(exe))
+    text = _set(text, "PIPER_MODEL", str(voice))
+    ENV.write_text(text, encoding="utf-8")
+    print("  Settings:     TTS_BACKEND=piper, PIPER_BIN and PIPER_MODEL "
+          "written\n                (old .env kept as .env.bak5)")
+
+    print("\n  Done. Start Vesper again and she'll use the new voice.")
+    print("  To go back: set TTS_BACKEND=windows in .env.\n")
+    return 0
+
+
 def main(argv=None) -> int:
     import argparse
 
@@ -616,6 +734,8 @@ def main(argv=None) -> int:
                    help="refresh the map and put a proper model first")
     p.add_argument("--doctor", action="store_true",
                    help="print what Vesper can reach, and test each provider")
+    p.add_argument("--piper", action="store_true",
+                   help="install the Piper voice and wire it into .env")
     p.add_argument("--no-browser", action="store_true",
                    help="start, but do not open the map")
     p.add_argument("--url", action="store_true",
@@ -633,6 +753,10 @@ def main(argv=None) -> int:
     if args.doctor:
         setup_logging(CONFIG.log_level)
         return doctor()
+
+    if args.piper:
+        setup_logging(CONFIG.log_level)
+        return piper_setup()
 
     from .config import Config
 
