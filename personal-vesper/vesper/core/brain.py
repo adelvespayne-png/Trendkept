@@ -453,7 +453,11 @@ class Brain:
 
         base = base or self.cfg.fallback_base
         token = token or self.cfg.fallback_token or self.cfg.github_token
-        headers = {"Content-Type": "application/json", "Accept": "application/json"}
+        from ..providers import USER_AGENT
+
+        headers = {"Content-Type": "application/json",
+                   "Accept": "application/json",
+                   "User-Agent": USER_AGENT}
         if token:
             headers["Authorization"] = "Bearer " + token
 

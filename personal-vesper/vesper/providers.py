@@ -33,6 +33,17 @@ from .config import CONFIG, Config, setup_logging
 
 LOG = logging.getLogger("vesper.providers")
 
+#: A real browser-ish User-Agent on every outbound call.
+#:
+#: urllib sends "Python-urllib/3.x" by default, and providers behind
+#: Cloudflare routinely answer that with a bare 403 -- no body, no reason.
+#: Groq did exactly that to the owner: a correctly-shaped `gsk_` key,
+#: rejected before it was ever looked at. The 403 reads as "your key is
+#: wrong" when it means "we don't serve that client".
+USER_AGENT = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) Vesper/1.0 "
+              "(local assistant; +https://trendkept.com)")
+
+
 # Makers we'd reach for, best first. Anything not listed still gets ranked,
 # just after these.
 PREFERRED_MAKERS = [
@@ -90,6 +101,7 @@ def fetch_catalog(cfg: Config = CONFIG, timeout: float = 20.0) -> List[dict]:
         cfg.github_catalog,
         headers={"Authorization": "Bearer " + cfg.github_token,
                  "Accept": "application/json",
+                 "User-Agent": USER_AGENT,
                  "X-GitHub-Api-Version": "2022-11-28"})
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
@@ -233,7 +245,8 @@ def google_models(token: str, timeout: float = 15.0) -> List[str]:
     try:
         req = urllib.request.Request(
             f"{GOOGLE_MODELS}?key={urllib.parse.quote(token)}",
-            headers={"Accept": "application/json"})
+            headers={"Accept": "application/json",
+                     "User-Agent": USER_AGENT})
         with urllib.request.urlopen(req, timeout=timeout) as r:
             data = json.loads(r.read())
     except Exception as exc:
@@ -335,6 +348,7 @@ def openai_models(models_url: str, token: str, timeout: float = 15.0) -> List[st
     try:
         req = urllib.request.Request(
             models_url, headers={"Accept": "application/json",
+                                 "User-Agent": USER_AGENT,
                                  "Authorization": "Bearer " + token})
         with urllib.request.urlopen(req, timeout=timeout) as r:
             data = json.loads(r.read())

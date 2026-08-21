@@ -447,6 +447,12 @@ def _mask(tok: str) -> str:
         else "(set, suspiciously short)"
 
 
+def _ua() -> str:
+    from .providers import USER_AGENT
+
+    return USER_AGENT
+
+
 def _probe(base: str, token: str, model: str, timeout: float = 30.0):
     """Send the smallest real request there is. Returns (ok, one-line why)."""
     import json
@@ -460,6 +466,7 @@ def _probe(base: str, token: str, model: str, timeout: float = 30.0):
         base, data=body, method="POST",
         headers={"Content-Type": "application/json",
                  "Accept": "application/json",
+                 "User-Agent": _ua(),
                  "Authorization": "Bearer " + token})
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
