@@ -264,7 +264,15 @@ def tuneup() -> int:
     if _get(text, "GITHUB_TOKEN", ""):
         print(f"\n  NOTE: {RETIRED['github']}")
         print("        You can delete GITHUB_TOKEN from .env.")
-    if len(have) > 1 and _get(text, "FALLBACK_CHAIN", "") != ",".join(have):
+    chain_now = _get(text, "FALLBACK_CHAIN", "")
+    if len(have) > 1 and chain_now == ",".join(have):
+        # Nothing to change -- but SAY so. This branch printed nothing at
+        # all, so a correctly-configured install looked identical to one
+        # where the setting had silently failed to take, and the owner had
+        # no way to tell "already done" from "didn't work".
+        print(f"\n  Providers: {' then '.join(have)} — already set up. "
+              "If one runs dry\n             the other takes the turn.")
+    elif len(have) > 1:
         try:
             ENV.with_suffix(".bak4").write_text(text, encoding="utf-8")
             text = _set(text, "FALLBACK_CHAIN", ",".join(have))
