@@ -196,6 +196,11 @@ class Config:
     # you want anyway; the next rung will be quicker.
     gateway_timeout: float = field(
         default_factory=lambda: _float("GATEWAY_TIMEOUT", 45.0))
+    # Speak each sentence as it is written rather than waiting for the
+    # whole reply. Does not make anything faster; makes the wait audible
+    # instead of silent, which is what "slow" actually means to a person.
+    stream_replies: bool = field(
+        default_factory=lambda: _bool("STREAM_REPLIES", True))
 
     # An ORDERED list of whole providers to try, not just models. One
     # provider is one point of failure: when Google's free allowance is

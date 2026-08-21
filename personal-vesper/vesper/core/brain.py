@@ -315,6 +315,10 @@ class Brain:
                                                   # it is worth asking again
         self._last_good: Optional[tuple] = None   # (endpoint, model) that
                                                   # answered most recently
+        # Called with each finished sentence the moment it exists, so the
+        # speaker can start on sentence one while sentence four is still
+        # being written. This is the whole of "why does it feel slow".
+        self.on_sentence = None
         self._budgets: Dict[str, int] = {}        # endpoint -> a max_tokens
                                                   # known to fit there
 
@@ -576,6 +580,68 @@ class Brain:
                 break
         return None
 
+    async def _stream_gateway(self, model, messages, tools, base, token,
+                              budget) -> Optional[str]:
+        """One turn, streamed, speaking each sentence as it completes.
+
+        Only used when there is somewhere to send the sentences AND no
+        tools are in play. A tool call cannot be acted on until it is
+        fully spelled out, so a turn that might make one has nothing to
+        say while it decides -- and speaking half of a reply that is about
+        to be replaced by a tool result would be worse than waiting.
+        """
+        import asyncio
+        import queue
+        import threading
+        import urllib.request
+
+        from ..providers import USER_AGENT
+        from .stream import sentences, stream_openai
+
+        body = json.dumps({"model": model, "messages": messages,
+                           "max_tokens": budget, "stream": True}).encode()
+        headers = {"Content-Type": "application/json",
+                   "Accept": "text/event-stream",
+                   "User-Agent": USER_AGENT}
+        if token:
+            headers["Authorization"] = "Bearer " + token
+        req = urllib.request.Request(base, data=body, method="POST",
+                                     headers=headers)
+
+        # The HTTP read is blocking and the sentences must reach the
+        # speaker as they land, so the read runs on a thread and hands
+        # them over through a queue.
+        out: "queue.Queue" = queue.Queue()
+
+        def pump():
+            try:
+                with urllib.request.urlopen(
+                        req, timeout=self.cfg.gateway_timeout) as r:
+                    for said in sentences(stream_openai(r)):
+                        out.put(("say", said))
+            except Exception as exc:
+                out.put(("fail", exc))
+            finally:
+                out.put(("done", None))
+
+        thread = threading.Thread(target=pump, daemon=True, name="stream")
+        thread.start()
+
+        parts: List[str] = []
+        while True:
+            kind, payload = await asyncio.to_thread(out.get)
+            if kind == "done":
+                break
+            if kind == "fail":
+                raise payload
+            parts.append(payload)
+            if self.on_sentence:
+                try:
+                    self.on_sentence(payload, len(parts) == 1)
+                except Exception:
+                    LOG.debug("sentence handler failed", exc_info=True)
+        return " ".join(parts).strip() or None
+
     async def _gateway(self, model: str, user_text: str,
                        opening: Optional[str] = None,
                        base: Optional[str] = None,
@@ -653,6 +719,16 @@ class Brain:
             data = decision = None
             for attempt in range(_GATEWAY_TRIES):
                 try:
+                    # Stream when there is a listener and no tools to wait
+                    # on. The gain is not speed -- the same tokens take the
+                    # same time -- it is that the first sentence is spoken
+                    # while the fourth is still being written, which is
+                    # what a person actually experiences as speed.
+                    if (self.on_sentence and not tools and _round == 0
+                            and self.cfg.stream_replies):
+                        said = await self._stream_gateway(
+                            model, messages, tools, base, token, budget)
+                        return said, served_by
                     data, decision = await asyncio.to_thread(fetch)
                     break
                 except Exception as exc:

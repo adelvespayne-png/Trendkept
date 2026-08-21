@@ -183,8 +183,36 @@ class Vesper:
     async def ask(self, text: str, channel: str = "voice") -> Optional[str]:
         """One user turn, start to finish. Returns what was said, if anything."""
         started = time.monotonic()
-        reply = await self.brain.respond(user_text=text, channel=channel)
+
+        # Speak each sentence the moment it is finished, rather than
+        # waiting for the whole reply. The generation takes exactly as
+        # long either way; the difference is whether those seconds are
+        # silent. Time-to-first-word is what a person experiences as
+        # speed, and this takes it from the length of the whole answer
+        # down to the length of its first sentence.
+        spoken_early: list = []
+        if channel == "voice" and self.cfg.stream_replies:
+            def on_sentence(said: str, first: bool) -> None:
+                spoken_early.append(said)
+                if first:
+                    LOG.info("first word out after %.1fs",
+                             time.monotonic() - started)
+                try:
+                    self.speaker.say(said)
+                except Exception:
+                    LOG.debug("could not speak a streamed sentence",
+                              exc_info=True)
+            self.brain.on_sentence = on_sentence
+        try:
+            reply = await self.brain.respond(user_text=text, channel=channel)
+        finally:
+            self.brain.on_sentence = None
+
         LOG.debug("turn took %.1fs", time.monotonic() - started)
+        # Already said aloud, sentence by sentence -- saying it again would
+        # be a stutter. Return it so the caller still has the text.
+        if spoken_early:
+            return reply
         await self._speak(reply)
         return reply
 
