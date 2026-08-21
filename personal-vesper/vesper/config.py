@@ -190,6 +190,12 @@ class Config:
         "FALLBACK_MODELS", "auto/best-reasoning,auto/smart,auto/best-free"))
     fallback_token: str = field(
         default_factory=lambda: os.environ.get("FALLBACK_TOKEN", ""))
+    # How long to wait for one gateway request. This was 90 seconds, which
+    # is not a conversation -- a single slow model made every reply feel
+    # broken. A model that cannot start answering in 45s is not the one
+    # you want anyway; the next rung will be quicker.
+    gateway_timeout: float = field(
+        default_factory=lambda: _float("GATEWAY_TIMEOUT", 45.0))
 
     # An ORDERED list of whole providers to try, not just models. One
     # provider is one point of failure: when Google's free allowance is

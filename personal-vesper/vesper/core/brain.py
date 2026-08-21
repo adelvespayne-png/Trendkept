@@ -51,6 +51,8 @@ _GATEWAY_BACKOFF = 1.5
 _COOLDOWN = {"gone": 24 * 3600,   # retired: it is not coming back today
              "auth": 900,         # a key does not fix itself in a minute
              "quota": 1800,       # a daily allowance, checked twice an hour
+             "rejected": 1800,    # our request shape; it will not self-heal
+             "timeout": 600,      # slow now, slow in a minute
              "busy": 60}          # genuinely transient
 
 
@@ -143,6 +145,9 @@ _REFUSALS = {
     "rejected": ("Every provider refused the request itself, sir — not a "
                  "capacity problem, something about the way I'm asking. "
                  "Start me with --verbose and the log will quote them."),
+    "timeout": ("Everything I can reach is answering too slowly to be "
+                "useful, sir. I'll stop asking the slow ones for a while; "
+                "try me again in a minute."),
 }
 
 
@@ -164,6 +169,12 @@ def _why_refused(exc: Exception, body: str = "") -> str:
         # OUR request, not their capacity. Reporting this as "busy" tells
         # the user to wait for something that is never going to change.
         return "rejected"
+    if "timed out" in text or "timeout" in text:
+        # Its own class, because the COST is different. Every other
+        # refusal comes back in milliseconds; this one costs the whole
+        # request timeout, and a 60-second cooldown means paying it again
+        # a minute later. A model that is slow now is slow in ten minutes.
+        return "timeout"
     return "busy"
 
 
@@ -249,6 +260,8 @@ class Brain:
         self._moved_to = None         # the rename a 404 pointed us at
         self._cooldown: Dict[tuple, float] = {}   # (endpoint, model) -> when
                                                   # it is worth asking again
+        self._last_good: Optional[tuple] = None   # (endpoint, model) that
+                                                  # answered most recently
         self._client = client
         self.available = client is not None
         # A chain that starts at the gateway needs no Anthropic key at all —
@@ -409,6 +422,16 @@ class Brain:
         self.last_refusal = None
         refusals: List[str] = []
         now = time.time()
+
+        # Start where it worked last time. Cooldowns stop us re-walking
+        # DEAD rungs; this stops us walking live-but-slower ones. On a
+        # chain whose first provider is mostly spent, the difference is
+        # every reply starting with a wasted round trip.
+        if self._last_good:
+            base, _model = self._last_good
+            stack = ([p for p in stack if p["base"] == base]
+                     + [p for p in stack if p["base"] != base])
+
         for provider in stack:
             tried = set()
             # Skip what refused recently -- but never skip EVERYTHING. If
@@ -417,6 +440,11 @@ class Brain:
             fresh = [m for m in provider["models"]
                      if self._cooldown.get((provider["base"], m), 0) <= now]
             queue = fresh or list(provider["models"])
+            if self._last_good and self._last_good[0] == provider["base"]:
+                good = self._last_good[1]
+                if good in queue:
+                    queue.remove(good)
+                    queue.insert(0, good)
             if fresh and len(fresh) < len(provider["models"]):
                 LOG.info("%s: skipping %d rung(s) still cooling down",
                          provider["label"],
@@ -435,6 +463,7 @@ class Brain:
                     LOG.warning("answered on %s (%s%s)", provider["label"],
                                 model, f" via {served_by}" if served_by else "")
                     self._cooldown.pop((provider["base"], model), None)
+                    self._last_good = (provider["base"], model)
                     return text
                 # Google answers a retired name with a 404 that names its
                 # replacement. Following that beats making the user go and
@@ -470,7 +499,8 @@ class Brain:
         # "rejected" ranks high: it is the only one the user cannot wait
         # out, so hiding it behind "busy" sends them off to wait for
         # something that will never change on its own.
-        for reason in ("auth", "rejected", "quota", "gone", "busy"):
+        for reason in ("auth", "rejected", "quota", "gone", "timeout",
+                       "busy"):
             if reason in refusals:
                 self.last_refusal = reason
                 break
@@ -528,7 +558,8 @@ class Brain:
                                          method="POST", headers=headers)
 
             def fetch():
-                with urllib.request.urlopen(req, timeout=90) as r:
+                with urllib.request.urlopen(
+                        req, timeout=self.cfg.gateway_timeout) as r:
                     # A running OmniRoute sends x-omniroute-* headers naming
                     # what it tried; the exact one varies, so take whichever
                     # is present rather than the single name in its README.

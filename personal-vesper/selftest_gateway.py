@@ -416,6 +416,42 @@ def main() -> int:
     bad += not check("a persistent 400 does not read as 'busy'",
                      bool(out) and "busy" not in out.lower(), repr(out))
 
+    # -- 16. steady state is ONE round trip -------------------------------
+    # "It takes extremely long to reply." The owner's chain is Google
+    # (three spent Pro rungs and a Flash rung that times out) then Groq.
+    # Every turn re-walked all of it: four wasted round trips, one of them
+    # costing the whole request timeout, before reaching the provider that
+    # answers. Cooldowns skip the dead rungs; _last_good goes straight to
+    # the live one, provider and model.
+    keep_chain2 = prov.chain
+    prov.chain = lambda cfg=None: [
+        {"name": "google", "label": "Google AI Studio", "base": "http://g/v1",
+         "token": "g", "models": ["pro-a", "pro-b", "pro-c", "flash"]},
+        {"name": "groq", "label": "Groq", "base": "http://q/v1",
+         "token": "q", "models": ["openai/gpt-oss-120b"]},
+    ]
+    try:
+        b = make_brain(tmp)
+        slow = TimeoutError("The read operation timed out")
+        counts = []
+        for turn in range(3):
+            script = [QUOTA, QUOTA, QUOTA, slow] if turn == 0 else []
+            rec = Recorder(script + [reply(f"Answer {turn}, sir.")])
+            ur.urlopen = rec
+            out = asyncio.run(b.respond(f"q{turn}", channel="text"))
+            counts.append(len(rec.sent))
+        bad += not check("the first turn pays to find out what works",
+                         counts[0] == 5, str(counts))
+        bad += not check("every turn after costs ONE round trip",
+                         counts[1:] == [1, 1], str(counts))
+        bad += not check("and it still answers",
+                         bool(out) and "Answer" in out, repr(out))
+        bad += not check("a timeout is not filed as 'busy'",
+                         brain_mod._why_refused(slow) == "timeout",
+                         brain_mod._why_refused(slow))
+    finally:
+        prov.chain = keep_chain2
+
     ur.urlopen = keep
     print("\nFAIL" if bad else "\nPASS")
     return 1 if bad else 0
