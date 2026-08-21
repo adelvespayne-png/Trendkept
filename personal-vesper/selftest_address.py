@@ -159,7 +159,14 @@ async def run() -> None:
     # The system prompt must ask for it too — enforcement is the safety net,
     # not the mechanism. If only the net were there, every reply would get it
     # bolted on the end rather than written in.
+    # The system prompt is sent as a list of blocks now, so the last one
+    # can be marked cacheable -- it is identical on every turn and is most
+    # of what is sent, so caching it is most of the bill.
     sysmsg = b._client.seen[0]["system"]
+    if isinstance(sysmsg, list):
+        cached = any(x.get("cache_control") for x in sysmsg)
+        check(cached, True, "the system prompt is marked cacheable")
+        sysmsg = " ".join(x.get("text", "") for x in sysmsg)
     check('"sir"' in sysmsg, True, "the system prompt asks for it")
 
     # The danger path returns before the model is ever called, so it needs

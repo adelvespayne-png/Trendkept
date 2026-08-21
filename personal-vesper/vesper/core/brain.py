@@ -417,13 +417,28 @@ class Brain:
                 # the gateway turn and resumes below this rung if it fails.
                 raise _GatewayRung(i)
             try:
+                # The system prompt and the tool schemas are identical on
+                # every single turn and are most of what is sent. Marking
+                # the last of them cached means Anthropic keeps the
+                # prefix warm and bills it at a tenth -- which on a
+                # personal assistant, where the fixed part dwarfs the
+                # question, is roughly a 40% cut in the monthly bill for
+                # one line of code. It is also faster: a cached prefix is
+                # not re-read.
+                system = [{"type": "text", "text": SYSTEM,
+                           "cache_control": {"type": "ephemeral"}}]
+                tools = list(self.tools)
+                if tools:
+                    tools[-1] = dict(tools[-1])
+                    tools[-1]["cache_control"] = {"type": "ephemeral"}
+
                 resp = await self._client.messages.create(
                     model=model,
                     max_tokens=self.cfg.max_tokens,
-                    system=SYSTEM,
+                    system=system,
                     thinking={"type": "adaptive"},
                     output_config={"effort": self.cfg.effort},
-                    tools=self.tools,
+                    tools=tools,
                     messages=messages,
                 )
                 if i != self.rung:
@@ -921,6 +936,7 @@ class Brain:
             # system prompt in the same shape.
             said = await self._turn(user_text, reason, channel, max_rounds,
                                     health=health)
+            said = await self._check(user_text, said)
             if said and user_text:
                 self._learn(user_text, said)
             return _address(said, self.cfg.address)
@@ -1089,6 +1105,46 @@ class Brain:
                 }) + "\n")
         except OSError as exc:
             LOG.warning("could not write conversation log: %s", exc)
+
+    async def _check(self, question: Optional[str],
+                     answer: Optional[str]) -> Optional[str]:
+        """Read the answer back against the question before speaking it.
+
+        The specific failure this catches is the one that makes an
+        assistant feel unintelligent: answering a slightly DIFFERENT
+        question, confidently. That is invisible from the inside -- the
+        answer is fluent and on-topic and simply not what was asked -- and
+        a second read with the question in hand catches it cheaply.
+
+        Deep questions only, and only when there is a model spare. On a
+        quick question the check would cost as much as the answer, to
+        police something that was never at risk.
+        """
+        if not (self.cfg.self_check and question and answer):
+            return answer
+        if self.depth != "deep" or len(answer) < 80:
+            return answer
+        # Already spoken aloud sentence by sentence -- rewriting it now
+        # would mean saying it twice.
+        if self.on_sentence:
+            return answer
+
+        from .depth import CHECK_PROMPT
+
+        try:
+            asked = CHECK_PROMPT.format(question=question, answer=answer)
+            better = await self._fallback(asked, asked)
+            if not better:
+                return answer
+            better = better.strip()
+            if better.upper().startswith("GOOD") or len(better) < 40:
+                return answer
+            LOG.info("the check improved the answer (%d -> %d chars)",
+                     len(answer), len(better))
+            return better
+        except Exception as exc:
+            LOG.debug("check pass failed (%s); keeping the first answer", exc)
+            return answer
 
     def _learn(self, user_text: Optional[str], spoken: Optional[str]) -> None:
         """Keep anything durable the user just told us.

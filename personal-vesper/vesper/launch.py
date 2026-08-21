@@ -247,6 +247,29 @@ def tuneup() -> int:
               + "\n            They are blank; fill in the ones you want.")
     text = ENV.read_text(encoding="utf-8")
 
+    # -- the brain -------------------------------------------------------
+    # No amount of scaffolding makes a weak model clever. Memory, routing
+    # and a checking pass all help, but they help a good model more than a
+    # thin one -- so if there is a paid key, it goes at the top.
+    anth = _get(text, "ANTHROPIC_API_KEY", "")
+    chain_models = _get(text, "VESPER_MODELS", cfg.models)
+    if anth and "claude" not in chain_models.lower():
+        text = _set(text, "VESPER_MODELS", "claude-opus-5,gateway")
+        ENV.write_text(text, encoding="utf-8")
+        print("\n  Brain:     Claude Opus 5 first, free providers behind it.")
+        print("             That is the single biggest change to how clever")
+        print("             she is; everything else helps a good model more")
+        print("             than a thin one.")
+    elif anth:
+        print(f"\n  Brain:     {chain_models.split(',')[0]} — a paid model "
+              "leads. Good.")
+    else:
+        print("\n  Brain:     free tiers only. They are the reason answers "
+              "feel thin —\n             no routing or memory fixes a small "
+              "model. An\n             ANTHROPIC_API_KEY in .env is the one "
+              "real upgrade;\n             run `Check Vesper` and it will "
+              "price it for you.")
+
     # -- providers -------------------------------------------------------
     # One provider is one point of failure: when a free allowance is spent,
     # every model behind that key is spent in the same instant. So set up
@@ -602,6 +625,9 @@ def doctor() -> int:
     # the gap between those two has now hidden a live bug twice: the
     # probe said OK while every actual question came back "every model is
     # busy". So do a real one, through the same brain the user talks to.
+    if not _get(text, "ANTHROPIC_API_KEY", ""):
+        costs()
+
     print("\n  A real turn — same path as talking to her")
     real, why = _real_turn()
     if real:
@@ -622,6 +648,38 @@ def doctor() -> int:
         print("  but cannot reason until one of the above works.")
     print()
     return 0 if real else 1
+
+
+def costs(turns_per_day: int = 25) -> None:
+    """What a month actually costs, on the current list prices.
+
+    Printed rather than promised. The numbers move, the assumptions are
+    arguable, and an assistant that quietly costs more than someone
+    budgeted is worse than one that is slightly less clever.
+    """
+    # USD per million tokens, input/output. August 2026 list prices.
+    models = (("Claude Opus 5", "claude-opus-5", 5.00, 25.00),
+              ("Claude Sonnet 5", "claude-sonnet-5", 3.00, 15.00),
+              ("Claude Haiku 4.5", "claude-haiku-4-5", 1.00, 5.00))
+    gbp = 1.27                      # USD per GBP, roughly
+    prompt, reply, deep = 2500, 350, 0.25
+    turns = turns_per_day * 30
+    inp = turns * prompt * (1 + deep)
+    out = turns * reply * (1 + deep)
+
+    print(f"\n  At {turns_per_day} questions a day ({turns} a month):\n")
+    print(f"    {'model':<20}{'per month':>12}{'with caching':>15}")
+    for name, _id, pin, pout in models:
+        plain = inp / 1e6 * pin + out / 1e6 * pout
+        # The system prompt and tools are identical every turn and are
+        # most of what is sent, so caching them is most of the bill.
+        cached = (inp * 0.75 * pin * 0.1 + inp * 0.25 * pin) / 1e6 \
+            + out / 1e6 * pout
+        print(f"    {name:<20}{'£%.2f' % (plain / gbp):>12}"
+              f"{'£%.2f' % (cached / gbp):>15}")
+    print("\n    Caching is already on. Set a spend cap in the Anthropic")
+    print("    console — it is the only thing that makes this safe to leave")
+    print("    running. Claude Pro does NOT cover the API; separate purchase.")
 
 
 def _real_turn():
