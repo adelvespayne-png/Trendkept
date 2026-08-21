@@ -58,6 +58,10 @@ ALERT = "alert"        # ...and it is one you should get wherever you are
 
 class Vesper:
     def __init__(self, cfg: Config = CONFIG) -> None:
+        # Something that fired while nobody was at the machine. Spoken on
+        # your return rather than into an empty room, and cleared once it
+        # has been. Set here so it always exists.
+        self.pending_alert: Optional[str] = None
         self.cfg = cfg
         self.state = WorldState(path=cfg.state_path)
         self.clock = Clock(self.state, cfg)
@@ -136,6 +140,11 @@ class Vesper:
                     # one goes to the phone as well.
                     self.alerts.send(reply, level="urgent",
                                      title="Vesper - your body")
+                    # And it is said aloud again when you come back. An
+                    # alert delivered to an empty room is not a delivery,
+                    # and this is precisely the case where being told late
+                    # still beats not being told.
+                    self.pending_alert = reply
         finally:
             self._busy = False
 
@@ -310,6 +319,7 @@ class Vesper:
             print(f"  {self.wake.problem}")
             print("Type to it with --text, or ask from your phone. "
                   "Ctrl-C to stop.\n")
+        watcher = asyncio.create_task(self._watch_for_you())
         try:
             while self._running:
                 kind, why = await self._events.get()
@@ -320,7 +330,34 @@ class Vesper:
         except asyncio.CancelledError:
             pass
         finally:
+            watcher.cancel()
             self.stop_sensors()
+
+    async def _watch_for_you(self) -> None:
+        """Open the conversation when you arrive, IF there is something in it.
+
+        The easy half is noticing you are there. The half that decides
+        whether this is a feature or an irritation is the restraint: an
+        assistant that greets you every time you sit down is a novelty for
+        a day and a nuisance for a year. So most passes of this loop do
+        nothing at all, and that is the intended behaviour rather than a
+        failure of it.
+        """
+        from .core.ready import Readiness, openings_for
+
+        ready = Readiness(self.cfg, self.state)
+        sources = openings_for(self)
+        while self._running:
+            await asyncio.sleep(self.cfg.ready_poll_seconds)
+            try:
+                opening = ready.opening(sources)
+            except Exception:
+                LOG.debug("readiness check failed", exc_info=True)
+                continue
+            if not opening:
+                continue
+            self.pending_alert = None
+            await self._speak(opening.text)
 
     # -- typed mode --------------------------------------------------------
 

@@ -497,6 +497,32 @@ class Config:
     # --- behaviour -------------------------------------------------------
     # Proactive speech is opt-in. An assistant that talks at you unprompted
     # is the fastest way to get itself switched off.
+    # --- speaking first ---------------------------------------------------
+    # She opens the conversation when you arrive AND there is something you
+    # would rather hear than not. The second half is what keeps this a
+    # feature: an assistant that greets you every time you sit down is a
+    # novelty for a day and a nuisance for a year.
+    #
+    # Idle seconds below this counts as "at the machine". Windows keeps the
+    # number already, so this costs a syscall and no permissions -- there is
+    # no camera and nothing watching what you type.
+    # How often to check whether you have arrived. Cheap -- one syscall --
+    # so this is about responsiveness, not load.
+    ready_poll_seconds: float = field(
+        default_factory=lambda: _float("READY_POLL_SECONDS", 20.0))
+    ready_idle_seconds: float = field(
+        default_factory=lambda: _float("READY_IDLE_SECONDS", 120.0))
+    # Never say the same thing twice inside this.
+    ready_repeat_seconds: float = field(
+        default_factory=lambda: _float("READY_REPEAT_SECONDS", 6 * 3600))
+    # However much is happening, never more than this in a day.
+    ready_max_per_day: int = field(
+        default_factory=lambda: _int("READY_MAX_PER_DAY", 4))
+    # Hours she stays quiet unless something is genuinely urgent. 24-hour
+    # clock; 22 to 8 means from ten at night until eight in the morning.
+    quiet_from: float = field(default_factory=lambda: _float("QUIET_FROM", 22.0))
+    quiet_until: float = field(default_factory=lambda: _float("QUIET_UNTIL", 8.0))
+
     proactive_enabled: bool = field(
         default_factory=lambda: _bool("PROACTIVE_ENABLED", True))
     # Minimum gap between unprompted remarks, whatever the triggers say.
