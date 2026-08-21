@@ -247,12 +247,13 @@ def main() -> int:
     ur.urlopen = rec
     b = make_brain(tmp)
     out = asyncio.run(b.respond("are you there", channel="text"))
-    # ONE request, not three. A spent allowance belongs to the KEY, so every
-    # other model behind it will fail identically -- there is nothing to
-    # learn from asking them. (This assertion used to expect three, from
-    # when each model was tried before the reason was understood.)
-    bad += not check("a spent quota stops the whole provider, not just a model",
-                     len(rec.sent) == 1,
+    # All three, and NOT one. This assertion has now been wrong in both
+    # directions, which is worth recording: first it expected three because
+    # nobody had thought about it, then I "fixed" it to expect one on the
+    # theory that a quota belongs to the key. On Google it belongs to the
+    # MODEL, so asking the next one is exactly right.
+    bad += not check("a spent quota still tries the other models",
+                     len(rec.sent) == 3,
                      f"{len(rec.sent)} requests across a 3-model list")
     bad += not check("and the reply names the quota, not 'everything refused'",
                      bool(out) and "allowance" in out, repr(out))
@@ -300,28 +301,29 @@ def main() -> int:
          "base": "http://github/v1", "token": "h", "models": ["openai/gpt-4.1"]},
     ]
     try:
-        rec = Recorder([QUOTA, reply("Good evening, sir.")])
+        rec = Recorder([QUOTA, QUOTA, reply("Good evening, sir.")])
         ur.urlopen = rec
         b = make_brain(tmp)
         out = asyncio.run(b.respond("what time is it", channel="text"))
         bad += not check("a spent Google quota hands the turn to GitHub",
                          bool(out) and "Good evening" in out, repr(out))
-        bad += not check("it did NOT grind through the rest of Google's list",
+        bad += not check("it exhausts Google's models before moving on",
                          [s["model"] for s in rec.sent]
-                         == ["gem-a", "openai/gpt-4.1"],
+                         == ["gem-a", "gem-b", "openai/gpt-4.1"],
                          str([s["model"] for s in rec.sent]))
         bad += not check("and each request went to its own endpoint",
                          [r.full_url for r in rec.reqs]
-                         == ["http://google/v1", "http://github/v1"],
+                         == ["http://google/v1", "http://google/v1",
+                             "http://github/v1"],
                          str([r.full_url for r in rec.reqs]))
         bad += not check("with its own key",
                          [r.headers.get("Authorization") for r in rec.reqs]
-                         == ["Bearer g", "Bearer h"],
+                         == ["Bearer g", "Bearer g", "Bearer h"],
                          str([r.headers.get("Authorization") for r in rec.reqs]))
 
         # Both dry: the sentence must name the ACTIONABLE reason, not
         # whichever provider happened to fail last.
-        rec = Recorder([QUOTA, BADKEY])
+        rec = Recorder([QUOTA, QUOTA, BADKEY])
         ur.urlopen = rec
         b = make_brain(tmp)
         out = asyncio.run(b.respond("hello", channel="text"))
@@ -329,6 +331,30 @@ def main() -> int:
                          bool(out) and "key" in out.lower(), repr(out))
     finally:
         prov.chain = keep_chain
+
+    # -- 13. a 429 is per MODEL on Google, not per key --------------------
+    # The owner's real ladder: three Pro rungs whose free tier was
+    # withdrawn, then a Flash rung with 1,500 requests a day. Stopping the
+    # provider on the first 429 never reached the one that works, so a
+    # perfectly good key looked dead for an entire evening.
+    theirs = ("gemini-3.1-pro-preview-customtools,gemini-3.1-pro-preview,"
+              "gemini-2.5-pro,gemini-3.7-flash")
+    rec = Recorder([QUOTA, QUOTA, QUOTA, reply("Good evening, sir.")])
+    ur.urlopen = rec
+    b = make_brain(tmp, models=theirs)
+    out = asyncio.run(b.respond("what time is it", channel="text"))
+    bad += not check("a 429 on one model still tries the next",
+                     len(rec.sent) == 4, f"gave up after {len(rec.sent)}")
+    bad += not check("and the working rung answers",
+                     bool(out) and "Good evening" in out, repr(out))
+
+    # A rejected KEY is different: nothing behind it can work.
+    rec = Recorder([BADKEY, BADKEY, BADKEY, BADKEY])
+    ur.urlopen = rec
+    b = make_brain(tmp, models=theirs)
+    asyncio.run(b.respond("hello", channel="text"))
+    bad += not check("but a rejected key stops the provider at once",
+                     len(rec.sent) == 1, f"{len(rec.sent)} requests")
 
     ur.urlopen = keep
     print("\nFAIL" if bad else "\nPASS")

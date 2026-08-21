@@ -415,11 +415,17 @@ class Brain:
                     queue.insert(0, moved)
                     continue
                 LOG.warning("%s couldn't take it; trying the next", model)
-                # A spent allowance or a bad key belongs to the KEY, not the
-                # model, so every remaining name behind it will fail the same
-                # way. Stop and move to the next provider instead of proving
-                # it three more times.
-                if self.last_refusal in ("quota", "auth"):
+                # A REJECTED KEY belongs to the key, so nothing behind it
+                # can work -- stop, and move to the next provider.
+                #
+                # A SPENT QUOTA does not. On Google the allowance is per
+                # MODEL: a Pro rung whose free tier was withdrawn answers
+                # 429 immediately, while the Flash rung underneath it still
+                # has 1,500 requests a day. Treating the first 429 as "this
+                # key is finished" skipped the model that would have
+                # answered -- which is how a perfectly good key looked like
+                # a dead one for an entire evening.
+                if self.last_refusal == "auth":
                     LOG.warning("%s is out (%s); moving to the next provider",
                                 provider["label"], self.last_refusal)
                     break

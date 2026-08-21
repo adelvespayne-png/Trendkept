@@ -417,11 +417,15 @@ def add_missing_settings() -> list:
 #: "that is not one of our keys" -- so the obvious reading is "my account
 #: has a problem" when the real answer is "that string is not an API key".
 _KEY_SHAPES = {
-    "GOOGLE_API_KEY": ("AIza", "a Google AI Studio key starts 'AIza' and is "
-                               "about 39 characters. A longer string "
-                               "starting 'AQ.' is an OAuth token, not an "
-                               "API key — get one from aistudio.google.com "
-                               "> Get API key"),
+    # BOTH are valid. Google is midway through changing the format: older
+    # keys are "AIza...", freshly issued ones are "AQ....". I flagged AQ.
+    # as an OAuth token and sent the owner off to hunt for an AIza key
+    # their account cannot issue any more. A shape check is only worth
+    # having if it is right about the shapes.
+    "GOOGLE_API_KEY": (("AIza", "AQ."),
+                       "a Google AI Studio key starts 'AIza' (older) or "
+                       "'AQ.' (newer) — from aistudio.google.com > Get "
+                       "API key"),
     "GROQ_API_KEY": ("gsk_", "a Groq key starts 'gsk_' — from "
                              "console.groq.com > API Keys"),
     "ANTHROPIC_API_KEY": ("sk-ant-", "an Anthropic key starts 'sk-ant-'"),
@@ -435,7 +439,9 @@ def _shape_warning(name: str, key: str) -> str:
     if not key:
         return ""
     prefix, why = _KEY_SHAPES.get(name, ("", ""))
-    if prefix and not key.startswith(prefix):
+    if isinstance(prefix, str):
+        prefix = (prefix,) if prefix else ()
+    if prefix and not any(key.startswith(x) for x in prefix):
         return f"\n               ^ WRONG SHAPE: {why}"
     return ""
 
@@ -567,13 +573,21 @@ def doctor() -> int:
     print("\n  Live test — one tiny request to each")
     any_ok = False
     for prov in stack:
-        model = prov["models"][0] if prov["models"] else None
-        if not model:
+        if not prov["models"]:
             print(f"    {prov['label']:<20} no models to try")
             continue
-        ok, why = _probe(prov["base"], prov["token"], model)
-        any_ok |= ok
-        print(f"    {prov['label']:<20} {'OK  ' if ok else 'FAIL'}  {why}")
+        # EVERY model, not just the first. Google's free allowance is per
+        # model, so the top rung can be out while a lower one has 1,500
+        # requests left -- and testing only the top reported the whole
+        # provider dead when it was not.
+        for i, model in enumerate(prov["models"]):
+            ok, why = _probe(prov["base"], prov["token"], model)
+            label = prov["label"] if i == 0 else ""
+            print(f"    {label:<20} {'OK  ' if ok else 'FAIL'}  "
+                  f"{model}: {why}")
+            if ok:
+                any_ok = True
+                break
 
     print()
     if any_ok:
