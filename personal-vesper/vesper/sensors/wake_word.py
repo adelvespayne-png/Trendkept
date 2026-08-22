@@ -71,6 +71,92 @@ def spoken_phrase(model: str) -> str:
     return PRETRAINED.get(model, model.replace("_", " "))
 
 
+class Porcupine:
+    """Picovoice Porcupine — the engine that can hear a phrase of your own.
+
+    openwakeword ships four pretrained phrases and nothing else, so
+    "hello Vesper" meant training a model: an hour in Colab, a GPU, and a
+    working knowledge of what a false-accept rate is. That is not a
+    reasonable ask, and it is why the wake word has stayed "hey Jarvis"
+    for a week.
+
+    Porcupine's free Personal tier lets you TYPE the phrase into a web
+    page and download the model. Two minutes, no training, no notebook.
+    The licence is non-commercial personal use, which is exactly what
+    this is -- and worth stating plainly rather than discovering later.
+
+    It wants its own frame size and sample rate, which is why this is a
+    class rather than a branch: it owns its own reading loop.
+    """
+
+    def __init__(self, cfg) -> None:
+        self.cfg = cfg
+        self._pv = None
+        self.problem = ""
+        self.frame_length = 512
+        self.sample_rate = 16000
+
+    def load(self) -> bool:
+        key = self.cfg.picovoice_key
+        path = (self.cfg.porcupine_keyword or "").strip()
+        if not key:
+            self.problem = ("no PICOVOICE_KEY in .env — get a free one at "
+                            "console.picovoice.ai")
+            return False
+        if not path:
+            self.problem = ("no PORCUPINE_KEYWORD in .env — the .ppn file "
+                            "you downloaded from the Picovoice console")
+            return False
+        model = Path(path)
+        if not model.is_absolute():
+            model = Path(__file__).resolve().parent.parent.parent / path
+        if not model.is_file():
+            self.problem = f"no wake-word file at {model}"
+            return False
+        try:
+            import pvporcupine
+        except Exception as exc:
+            self.problem = (f"pvporcupine is not installed ({exc}). Run "
+                            "Install Vesper.bat again to add it.")
+            return False
+        try:
+            self._pv = pvporcupine.create(
+                access_key=key, keyword_paths=[str(model)],
+                sensitivities=[self.cfg.wake_threshold])
+        except Exception as exc:
+            # The two that actually happen: a key that is not accepted, and
+            # a .ppn built for a different platform. Both say so clearly.
+            hint = ""
+            low = str(exc).lower()
+            if "activation" in low or "access" in low or "key" in low:
+                hint = " — check PICOVOICE_KEY against console.picovoice.ai"
+            elif "platform" in low or "arch" in low:
+                hint = (" — that .ppn was built for a different platform; "
+                        "download the Windows (x86_64) one")
+            self.problem = f"Porcupine would not start: {exc}{hint}"
+            return False
+        self.frame_length = self._pv.frame_length
+        self.sample_rate = self._pv.sample_rate
+        self.problem = ""
+        return True
+
+    def heard(self, samples) -> bool:
+        """True when the phrase was just said."""
+        try:
+            return self._pv.process(samples) >= 0
+        except Exception:
+            LOG.debug("porcupine frame failed", exc_info=True)
+            return False
+
+    def close(self) -> None:
+        try:
+            if self._pv:
+                self._pv.delete()
+        except Exception:
+            pass
+        self._pv = None
+
+
 class WakeWordListener:
     """Runs a detection loop on its own thread and calls `on_wake()`."""
 
@@ -84,6 +170,7 @@ class WakeWordListener:
         #: Why start() failed, in words a non-technical owner can act on.
         self.problem = ""
         self._model = None
+        self._porcupine = None
         self._thread: Optional[threading.Thread] = None
         self._stop = threading.Event()
         # After firing we ignore audio briefly, or one wake word scores above
@@ -93,7 +180,17 @@ class WakeWordListener:
     @property
     def phrase(self) -> str:
         """What the user should actually say, for whatever model is loaded."""
-        return self.cfg.wake_phrase or spoken_phrase(self.cfg.wake_model)
+        if self.cfg.wake_phrase:
+            return self.cfg.wake_phrase
+        if self._porcupine or (self.cfg.picovoice_key
+                               and self.cfg.porcupine_keyword):
+            # The phrase is baked into the .ppn and cannot be read back
+            # out of it, so fall back to the filename -- which the console
+            # names after the phrase you typed.
+            stem = Path(self.cfg.porcupine_keyword or "").stem
+            guess = stem.split("_")[0].replace("-", " ").strip()
+            return guess or "your wake word"
+        return spoken_phrase(self.cfg.wake_model)
 
     def _fail(self, message: str) -> bool:
         self.problem = message
@@ -101,6 +198,25 @@ class WakeWordListener:
         return False
 
     def _ensure_model(self) -> bool:
+        # Porcupine first when it is configured, because it is the only
+        # one that can hear a phrase you chose. openwakeword stays as the
+        # fallback: four fixed phrases, but nothing to sign up for.
+        want_engine = (self.cfg.wake_engine or "auto").lower()
+        if want_engine in ("auto", "porcupine"):
+            pv = Porcupine(self.cfg)
+            if pv.load():
+                self._porcupine = pv
+                self._model = None
+                self.problem = ""
+                LOG.info("wake word: Porcupine, listening for %r", self.phrase)
+                return True
+            if want_engine == "porcupine":
+                return self._fail(pv.problem)
+            LOG.debug("porcupine unavailable (%s); using openwakeword",
+                      pv.problem)
+        return self._ensure_openwakeword()
+
+    def _ensure_openwakeword(self) -> bool:
         if self._model is not None:
             return True
         if not self.cfg.wake_enabled:
@@ -171,15 +287,23 @@ class WakeWordListener:
         import numpy as np
 
         last_fire = 0.0
+        # Porcupine dictates its own frame size; openwakeword takes ours.
+        frame = (self._porcupine.frame_length if self._porcupine
+                 else FRAME_SAMPLES)
         try:
-            with self.mic.stream() as stream:
+            with self.mic.stream(frames=frame) as stream:
                 while not self._stop.is_set():
-                    block, _overflow = stream.read(FRAME_SAMPLES)
+                    block, _overflow = stream.read(frame)
                     samples = np.frombuffer(bytes(block), dtype=np.int16)
-                    scores = self._model.predict(samples)
-                    best = max(scores.values()) if scores else 0.0
+                    if self._porcupine:
+                        best = 1.0 if self._porcupine.heard(samples) else 0.0
+                        threshold = 1.0
+                    else:
+                        scores = self._model.predict(samples)
+                        best = max(scores.values()) if scores else 0.0
+                        threshold = self.cfg.wake_threshold
                     now = time.monotonic()
-                    if best >= self.cfg.wake_threshold and \
+                    if best >= threshold and \
                             now - last_fire > self._refractory:
                         last_fire = now
                         LOG.info("wake word (%.2f)", best)

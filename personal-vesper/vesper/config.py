@@ -402,6 +402,27 @@ class Config:
         default_factory=lambda: _float("BARGE_IN_OVER", 3.0))
 
     # --- speech ----------------------------------------------------------
+    # --- the wake word ----------------------------------------------------
+    # Which engine listens for it.
+    #   auto       — Porcupine if it is set up, otherwise openwakeword
+    #   porcupine  — Porcupine only; say why if it will not start
+    #   openwakeword — the four built-in phrases
+    #
+    # openwakeword ships four phrases and nothing else, so anything of your
+    # own ("hello Vesper") means training a model: an hour in Colab and a
+    # GPU. Porcupine lets you TYPE the phrase into a web page and download
+    # it. Free for personal, non-commercial use, which is what this is.
+    #
+    #   console.picovoice.ai -> sign up -> AccessKey        (PICOVOICE_KEY)
+    #   console.picovoice.ai -> Porcupine -> type the phrase
+    #     -> platform: Windows (x86_64) -> Download          (the .ppn file)
+    wake_engine: str = field(
+        default_factory=lambda: os.environ.get("WAKE_ENGINE", "auto"))
+    picovoice_key: str = field(
+        default_factory=lambda: os.environ.get("PICOVOICE_KEY", ""))
+    porcupine_keyword: str = field(
+        default_factory=lambda: os.environ.get("PORCUPINE_KEYWORD", ""))
+
     stt_enabled: bool = field(default_factory=lambda: _bool("STT_ENABLED", True))
     stt_model: str = field(default_factory=lambda: os.environ.get("STT_MODEL", "base.en"))
     stt_device: str = field(default_factory=lambda: os.environ.get("STT_DEVICE", "cpu"))

@@ -30,3 +30,10 @@ onnxruntime>=1.16          # openwakeword's inference backend
 # --- speech out -------------------------------------------------------------
 # Piper is a binary, not a pip package — see README step 3.
 # ElevenLabs needs no package: the executor calls the REST endpoint directly.
+
+# The wake word you choose yourself. openwakeword ships four fixed phrases;
+# anything else means training a model in Colab. Porcupine lets you type
+# the phrase into a web page and download it -- free for personal,
+# non-commercial use. Optional: without a key Vesper falls back to
+# "hey Jarvis" rather than refusing to start.
+pvporcupine>=3.0

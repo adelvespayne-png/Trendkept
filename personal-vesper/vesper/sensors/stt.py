@@ -57,12 +57,17 @@ class Microphone:
             LOG.warning("microphone unavailable (%s); speech input is off. "
                         "See README step 3.", exc)
 
-    def stream(self):
-        """A raw 16-bit mono input stream at 16 kHz."""
+    def stream(self, frames: Optional[int] = None):
+        """A raw 16-bit mono input stream at 16 kHz.
+
+        `frames` is the block size. Porcupine dictates its own (512) and
+        will not accept anything else, so the caller has to be able to
+        ask -- everything else is happy with our default.
+        """
         if not self.available:
             raise RuntimeError("no microphone")
         return self._sd.RawInputStream(
-            samplerate=SAMPLE_RATE, blocksize=FRAME_SAMPLES,
+            samplerate=SAMPLE_RATE, blocksize=frames or FRAME_SAMPLES,
             dtype="int16", channels=1,
         )
 

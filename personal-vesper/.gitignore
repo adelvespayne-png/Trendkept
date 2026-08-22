@@ -36,5 +36,9 @@ __pycache__/
 *.pyc
 .venv/
 # Speech and vision model weights, downloaded on first run.
+# Your wake-word model. Trained on the phrase you chose and tied to your
+# Picovoice account, so it is yours rather than the project's.
+*.ppn
+
 *.onnx
 *.pt

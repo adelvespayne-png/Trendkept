@@ -628,6 +628,29 @@ def doctor() -> int:
     if not _get(text, "ANTHROPIC_API_KEY", ""):
         costs()
 
+    # -- the wake word ---------------------------------------------------
+    pv_key = _get(text, "PICOVOICE_KEY", "")
+    ppn = _get(text, "PORCUPINE_KEYWORD", "")
+    print("\n  Wake word")
+    if pv_key and ppn:
+        from .sensors.wake_word import Porcupine
+
+        pv = Porcupine(cfg)
+        if pv.load():
+            print(f"    OK    Porcupine, listening for your own phrase "
+                  f"({Path(ppn).stem.split('_')[0]})")
+            pv.close()
+        else:
+            print(f"    FAIL  {pv.problem}")
+    elif pv_key or ppn:
+        missing = "PORCUPINE_KEYWORD (the .ppn file)" if pv_key \
+            else "PICOVOICE_KEY"
+        print(f"    half set up — still needs {missing}")
+    else:
+        print("    hey Jarvis (the built-in engine has four fixed phrases)")
+        print("    For \"hello Vesper\": console.picovoice.ai, type the")
+        print("    phrase, download the .ppn — two minutes, no training.")
+
     print("\n  A real turn — same path as talking to her")
     real, why = _real_turn()
     if real:

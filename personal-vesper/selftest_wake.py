@@ -109,5 +109,59 @@ c = cfg_for("hey_jarvis")
 c.wake_phrase = "hey you"
 check("override respected", WakeWordListener(c, mic=FakeMic()).phrase, "hey you")
 
-print("\nFAIL" if bad else "\nPASS")
+print("\n8. the wake word you choose yourself")
+# "I need the wake word hello Vesper to work." The built-in engine ships
+# four phrases and nothing else, so a phrase of your own meant an hour in
+# Colab with a GPU. Porcupine lets you type it into a web page instead --
+# which is the only version of this that actually gets done.
+from vesper.sensors.wake_word import Porcupine
+
+_c = cfg_for("hey_jarvis")
+_c.porcupine_keyword = "hello_vesper.ppn"
+_c.picovoice_key = ""
+_pv = Porcupine(_c)
+check("no key -> refuses to start", _pv.load(), False)
+check("and names the missing key", "PICOVOICE_KEY" in _pv.problem, True)
+
+_c2 = cfg_for("hey_jarvis")
+_c2.picovoice_key = "fake"
+_c2.porcupine_keyword = ""
+_pv2 = Porcupine(_c2)
+check("no keyword file -> refuses", _pv2.load(), False)
+check("and names the missing file", "PORCUPINE_KEYWORD" in _pv2.problem, True)
+
+_c3 = cfg_for("hey_jarvis")
+_c3.picovoice_key = "fake"
+_c3.porcupine_keyword = "definitely-not-here.ppn"
+_pv3 = Porcupine(_c3)
+check("a file that isn't there -> refuses", _pv3.load(), False)
+check("and says where it looked", "no wake-word file at" in _pv3.problem, True)
+
+# The one that matters most: adding this must not break what already works.
+_c4 = cfg_for("hey_jarvis")
+_c4.picovoice_key = ""
+_c4.porcupine_keyword = ""
+_c4.wake_engine = "auto"
+check("with none of it set up, still hey Jarvis",
+      WakeWordListener(_c4, mic=FakeMic()).phrase, "hey Jarvis")
+
+# Asking for porcupine explicitly must NOT quietly fall back -- that would
+# leave you saying "hello Vesper" at something listening for Jarvis.
+_c5 = cfg_for("hey_jarvis")
+_c5.wake_engine = "porcupine"
+_c5.picovoice_key = ""
+_w5 = WakeWordListener(_c5, mic=FakeMic())
+check("engine=porcupine never falls back silently", _w5._ensure_model(), False)
+check("and says why", "PICOVOICE_KEY" in _w5.problem, True)
+
+# A .ppn cannot be asked which phrase it holds, so the filename is the best
+# available answer -- and the console names it after what you typed.
+_c6 = cfg_for("hey_jarvis")
+_c6.picovoice_key = "k"
+_c6.porcupine_keyword = "hello vesper_en_windows_v3_0_0.ppn"
+_c6.wake_phrase = ""
+check("the phrase is read off the filename",
+      WakeWordListener(_c6, mic=FakeMic()).phrase, "hello vesper")
+
+
 sys.exit(1 if bad else 0)
