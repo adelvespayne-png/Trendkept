@@ -416,8 +416,18 @@ class Config:
     #   console.picovoice.ai -> sign up -> AccessKey        (PICOVOICE_KEY)
     #   console.picovoice.ai -> Porcupine -> type the phrase
     #     -> platform: Windows (x86_64) -> Download          (the .ppn file)
+    #   auto      — your own phrase if WAKE_PHRASE is set, else hey Jarvis
+    #   speech     — your own phrase, heard by the recogniser. No account.
+    #   openwakeword — the four built-in phrases
+    #   porcupine  — Picovoice (needs a company email; free tier withdrawn
+    #                30 June 2026, so this is here for completeness only)
     wake_engine: str = field(
         default_factory=lambda: os.environ.get("WAKE_ENGINE", "auto"))
+    # How wrong the recogniser may be and still count. A recogniser hears
+    # "hello vespa" and "hello whisper"; a person never says those. Raise
+    # it if she misses you, lower it if she wakes to the television.
+    wake_tolerance: float = field(
+        default_factory=lambda: _float("WAKE_TOLERANCE", 0.34))
     picovoice_key: str = field(
         default_factory=lambda: os.environ.get("PICOVOICE_KEY", ""))
     porcupine_keyword: str = field(

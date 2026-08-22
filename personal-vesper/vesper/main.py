@@ -173,11 +173,21 @@ class Vesper:
                 # sentence you had just begun. Recording straight through
                 # with a long start window keeps the run-up and hears the
                 # whole thing.
-                window = (None if first else self.cfg.follow_up_seconds)
-                LOG.info("listening…" if first
-                         else "holding the conversation open")
-                text = await asyncio.to_thread(
-                    self.listener.listen_once, window)
+                # They may have said the whole thing in one breath --
+                # "hello Vesper, what's the weather". The wake phrase and
+                # the command arrive in the same transcript, so asking
+                # them to repeat it would be worse than useless.
+                carried = getattr(self.wake, "carried", None) if first else None
+                if carried:
+                    self.wake.carried = None
+                    LOG.info("the command came with the wake phrase")
+                    text = carried
+                else:
+                    window = (None if first else self.cfg.follow_up_seconds)
+                    LOG.info("listening…" if first
+                             else "holding the conversation open")
+                    text = await asyncio.to_thread(
+                        self.listener.listen_once, window)
                 if not text:
                     LOG.info("nothing heard after the wake word" if first
                              else "conversation closed")

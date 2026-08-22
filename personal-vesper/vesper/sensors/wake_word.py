@@ -157,6 +157,63 @@ class Porcupine:
         self._pv = None
 
 
+class SpeechWake:
+    """Hear the phrase by transcribing what was said, not by spotting it.
+
+    The third route to "hello Vesper", and the first that depends on
+    nobody: openwakeword has four fixed phrases, Picovoice wants a company
+    email and closed its free tier on 30 June 2026, and this uses the
+    recogniser already installed for every other spoken word.
+
+    It only transcribes when there IS sound, so a quiet room costs one
+    RMS calculation per frame. And because the phrase and the command
+    land in the same transcript, "hello Vesper, what's the weather" is one
+    breath rather than a wake followed by a question.
+    """
+
+    def __init__(self, cfg, listener=None) -> None:
+        self.cfg = cfg
+        self.problem = ""
+        self._listener = listener
+
+    def load(self) -> bool:
+        phrase = (self.cfg.wake_phrase or "").strip()
+        if not phrase:
+            self.problem = ("no WAKE_PHRASE in .env — the words you want to "
+                            "say, e.g. 'hello vesper'")
+            return False
+        if self._listener is None:
+            from .stt import Listener
+
+            self._listener = Listener(self.cfg)
+        if not self._listener.available:
+            self.problem = ("the speech recogniser is not available, and "
+                            "this way of hearing the wake word needs it")
+            return False
+        self.problem = ""
+        return True
+
+    def listen(self):
+        """Block until the phrase is said. Returns the rest, or ''.
+
+        `None` means nothing was heard worth considering -- the caller
+        should simply go round again.
+        """
+        from .heard_phrase import looks_like_just_noise, split_wake
+
+        # A long start window: this is the idle loop, and it should sit
+        # patiently rather than reopening the microphone every few seconds.
+        text = self._listener.listen_once(start_window=3600.0)
+        if not text or looks_like_just_noise(text):
+            return None
+        heard, rest = split_wake(text, self.cfg.wake_phrase,
+                                 self.cfg.wake_tolerance)
+        if not heard:
+            LOG.debug("heard %r, not the wake phrase", text[:60])
+            return None
+        return rest or ""
+
+
 class WakeWordListener:
     """Runs a detection loop on its own thread and calls `on_wake()`."""
 
@@ -171,6 +228,11 @@ class WakeWordListener:
         self.problem = ""
         self._model = None
         self._porcupine = None
+        self._speech = None
+        self._listener = None      # injectable, for tests
+        #: Set when the wake phrase and the command arrived together, so
+        #: the caller can answer without asking them to repeat it.
+        self.carried = None
         self._thread: Optional[threading.Thread] = None
         self._stop = threading.Event()
         # After firing we ignore audio briefly, or one wake word scores above
@@ -202,6 +264,23 @@ class WakeWordListener:
         # one that can hear a phrase you chose. openwakeword stays as the
         # fallback: four fixed phrases, but nothing to sign up for.
         want_engine = (self.cfg.wake_engine or "auto").lower()
+
+        # `speech` first when a phrase of your own has been set, because it
+        # is the only route that needs no account and cannot be withdrawn.
+        if want_engine in ("auto", "speech"):
+            if self.cfg.wake_phrase.strip() or want_engine == "speech":
+                sw = SpeechWake(self.cfg, listener=self._listener)
+                if sw.load():
+                    self._speech = sw
+                    self._model = None
+                    self.problem = ""
+                    LOG.info("wake word: listening for %r in what you say",
+                             self.phrase)
+                    return True
+                if want_engine == "speech":
+                    return self._fail(sw.problem)
+                LOG.debug("speech wake unavailable (%s)", sw.problem)
+
         if want_engine in ("auto", "porcupine"):
             pv = Porcupine(self.cfg)
             if pv.load():
@@ -284,6 +363,8 @@ class WakeWordListener:
             self._thread.join(timeout=2.0)
 
     def _loop(self) -> None:
+        if self._speech:
+            return self._speech_loop()
         import numpy as np
 
         last_fire = 0.0
@@ -314,6 +395,28 @@ class WakeWordListener:
                                 LOG.exception("wake callback failed")
         except Exception:
             LOG.exception("wake-word loop stopped")
+
+
+    def _speech_loop(self) -> None:
+        """The transcribe-and-match loop, which owns its own microphone."""
+        while not self._stop.is_set():
+            try:
+                rest = self._speech.listen()
+            except Exception:
+                LOG.exception("speech wake loop stopped")
+                return
+            if rest is None:
+                continue
+            # They may have said the whole thing at once. Hand the command
+            # over so it is answered rather than asked for again.
+            self.carried = rest or None
+            LOG.info("wake phrase heard%s",
+                     f", carrying: {rest!r}" if rest else "")
+            if self.on_wake:
+                try:
+                    self.on_wake()
+                except Exception:
+                    LOG.exception("wake callback failed")
 
 
 def main(argv=None) -> int:
