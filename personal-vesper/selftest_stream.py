@@ -142,21 +142,86 @@ def main() -> int:
                      bool(out) and "346.81" in out and out.endswith("today."),
                      repr(out))
 
-    # -- 5. with tools in play, nothing is spoken early -------------------
-    # A tool call cannot be acted on until it is complete, so speaking half
-    # an answer that is about to be replaced by a tool result is worse than
-    # waiting.
-    rec = G.Recorder([G.reply("Checked, sir.")])
-    urllib.request.urlopen = rec
+    # -- 5. THE ONE THAT MATTERED: streaming must survive real tools ------
+    # This originally asserted the OPPOSITE -- that a turn carrying tools
+    # said nothing early, on the reasoning that a half-spoken answer might
+    # be replaced by a tool result. But a normal turn carries fourteen
+    # tools, so that condition was never false and the streaming was dead
+    # code: all of the work, none of the benefit. "It still takes a while
+    # to respond" was precisely this.
+    from vesper.tools.tool_definitions import tool_definitions
+
+    real = tool_definitions(include_web=True, include_map=True,
+                            include_search=True)
+    urllib.request.urlopen = lambda req, timeout=None: SSE(
+        "The trend is intact, sir. Nothing to do today.")
     b2 = G.make_brain(tmp, models="fast")
-    b2.tools = [{"name": "read_map", "description": "read it",
-                 "input_schema": {"type": "object", "properties": {}}}]
+    b2.tools = real
     early = []
     b2.on_sentence = lambda s, first: early.append(s)
-    asyncio.run(b2.respond("what is on my map", channel="voice"))
+    out2 = asyncio.run(b2.respond("how is Visa", channel="voice"))
     urllib.request.urlopen = keep
-    bad += not check("a turn that may call a tool says nothing early",
-                     not early, str(early))
+    bad += not check(f"a turn with {len(real)} real tools STILL streams",
+                     len(early) == 2, str(early))
+    bad += not check("and returns the whole answer",
+                     bool(out2) and "Nothing to do" in out2, repr(out2))
+
+    # -- 5b. a tool call inside a stream still runs -----------------------
+    class WithTool:
+        def __init__(self):
+            pre = "Let me check that, sir."
+            self.lines = [("data: " + json.dumps(
+                {"choices": [{"delta": {"content": pre[i:i + 6]}}]})).encode()
+                for i in range(0, len(pre), 6)]
+            self.lines.append(("data: " + json.dumps({"choices": [{"delta": {
+                "tool_calls": [{"index": 0, "id": "c1", "function": {
+                    "name": "read_map", "arguments": "{}"}}]}}]})).encode())
+            self.lines.append(b"data: [DONE]")
+
+        def __iter__(self): return iter(self.lines)
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+
+    ran = []
+
+    class Exec(G.FakeExecutor):
+        def run(self, name, args):
+            ran.append(name)
+            return "the map says: Visa, stop 346.81", False
+
+    step = {"n": 0}
+
+    def two_rounds(req, timeout=None):
+        step["n"] += 1
+        return WithTool() if step["n"] == 1 else \
+            G.FakeResponse(G.reply("Stop at 346.81, sir."))
+
+    urllib.request.urlopen = two_rounds
+    b3 = G.make_brain(tmp, models="fast")
+    b3.executor = Exec()
+    b3.tools = [{"name": "read_map", "description": "read it",
+                 "input_schema": {"type": "object", "properties": {}}}]
+    spoke = []
+    b3.on_sentence = lambda s, first: spoke.append(s)
+    out3 = asyncio.run(b3.respond("what does my map say", channel="voice"))
+    urllib.request.urlopen = keep
+    bad += not check("the preamble is spoken while it works",
+                     bool(spoke) and "check that" in spoke[0], str(spoke))
+    bad += not check("the tool call survives the stream", ran == ["read_map"],
+                     str(ran))
+    bad += not check("and the second round answers",
+                     bool(out3) and "346.81" in out3, repr(out3))
+
+    # -- 5c. a provider that cannot stream must not be lost ---------------
+    rec = G.Recorder([G.reply("Checked, sir."), G.reply("Checked, sir.")])
+    urllib.request.urlopen = rec
+    b4 = G.make_brain(tmp, models="fast")
+    b4.tools = real
+    b4.on_sentence = lambda s, first: None
+    out4 = asyncio.run(b4.respond("what is on my map", channel="voice"))
+    urllib.request.urlopen = keep
+    bad += not check("a non-streaming provider still answers",
+                     bool(out4) and "Checked" in out4, repr(out4))
 
     # -- 6. first_words, for when something must be said immediately ------
     bad += not check("first_words cuts at a sentence when it can",

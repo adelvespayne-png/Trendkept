@@ -596,14 +596,21 @@ class Brain:
         return None
 
     async def _stream_gateway(self, model, messages, tools, base, token,
-                              budget) -> Optional[str]:
+                              budget):
         """One turn, streamed, speaking each sentence as it completes.
 
-        Only used when there is somewhere to send the sentences AND no
-        tools are in play. A tool call cannot be acted on until it is
-        fully spelled out, so a turn that might make one has nothing to
-        say while it decides -- and speaking half of a reply that is about
-        to be replaced by a tool result would be worse than waiting.
+        Returns the same shape a non-streaming call returns, so the round
+        loop above does not care which was used.
+
+        This used to refuse to run when tools were attached, on the
+        reasoning that a half-spoken answer might be replaced by a tool
+        result. That was wrong twice over. Practically: a normal turn
+        carries thirteen tools, so the condition was never true and the
+        streaming was dead code -- all of the work, none of the benefit,
+        which is exactly what "it still takes a while" turned out to mean.
+        And conceptually: a model about to call a tool emits no content to
+        speak, or emits a short preamble first. Saying "let me check that"
+        and then answering is how a person handles it, not a failure.
         """
         import asyncio
         import queue
@@ -627,12 +634,14 @@ class Brain:
         # speaker as they land, so the read runs on a thread and hands
         # them over through a queue.
         out: "queue.Queue" = queue.Queue()
+        calls: List[dict] = []
 
         def pump():
             try:
                 with urllib.request.urlopen(
                         req, timeout=self.cfg.gateway_timeout) as r:
-                    for said in sentences(stream_openai(r)):
+                    got = stream_openai(r, on_tool=lambda c: out.put(("calls", c)))
+                    for said in sentences(got):
                         out.put(("say", said))
             except Exception as exc:
                 out.put(("fail", exc))
@@ -649,13 +658,20 @@ class Brain:
                 break
             if kind == "fail":
                 raise payload
+            if kind == "calls":
+                calls.extend(payload)
+                continue
             parts.append(payload)
             if self.on_sentence:
                 try:
                     self.on_sentence(payload, len(parts) == 1)
                 except Exception:
                     LOG.debug("sentence handler failed", exc_info=True)
-        return " ".join(parts).strip() or None
+
+        # Shaped like a normal response so the caller is unchanged.
+        return {"choices": [{"message": {
+            "content": " ".join(parts).strip() or None,
+            "tool_calls": calls or None}}]}
 
     async def _gateway(self, model: str, user_text: str,
                        opening: Optional[str] = None,
@@ -700,6 +716,7 @@ class Brain:
         # and on a tight free tier that is EVERY turn.
         budget = min(self.cfg.max_tokens,
                      self._budgets.get(base, self.cfg.max_tokens))
+        no_stream = False        # set once a provider proves it cannot
         served_by = None
 
         for _round in range(8):
@@ -739,11 +756,24 @@ class Brain:
                     # same time -- it is that the first sentence is spoken
                     # while the fourth is still being written, which is
                     # what a person actually experiences as speed.
-                    if (self.on_sentence and not tools and _round == 0
+                    if (self.on_sentence and _round == 0 and not no_stream
                             and self.cfg.stream_replies):
-                        said = await self._stream_gateway(
-                            model, messages, tools, base, token, budget)
-                        return said, served_by
+                        try:
+                            data = await self._stream_gateway(
+                                model, messages, tools, base, token, budget)
+                            decision = None
+                            break
+                        except Exception as exc:
+                            # Not every endpoint streams, and a provider
+                            # that does not must not lose the whole model
+                            # over it. Fall back to one ordinary request on
+                            # the SAME model rather than stepping down --
+                            # stepping down would trade a working model for
+                            # a worse one to avoid a feature we can simply
+                            # go without.
+                            LOG.warning("%s could not stream (%s); asking "
+                                        "the ordinary way", model, _brief(exc))
+                            no_stream = True
                     data, decision = await asyncio.to_thread(fetch)
                     break
                 except Exception as exc:
