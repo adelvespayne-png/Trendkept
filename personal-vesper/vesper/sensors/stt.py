@@ -144,10 +144,54 @@ class Transcriber:
         import numpy as np
 
         audio = np.frombuffer(pcm, dtype=np.int16).astype(np.float32) / 32768.0
+
+        # LEVEL FIRST. A laptop microphone at default gain often peaks
+        # around a tenth of full scale, and Whisper is measurably worse on
+        # quiet audio -- it is the single most common reason a recogniser
+        # "isn't very good" on a machine where the microphone is fine.
+        # Normalising the peak costs one pass over a few seconds of samples.
+        peak = float(np.max(np.abs(audio))) if audio.size else 0.0
+        if 0.0 < peak < 0.7:
+            audio = audio * (0.85 / peak)
+
         segments, _info = self._model.transcribe(
-            audio, language="en", beam_size=1, vad_filter=True,
+            audio,
+            language="en",
+            # Greedy decoding (beam_size=1) is the fastest and the least
+            # accurate. On a two-second utterance the difference is a few
+            # hundred milliseconds and a noticeably better transcript.
+            beam_size=self.cfg.stt_beam,
+            # Whisper carries context between segments by default, which on
+            # a run of short independent utterances makes it repeat itself
+            # and invent continuations of things you never said.
+            condition_on_previous_text=False,
+            # THE BIG ONE for a made-up name. Whisper has never seen
+            # "Vesper" as an assistant and writes "whisper", "vespa" or
+            # "Vesta" instead. A prompt containing the words you actually
+            # use biases it towards them at no cost.
+            initial_prompt=self._vocabulary(),
+            vad_filter=True,
+            # The default VAD trims too tightly and eats the first
+            # consonant, which is exactly the syllable a wake word starts
+            # with.
+            vad_parameters={"min_silence_duration_ms": 400,
+                            "speech_pad_ms": 200},
         )
         return " ".join(seg.text.strip() for seg in segments).strip()
+
+    def _vocabulary(self) -> str:
+        """Words this particular user says that Whisper would not guess.
+
+        Passed as `initial_prompt`, which biases decoding towards them. The
+        wake phrase belongs here above all -- a recogniser that writes
+        "hello whisper" every time is not a microphone problem.
+        """
+        bits = []
+        if self.cfg.wake_phrase:
+            bits.append(self.cfg.wake_phrase.strip())
+        if self.cfg.stt_vocabulary:
+            bits.append(self.cfg.stt_vocabulary.strip())
+        return ". ".join(b for b in bits if b)
 
 
 class Listener:
@@ -299,16 +343,123 @@ class Listener:
         return text
 
 
+def hearing_test(cfg=CONFIG, rounds: int = 3) -> int:
+    """Is it the microphone or the software? Measure, do not guess.
+
+    Records you saying a known sentence a few times and reports the two
+    things separately:
+
+      * the LEVEL -- how loud you arrive. This is the microphone, its
+        gain, and where you are sitting. Nothing in the code can fix a
+        signal that is not there.
+      * the TRANSCRIPT -- what the recogniser made of it. This is the
+        model, the beam width and the vocabulary, all of which are
+        settings.
+
+    Reporting them together is the point: "it doesn't hear me well" is
+    two completely different problems with two completely different
+    fixes, and they are indistinguishable from the outside.
+    """
+    # Check the microphone BEFORE importing anything, so a machine with
+    # no audio at all gets the useful sentence rather than an ImportError
+    # about a maths library it was never going to need.
+    listener = Listener(cfg)
+    if not listener.available:
+        print("\n  No microphone that Vesper can see, so there is nothing to")
+        print("  measure. Check which inputs exist:")
+        print("      Hearing test aside, run:  vesper.sensors.stt --devices\n")
+        return 1
+    try:
+        import numpy as np
+    except Exception as exc:
+        print(f"\n  numpy is missing ({exc}), so levels cannot be measured.")
+        print("  Run Install Vesper.bat again.\n")
+        return 1
+
+    SAY = "Hello Vesper, what is the weather today"
+    print(f"\n  Say this, clearly, {rounds} times. Wait for each prompt.\n")
+    print(f"      \"{SAY}\"\n")
+
+    levels, texts = [], []
+    for i in range(1, rounds + 1):
+        print(f"  {i}. Speak now...", flush=True)
+        pcm = listener.record(start_window=12.0)
+        if not pcm:
+            print("     heard nothing at all")
+            continue
+        audio = np.frombuffer(pcm, dtype=np.int16).astype(np.float32)
+        peak = float(np.max(np.abs(audio))) / 32768.0
+        rms = float(np.sqrt(np.mean(audio ** 2))) / 32768.0
+        seconds = len(pcm) / FRAME_BYTES * FRAME_MS / 1000
+        said = listener.transcriber.transcribe(pcm)
+        levels.append((peak, rms, seconds))
+        texts.append(said)
+        print(f"     peak {peak:5.1%}  loudness {rms:5.1%}  {seconds:.1f}s")
+        print(f"     heard: {said!r}")
+
+    if not levels:
+        print("\n  Nothing was recorded. The microphone is not picking you up "
+              "at all —\n  check Windows sound settings and that the right "
+              "input is selected.\n")
+        return 1
+
+    print("\n  ── the verdict ──────────────────────────────────────────\n")
+    peak = max(p for p, _r, _s in levels)
+    rms = max(r for _p, r, _s in levels)
+    mic_ok = peak > 0.10 and rms > 0.010
+
+    if not mic_ok:
+        print(f"  MICROPHONE. You are arriving at {peak:.1%} peak, which is "
+              "very quiet.")
+        print("  Windows: Settings > System > Sound > your microphone >")
+        print("  turn the Input volume up, and switch ON any 'Microphone "
+              "Boost'.")
+        print("  Sit closer, or use a headset. No software setting recovers")
+        print("  a signal that is not there.")
+    else:
+        print(f"  The microphone is fine — {peak:.1%} peak is a healthy level.")
+
+    from .heard_phrase import close_enough, normalise
+
+    good = sum(1 for x in texts if close_enough(
+        normalise(x)[:len(SAY)], SAY, 0.4))
+    print(f"\n  The recogniser got {good} of {len(texts)} close to right.")
+    if good < len(texts):
+        print("  If that is poor while the level is fine, it is the SOFTWARE,")
+        print("  and these are the dials, in the order worth trying:")
+        print("    STT_MODEL=small.en   more accurate, about twice as slow")
+        print("    STT_BEAM=5           already on; 1 is the fast, sloppy one")
+        print("    STT_VOCABULARY=...   add names it keeps getting wrong")
+    if cfg.wake_phrase:
+        from .heard_phrase import split_wake
+
+        heard_wake = sum(1 for x in texts
+                         if split_wake(x, cfg.wake_phrase,
+                                       cfg.wake_tolerance)[0])
+        print(f"\n  The wake phrase was recognised {heard_wake} of "
+              f"{len(texts)} times.")
+        if heard_wake < len(texts):
+            print("  Raise WAKE_TOLERANCE (0.34 now, try 0.45) to forgive "
+                  "more.")
+    print()
+    return 0 if mic_ok else 1
+
+
 def main(argv=None) -> int:
     import argparse
 
     p = argparse.ArgumentParser(description="Microphone and transcription check.")
     p.add_argument("--devices", action="store_true",
                    help="list the microphones this machine can see")
+    p.add_argument("--hearing", action="store_true",
+                   help="is it the microphone or the software? measures both")
     p.add_argument("--level", action="store_true",
                    help="check the microphone actually hears you (no models)")
     args = p.parse_args(argv)
     setup_logging(CONFIG.log_level)
+
+    if args.hearing:
+        return hearing_test()
 
     if args.devices:
         mic = Microphone()

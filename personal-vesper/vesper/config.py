@@ -434,7 +434,20 @@ class Config:
         default_factory=lambda: os.environ.get("PORCUPINE_KEYWORD", ""))
 
     stt_enabled: bool = field(default_factory=lambda: _bool("STT_ENABLED", True))
+    # base.en is the fast one. small.en is noticeably more accurate and
+    # takes maybe twice as long on a short clip -- worth it on a machine
+    # like the T480s, and the first thing to try if transcripts are poor.
     stt_model: str = field(default_factory=lambda: os.environ.get("STT_MODEL", "base.en"))
+    # How hard it works to decode. 1 is greedy: fastest, least accurate.
+    # 5 is Whisper's own default and measurably better on short speech.
+    stt_beam: int = field(default_factory=lambda: _int("STT_BEAM", 5))
+    # Words you say that Whisper would not guess — names, tickers, jargon.
+    # The wake phrase is added automatically. This is the cheapest accuracy
+    # win available: a recogniser that has never heard of "Vesper" writes
+    # "whisper" every time, and no microphone fixes that.
+    stt_vocabulary: str = field(default_factory=lambda: os.environ.get(
+        "STT_VOCABULARY",
+        "Vesper. Trendkept. R-multiple. AAPL, NVDA, MSFT, Visa, SPY."))
     stt_device: str = field(default_factory=lambda: os.environ.get("STT_DEVICE", "cpu"))
     stt_compute_type: str = field(
         default_factory=lambda: os.environ.get("STT_COMPUTE_TYPE", "int8"))
