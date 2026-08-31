@@ -23,6 +23,7 @@ broker instead of your nerves.">
 <meta name="twitter:title" content="Trendkept — trade the trend. Follow the rules.">
 <meta name="twitter:description" content="Follow your own trading rules — sized by risk, stop-loss on every order, scored honestly. No predictions.">
 <meta name="twitter:image" content="https://trendkept.com/og.png">
+<meta name="theme-color" content="#171717">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -37,7 +38,7 @@ broker instead of your nerves.">
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;650;750&family=Space+Grotesk:wght@500;700&display=swap"
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap"
       rel="stylesheet">
 <script>
   /* Apply the visitor's saved look before first paint (no theme flash). */
@@ -54,693 +55,819 @@ broker instead of your nerves.">
   })();
 </script>
 <style>
+  /* ---- Design tokens: Mesh Operations Center -------------------------
+     Dark is the designed mode. Light stays available because the
+     appearance panel is a real product feature that also runs through
+     the dashboard — but every role (bg / surface / text / border) keeps
+     the same contrast relationship in both. */
   :root {
-    --accent-l: #2a78d6; --accent-d: #4a90e8;   /* blue (default) */
-    --fs: 16px;
+    --bg:#171717; --surface:#18181B; --surface-2:#1F1F23; --surface-3:#232327;
+    --border:#27272A; --border-hi:#3A3A40;
+    --text:#FFFFFF; --muted:#A1A1AA; --dim:#71717A;
+    --accent:#3B82F6; --accent-hi:#60A5FA; --accent-dim:rgba(59,130,246,.12);
+    --pos:#34D399; --neg:#F87171; --warn:#FBBF24;
+    --r-card:11px; --r-ctl:11px; --r-pill:9999px;
+    --base:8px; --gap:16px; --pad:24px; --sec:80px;
+    --fs:16px;
+    --maxw:1180px;
+    --ease:cubic-bezier(.22,.61,.36,1);
   }
-  :root[data-accent="aqua"]    { --accent-l: #1baf7a; --accent-d: #2cc98f; }
-  :root[data-accent="violet"]  { --accent-l: #4a3aa7; --accent-d: #9085e9; }
-  :root[data-accent="orange"]  { --accent-l: #eb6834; --accent-d: #f0824f; }
-  :root[data-accent="magenta"] { --accent-l: #e87ba4; --accent-d: #ef92b4; }
-  :root[data-font="small"] { --fs: 14px; }
-  :root[data-font="large"] { --fs: 18px; }
-  :root {
-    --surface: #ffffff; --page: #f6f7f9; --chip: #edf0f4;
-    --ink: #0e1116; --ink-2: #49525e; --muted: #8a93a0;
-    --ring: rgba(14,17,22,0.10); --accent: var(--accent-l);
-    --ok: #158a60; --bad: #c04f5e;
-    --glow: color-mix(in srgb, var(--accent) 14%, transparent);
-    --shadow: 0 1px 2px rgba(14,17,22,.05), 0 12px 36px rgba(14,17,22,.08);
+  :root[data-theme="light"] {
+    --bg:#FFFFFF; --surface:#FAFAFA; --surface-2:#F4F4F5; --surface-3:#EFEFF1;
+    --border:#E4E4E7; --border-hi:#D4D4D8;
+    --text:#111113; --muted:#52525B; --dim:#71717A;
+    --accent-dim:rgba(59,130,246,.09);
   }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --surface: #14161b; --page: #0a0c10; --chip: #1d2027;
-      --ink: #f3f5f8; --ink-2: #b6bdc8; --muted: #79818e;
-      --ring: rgba(255,255,255,0.09); --accent: var(--accent-d);
-      --ok: #35c28c; --bad: #e0798a;
-      --glow: color-mix(in srgb, var(--accent) 17%, transparent);
-      --shadow: 0 1px 2px rgba(0,0,0,.45), 0 14px 40px rgba(0,0,0,.4);
+  :root[data-accent="aqua"]    { --accent:#10B981; --accent-hi:#34D399; --accent-dim:rgba(16,185,129,.12); }
+  :root[data-accent="violet"]  { --accent:#8B5CF6; --accent-hi:#A78BFA; --accent-dim:rgba(139,92,246,.12); }
+  :root[data-accent="orange"]  { --accent:#F97316; --accent-hi:#FB923C; --accent-dim:rgba(249,115,22,.12); }
+  :root[data-accent="magenta"] { --accent:#EC4899; --accent-hi:#F472B6; --accent-dim:rgba(236,72,153,.12); }
+  :root[data-font="small"] { --fs:15px; }
+  :root[data-font="large"] { --fs:17.5px; }
+
+  *, *::before, *::after { box-sizing:border-box; }
+  html { scroll-behavior:smooth; -webkit-text-size-adjust:100%; }
+  @media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
+  body {
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size:var(--fs); line-height:1.6; font-weight:400;
+    -webkit-font-smoothing:antialiased; overflow-x:hidden;
+  }
+  img, svg { max-width:100%; }
+  a { color:var(--accent-hi); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:3px; border-radius:4px; }
+
+  .wrap { width:100%; max-width:var(--maxw); margin:0 auto; padding:0 24px; }
+  section { padding:var(--sec) 0; position:relative; }
+  @media (max-width:720px){ :root{ --sec:56px; } }
+
+  /* ---- type ---- */
+  .display {
+    font-size:clamp(38px, 7.2vw, 64px); font-weight:500; line-height:1.04;
+    letter-spacing:0; margin:0;
+  }
+  h2 { font-size:clamp(26px, 3.6vw, 38px); font-weight:600; line-height:1.14;
+       letter-spacing:-.01em; margin:0 0 12px; }
+  h3 { font-size:17px; font-weight:600; line-height:1.3; margin:0 0 8px; }
+  p  { margin:0 0 12px; color:var(--muted); }
+  .lede { font-size:clamp(16px,1.35vw,18px); color:var(--muted); max-width:62ch; }
+  .label, .mono {
+    font-family:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  .label {
+    font-size:12px; font-weight:600; line-height:1.2; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--dim);
+  }
+  .label .n { color:var(--accent); }
+  .secHead { display:flex; flex-direction:column; gap:10px; margin-bottom:40px; }
+
+  /* ---- nav ---- */
+  header.nav {
+    position:sticky; top:0; z-index:60;
+    background:var(--bg);                       /* fallback */
+    border-bottom:1px solid var(--border);
+  }
+  @supports (background:color-mix(in srgb, red 50%, transparent)) {
+    header.nav {
+      background:color-mix(in srgb, var(--bg) 88%, transparent);
+      backdrop-filter:blur(12px);
     }
   }
-  :root[data-theme="dark"] {
-    --surface: #14161b; --page: #0a0c10; --chip: #1d2027;
-    --ink: #f3f5f8; --ink-2: #b6bdc8; --muted: #79818e;
-    --ring: rgba(255,255,255,0.09); --accent: var(--accent-d);
-    --ok: #35c28c; --bad: #e0798a;
-    --glow: color-mix(in srgb, var(--accent) 17%, transparent);
-    --shadow: 0 1px 2px rgba(0,0,0,.45), 0 14px 40px rgba(0,0,0,.4);
+  .navIn { display:flex; align-items:center; gap:20px; height:60px; }
+  .brand { display:flex; align-items:center; gap:9px; font-weight:600;
+           color:var(--text); letter-spacing:-.01em; }
+  .brand:hover { text-decoration:none; }
+  .dot { width:7px; height:7px; border-radius:50%; background:var(--accent);
+         box-shadow:0 0 0 3px var(--accent-dim); flex:none; }
+  .navLinks { display:flex; gap:22px; margin-left:auto; }
+  .navLinks a { color:var(--muted); font-size:14px; }
+  .navLinks a:hover { color:var(--text); text-decoration:none; }
+  .navCta {
+    background:var(--accent); color:#fff; padding:8px 15px;
+    border-radius:var(--r-ctl); font-size:14px; font-weight:600;
+    white-space:nowrap; transition:background .18s var(--ease);
   }
-  * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
-  body { margin: 0; background: var(--page); color: var(--ink);
-    font: var(--fs)/1.65 Inter, system-ui, -apple-system, sans-serif;
-    position: relative; }
-  h1, h2, .price, .stat b { font-family: "Space Grotesk", Inter, system-ui,
-    sans-serif; }
+  .navCta:hover { background:var(--accent-hi); text-decoration:none; }
+  @media (max-width:900px){ .navLinks{ display:none; } .navCta{ margin-left:auto; } }
 
-  /* ---------- motion ---------- */
-  .rv { opacity: 0; transform: translateY(18px);
-    transition: opacity .6s ease, transform .6s ease; }
-  .rv.in { opacity: 1; transform: none; }
-  @media (prefers-reduced-motion: reduce) {
-    .rv { opacity: 1; transform: none; transition: none; }
-    .tape-in { animation: none !important; }
-    .draw { animation: none !important; stroke-dasharray: none !important; }
+  /* ---- hero ---- */
+  .hero { padding-top:64px; padding-bottom:64px; }
+  .heroGrid { display:grid; grid-template-columns:1.05fr .95fr; gap:56px; align-items:start; }
+  @media (max-width:960px){ .heroGrid{ grid-template-columns:1fr; gap:40px; } }
+  .pill {
+    display:inline-flex; align-items:center; gap:8px; padding:6px 13px;
+    border:1px solid var(--border); border-radius:var(--r-pill);
+    background:var(--surface); font-size:12.5px; color:var(--muted);
+    margin-bottom:22px;
   }
+  .pill b { color:var(--text); font-weight:600; }
+  .heroSub { margin:20px 0 26px; }
 
-  /* ---------- top nav ---------- */
-  .nav { position: sticky; top: 0; z-index: 50;
-    background: color-mix(in srgb, var(--page) 80%, transparent);
-    backdrop-filter: blur(12px); border-bottom: 1px solid var(--ring); }
-  .nav-in { max-width: 1100px; margin: 0 auto; padding: 11px 20px;
-    display: flex; align-items: center; gap: 18px; }
-  .nav .mark { display: flex; align-items: center; gap: 10px;
-    font-weight: 750; text-decoration: none; color: var(--ink);
-    letter-spacing: -0.01em; font-family: "Space Grotesk", sans-serif; }
-  .nav .mark img { width: 28px; height: 28px; border-radius: 7px; }
-  .nav .links { margin-left: auto; display: flex; gap: 2px; align-items: center;
-    flex-wrap: wrap; }
-  .nav .links a { color: var(--ink-2); text-decoration: none; font-size: 14.5px;
-    padding: 7px 11px; border-radius: 8px; }
-  .nav .links a:hover { background: var(--chip); color: var(--ink); }
-  .nav .links a.cta { color: #fff; background: var(--accent); font-weight: 650;
-    margin-left: 6px; }
-  .nav .links a.cta:hover { filter: brightness(1.08); }
-
-  main { max-width: 1100px; margin: 0 auto; padding: 0 20px 90px; }
-
-  /* ---------- hero ---------- */
-  .heroWrap { position: relative; }
-  .heroWrap::before { content: ""; position: absolute; inset: -80px -40vw auto;
-    height: 640px; z-index: -1; pointer-events: none;
-    background:
-      radial-gradient(760px 380px at 22% 8%, var(--glow), transparent 70%),
-      radial-gradient(600px 320px at 88% 2%,
-        color-mix(in srgb, var(--accent) 9%, transparent), transparent 70%);
+  .signup { display:flex; gap:10px; max-width:470px; flex-wrap:wrap; }
+  .signup input {
+    flex:1 1 210px; min-width:0; padding:13px 15px; font:inherit; font-size:15px;
+    background:var(--surface); color:var(--text);
+    border:1px solid var(--border); border-radius:var(--r-ctl);
+    transition:border-color .18s var(--ease);
   }
-  .hero { display: grid; grid-template-columns: 1fr 0.95fr; gap: 48px;
-    align-items: center; padding: 72px 0 26px; }
-  @media (max-width: 940px) { .hero { grid-template-columns: 1fr;
-    padding-top: 44px; gap: 36px; } }
-  .kicker { display: inline-flex; align-items: center; gap: 8px;
-    font-size: 13px; font-weight: 650; color: var(--accent);
-    background: color-mix(in srgb, var(--accent) 10%, transparent);
-    border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
-    padding: 6px 14px; border-radius: 999px; }
-  h1 { font-size: clamp(38px, 5.6vw, 58px); line-height: 1.04;
-    margin: 20px 0 16px; letter-spacing: -0.03em; font-weight: 700; }
-  h1 em { font-style: normal; color: var(--accent); }
-  .sub { font-size: 18.5px; color: var(--ink-2); max-width: 32em; margin: 0; }
-  .hero-ctas { margin-top: 28px; display: flex; gap: 12px; flex-wrap: wrap; }
-  .hero-signup { margin-top: 26px; max-width: 460px; }
-  .cta, button.cta { display: inline-block; background: var(--accent);
-    color: #fff; font-weight: 650; text-decoration: none; border: 0;
-    border-radius: 11px; padding: 14px 26px; font-size: 16px; cursor: pointer;
-    transition: filter .15s, transform .15s, box-shadow .15s;
-    box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent); }
-  .cta:hover { filter: brightness(1.08); transform: translateY(-1px); }
-  .cta.ghost { background: transparent; color: var(--accent);
-    border: 1.5px solid var(--accent); box-shadow: none; }
-  .badges { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 22px; }
-  .badge { font-size: 13px; color: var(--ink-2); background: var(--surface);
-    border: 1px solid var(--ring); padding: 6px 12px; border-radius: 999px;
-    display: inline-flex; align-items: center; gap: 7px; }
-  .badge.lock { color: var(--accent); font-weight: 650;
-    border-color: color-mix(in srgb, var(--accent) 40%, var(--ring));
-    background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
-  .heroNote { margin-top: 16px; font-size: 13.5px; color: var(--muted);
-    max-width: 36em; }
+  .signup input::placeholder { color:var(--dim); }
+  .signup input:focus { border-color:var(--accent); outline:none; }
+  .cta {
+    padding:13px 21px; font:inherit; font-size:15px; font-weight:600;
+    background:var(--accent); color:#fff; border:1px solid var(--accent);
+    border-radius:var(--r-ctl); cursor:pointer; white-space:nowrap;
+    transition:background .18s var(--ease), transform .18s var(--ease);
+  }
+  .cta:hover { background:var(--accent-hi); border-color:var(--accent-hi); transform:translateY(-1px); }
+  .fine { font-size:12.5px; color:var(--dim); margin:10px 0 0; }
+  .fine b { color:var(--muted); font-weight:600; }
 
-  /* layered product cards */
-  .stack { position: relative; min-height: 430px; }
-  .panel { background: var(--surface); border: 1px solid var(--ring);
-    border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; }
-  .panel .bar { display: flex; gap: 6px; padding: 10px 14px;
-    border-bottom: 1px solid var(--ring); align-items: center; }
-  .panel .bar i { width: 9px; height: 9px; border-radius: 50%;
-    background: var(--chip); display: block; }
-  .panel .bar span { margin-left: 8px; font-size: 12px; color: var(--muted); }
-  .p-back { position: absolute; top: 0; right: 6px; left: 40px;
-    transform: rotate(2.2deg); opacity: .85; }
-  .p-front { position: relative; margin-top: 62px; max-width: 92%;
-    transform: rotate(-1.3deg); }
-  @media (max-width: 940px) { .p-front { max-width: 100%; } }
-  .panel .body { padding: 14px 16px 16px; }
-  .panel table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-  .panel th { text-align: left; font-size: 10.5px; text-transform: uppercase;
-    letter-spacing: .07em; color: var(--muted); padding: 3px 8px; }
-  .panel td { padding: 7px 8px; border-top: 1px solid var(--ring); }
-  .panel .ok { color: var(--ok); font-weight: 600; }
-  .panel .bad { color: var(--bad); }
-  .panel .quiet { color: var(--muted); }
-  .panel svg { width: 100%; height: auto; display: block; margin-top: 8px; }
-  .draw { stroke-dasharray: 1400; stroke-dashoffset: 1400;
-    animation: draw 1.8s ease-out .3s forwards; }
-  @keyframes draw { to { stroke-dashoffset: 0; } }
-  .jrow { display: flex; justify-content: space-between; font-size: 13px;
-    padding: 7px 8px; border-top: 1px solid var(--ring); }
-  .jrow:first-of-type { border-top: 0; }
-  .jrow .r-neg { color: var(--bad); font-weight: 650; }
-  .jrow .r-open { color: var(--muted); }
+  .badges { display:flex; flex-wrap:wrap; gap:8px; margin:22px 0 0; }
+  .badge {
+    display:inline-flex; align-items:center; gap:6px; padding:5px 11px;
+    border:1px solid var(--border); border-radius:var(--r-pill);
+    background:var(--surface); font-size:12px; color:var(--muted);
+  }
+  .badge.lock { color:var(--text); border-color:var(--border-hi); }
+  .badge.lock svg { color:var(--accent); }
+  .heroNote { font-size:13px; color:var(--dim); margin-top:20px; max-width:52ch; }
 
-  /* ---------- ticker tape ---------- */
-  .tape { overflow: hidden; border-block: 1px solid var(--ring);
-    margin-top: 30px; -webkit-mask-image: linear-gradient(90deg, transparent,
-    #000 6%, #000 94%, transparent); mask-image: linear-gradient(90deg,
-    transparent, #000 6%, #000 94%, transparent); }
-  .tape-in { display: flex; gap: 34px; width: max-content;
-    padding: 12px 0; animation: tape 46s linear infinite; }
-  @keyframes tape { to { transform: translateX(-50%); } }
-  .t { display: inline-flex; gap: 8px; align-items: baseline;
-    font-size: 13.5px; white-space: nowrap; }
-  .t b { font-weight: 700; }
-  .t .s-ok { color: var(--ok); }
-  .t .s-bad { color: var(--bad); }
-  .t .s-q { color: var(--muted); }
-  .tapeCap { text-align: center; font-size: 12px; color: var(--muted);
-    margin-top: 8px; }
+  /* ---- panel (the focal object) ---- */
+  .panel {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--r-card); overflow:hidden;
+  }
+  .panelHead {
+    display:flex; align-items:center; gap:10px; padding:13px var(--pad);
+    border-bottom:1px solid var(--border); background:var(--surface-2);
+  }
+  .live { display:inline-flex; align-items:center; gap:7px; margin-left:auto;
+          font-size:11px; letter-spacing:.08em; color:var(--dim); }
+  .live i { width:6px; height:6px; border-radius:50%; background:var(--pos);
+            display:block; animation:pulse 2.4s var(--ease) infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+  @media (prefers-reduced-motion:reduce){ .live i{ animation:none; } }
 
-  /* ---------- stat band ---------- */
-  .stats { display: grid; grid-template-columns: repeat(auto-fit,
-    minmax(150px, 1fr)); gap: 14px; margin: 44px 0 0; }
-  .stat { background: var(--surface); border: 1px solid var(--ring);
-    border-radius: 14px; padding: 18px 20px; text-align: center;
-    box-shadow: var(--shadow); }
-  .stat b { display: block; font-size: 32px; letter-spacing: -0.02em;
-    color: var(--accent); }
-  .stat span { font-size: 13px; color: var(--ink-2); }
+  .rows { display:grid; }
+  .row {
+    display:grid; grid-template-columns:30px minmax(0,1fr) auto auto; gap:12px;
+    align-items:center; padding:14px var(--pad);
+    border-bottom:1px solid var(--border);
+  }
+  .rowHead { background:var(--surface-2); padding-block:9px; }
+  .rowHead .hcell { font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+                    color:var(--dim); }
+  .num2 { font-variant-numeric:tabular-nums; }
+  @media (max-width:420px){
+    .row { grid-template-columns:24px minmax(0,1fr) auto; gap:9px; padding-inline:16px; }
+    .row .num2 { display:none; }
+  }
+  .row:last-child { border-bottom:0; }
+  .row .num { font-size:11px; color:var(--dim); letter-spacing:.06em; }
+  .row .k { font-size:13.5px; color:var(--text); font-weight:500; }
+  .row .s { font-size:12px; color:var(--muted); margin-top:2px; }
+  .row .v { font-size:13px; text-align:right; white-space:nowrap; }
+  .v.pos { color:var(--pos); } .v.neg { color:var(--neg); }
+  .v.mut { color:var(--muted); }
+  .tag {
+    display:inline-block; padding:3px 9px; border-radius:var(--r-pill);
+    font-size:11px; letter-spacing:.04em; border:1px solid var(--border-hi);
+    color:var(--muted); background:var(--surface-2);
+  }
+  .tag.on { color:var(--accent-hi); border-color:var(--accent);
+            background:var(--accent-dim); }
+  .tag.off { color:var(--dim); }
+  .panelFoot { padding:13px var(--pad); font-size:12px; color:var(--dim);
+               background:var(--surface-2); border-top:1px solid var(--border); }
 
-  /* ---------- shared ---------- */
-  section { padding-top: 8px; }
-  .eyebrow { font-size: 12.5px; font-weight: 700; letter-spacing: .12em;
-    text-transform: uppercase; color: var(--accent); margin: 72px 0 4px; }
-  h2 { font-size: clamp(26px, 3.2vw, 34px); letter-spacing: -0.02em;
-    margin: 0 0 8px; font-weight: 700; }
-  .lead { color: var(--ink-2); max-width: 46em; margin-top: 4px; }
-  .card { background: var(--surface); border: 1px solid var(--ring);
-    border-radius: 16px; padding: 24px 26px; margin: 18px 0;
-    box-shadow: var(--shadow); }
-  .grid3 { display: grid; gap: 16px;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
-  .step { background: var(--surface); border: 1px solid var(--ring);
-    border-radius: 16px; padding: 22px; box-shadow: var(--shadow);
-    transition: transform .2s, border-color .2s; }
-  .step:hover { transform: translateY(-3px); border-color:
-    color-mix(in srgb, var(--accent) 40%, var(--ring)); }
-  .step .ico { width: 42px; height: 42px; border-radius: 11px;
-    background: color-mix(in srgb, var(--accent) 12%, transparent);
-    color: var(--accent); display: flex; align-items: center;
-    justify-content: center; margin-bottom: 13px; }
-  .step b { font-size: 16.5px; }
-  .step p { color: var(--ink-2); font-size: 14.5px; margin: 6px 0 0; }
+  /* ---- ticker tape ---- */
+  .tape { border-block:1px solid var(--border); background:var(--surface);
+          overflow:hidden; padding:11px 0; }
+  .tapeTrack { display:flex; gap:34px; width:max-content;
+               animation:slide 62s linear infinite; }
+  @keyframes slide { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+  @media (prefers-reduced-motion:reduce){ .tapeTrack{ animation:none; } }
+  .tick { display:inline-flex; align-items:center; gap:8px; font-size:12px;
+          color:var(--dim); white-space:nowrap; }
+  .tick b { color:var(--text); font-weight:600; letter-spacing:.04em; }
+  .tick .up { color:var(--pos); }
 
-  .rules { padding: 0; list-style: none; counter-reset: rule; display: grid;
-    gap: 12px; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
-    margin-top: 18px; }
-  .rules li { counter-increment: rule; background: var(--surface);
-    border: 1px solid var(--ring); border-radius: 16px; padding: 20px 20px
-    20px 64px; position: relative; box-shadow: var(--shadow); }
-  .rules li::before { content: counter(rule); position: absolute; left: 20px;
-    top: 20px; width: 30px; height: 30px; border-radius: 10px;
-    background: var(--accent); color: #fff; font-weight: 750; font-size: 15px;
-    display: flex; align-items: center; justify-content: center;
-    font-family: "Space Grotesk", sans-serif; }
-  .rules b { display: block; margin-bottom: 2px; }
-  .rules li p { margin: 0; color: var(--ink-2); font-size: 14.5px; }
+  /* ---- metrics ---- */
+  .metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:var(--gap); }
+  @media (max-width:760px){ .metrics{ grid-template-columns:repeat(2,1fr); } }
+  .metric { background:var(--surface); border:1px solid var(--border);
+            border-radius:var(--r-card); padding:var(--pad); }
+  .metric .big { font-size:34px; font-weight:600; line-height:1.05;
+                 letter-spacing:-.02em; color:var(--text); }
+  .metric .cap { font-size:12.5px; color:var(--muted); margin-top:7px; }
 
-  pre { background: var(--surface); border: 1px solid var(--ring);
-    border-radius: 14px; padding: 18px; overflow-x: auto; font-size: 13.5px;
-    line-height: 1.55; }
-  code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
-  .honest { border-left: 3px solid var(--accent); padding-left: 18px;
-    color: var(--ink-2); }
+  /* ---- cards ---- */
+  .grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--gap); }
+  .grid2 { display:grid; grid-template-columns:repeat(2,1fr); gap:var(--gap); }
+  .grid4 { display:grid; grid-template-columns:repeat(4,1fr); gap:var(--gap); }
+  @media (max-width:900px){ .grid3,.grid4{ grid-template-columns:repeat(2,1fr);} }
+  @media (max-width:640px){ .grid2,.grid3,.grid4{ grid-template-columns:1fr; } }
+  .card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--r-card); padding:var(--pad);
+    transition:border-color .2s var(--ease), transform .2s var(--ease);
+  }
+  .card:hover { border-color:var(--border-hi); transform:translateY(-2px); }
+  .card p:last-child { margin-bottom:0; }
+  .card .idx { font-size:11px; color:var(--accent); letter-spacing:.1em;
+               display:block; margin-bottom:14px; }
+  a.card { color:inherit; display:block; }
+  a.card:hover { text-decoration:none; border-color:var(--accent); }
+  a.card .go { color:var(--accent-hi); font-size:13px; font-weight:600; }
+  .card.hi { border-color:var(--accent); background:
+             linear-gradient(180deg, var(--accent-dim), transparent 60%), var(--surface); }
 
-  /* build log */
-  .log { list-style: none; padding: 0; margin: 18px 0 0; position: relative; }
-  .log::before { content: ""; position: absolute; left: 7px; top: 6px;
-    bottom: 6px; width: 2px; background: var(--ring); }
-  .log li { position: relative; padding: 0 0 18px 32px; color: var(--ink-2);
-    font-size: 15px; }
-  .log li::before { content: ""; position: absolute; left: 0; top: 6px;
-    width: 12px; height: 12px; border-radius: 50%; background: var(--accent);
-    border: 3px solid var(--page); }
-  .log b { color: var(--ink); }
-  .log time { display: block; font-size: 12px; color: var(--muted);
-    letter-spacing: .04em; text-transform: uppercase; }
+  /* ---- rules list ---- */
+  .rules { display:grid; gap:var(--gap); counter-reset:rule; }
+  .rule {
+    display:grid; grid-template-columns:44px 1fr; gap:18px;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--r-card); padding:var(--pad);
+    transition:border-color .2s var(--ease);
+  }
+  .rule:hover { border-color:var(--border-hi); }
+  .rule::before {
+    counter-increment:rule; content:"0" counter(rule);
+    font-family:"JetBrains Mono", ui-monospace, monospace;
+    font-size:12px; font-weight:700; color:var(--accent);
+    letter-spacing:.06em; padding-top:2px;
+  }
+  .rule b { color:var(--text); font-weight:600; }
+  .rule p { margin:0; }
+  @media (max-width:520px){ .rule{ grid-template-columns:34px 1fr; gap:12px; } }
 
-  .tiers { display: grid; gap: 16px; margin-top: 18px;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
-  .tier { background: var(--surface); border: 1px solid var(--ring);
-    border-radius: 18px; padding: 26px; display: flex; flex-direction: column;
-    box-shadow: var(--shadow); }
-  .tier.featured { border-color: var(--accent); border-width: 2px;
-    position: relative; }
-  .tier.featured::before { content: "Coming — join the list";
-    position: absolute; top: -11px; left: 22px; background: var(--accent);
-    color: #fff; font-size: 11.5px; font-weight: 700; padding: 3px 11px;
-    border-radius: 999px; letter-spacing: .03em; }
-  .tier .name { font-weight: 750; }
-  .tier .price { font-size: 34px; font-weight: 700; margin: 8px 0 2px;
-    letter-spacing: -0.02em; }
-  .tier .per { color: var(--muted); font-size: 13px; }
-  .tier ul { padding-left: 18px; margin: 14px 0 20px; color: var(--ink-2);
-    font-size: 14.5px; flex: 1; }
-  .tier li { margin: 6px 0; }
+  /* ---- terminal ---- */
+  .term {
+    background:#0E0E10; border:1px solid var(--border);
+    border-radius:var(--r-card); overflow:hidden;
+  }
+  :root[data-theme="light"] .term { background:#18181B; }
+  .termHead { display:flex; align-items:center; gap:7px; padding:11px 16px;
+              border-bottom:1px solid #27272A; }
+  .termHead i { width:10px; height:10px; border-radius:50%; background:#3F3F46; display:block; }
+  .termHead span { margin-left:8px; font-size:11.5px; color:#71717A;
+                   font-family:"JetBrains Mono", ui-monospace, monospace; }
+  .term pre {
+    margin:0; padding:18px 16px; overflow-x:auto; font-size:12.5px; line-height:1.75;
+    font-family:"JetBrains Mono", ui-monospace, monospace; color:#D4D4D8;
+  }
+  .term .c { color:#3F8F5F; }
+  .term .a { color:#60A5FA; }
+  .term .m { color:#71717A; }
 
-  form.signup { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
-  form.signup input { flex: 1; min-width: 220px; padding: 14px 16px;
-    font: inherit; border: 1px solid var(--ring); border-radius: 11px;
-    background: var(--page); color: var(--ink); }
-  .fine { color: var(--muted); font-size: 13px; }
+  /* ---- timeline ---- */
+  .tl { display:grid; gap:0; }
+  .tlItem { display:grid; grid-template-columns:118px 1fr; gap:22px;
+            padding:20px 0; border-bottom:1px solid var(--border); }
+  .tlItem:last-child { border-bottom:0; }
+  .tlItem .when { font-size:11.5px; color:var(--dim); letter-spacing:.06em;
+                  padding-top:2px; }
+  .tlItem b { color:var(--text); font-weight:600; }
+  @media (max-width:620px){ .tlItem{ grid-template-columns:1fr; gap:6px; } }
 
-  details.faq { background: var(--surface); border: 1px solid var(--ring);
-    border-radius: 13px; padding: 15px 19px; margin: 10px 0; }
-  details.faq summary { cursor: pointer; font-weight: 650; }
-  details.faq p { color: var(--ink-2); margin: 10px 0 2px; font-size: 15px; }
+  /* ---- pricing ---- */
+  .price { font-size:38px; font-weight:600; letter-spacing:-.02em; color:var(--text); }
+  .price small { font-size:14px; font-weight:400; color:var(--muted); }
+  .plan ul { list-style:none; margin:18px 0; padding:0; display:grid; gap:10px; }
+  .plan li { display:grid; grid-template-columns:18px 1fr; gap:9px;
+             font-size:14px; color:var(--muted); }
+  .plan li svg { color:var(--accent); margin-top:4px; }
+  .btn {
+    display:inline-block; padding:12px 20px; border-radius:var(--r-ctl);
+    font-size:14.5px; font-weight:600; text-align:center; width:100%;
+    border:1px solid var(--border-hi); color:var(--text); background:var(--surface-2);
+    transition:border-color .18s var(--ease), background .18s var(--ease);
+  }
+  .btn:hover { border-color:var(--accent); text-decoration:none; }
+  .btn.solid { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .btn.solid:hover { background:var(--accent-hi); border-color:var(--accent-hi); }
 
-  footer { margin-top: 88px; padding-top: 26px;
-    border-top: 1px solid var(--ring); color: var(--muted); font-size: 13px; }
-  footer .cols { display: flex; gap: 24px; flex-wrap: wrap;
-    justify-content: space-between; margin-bottom: 14px; }
-  a { color: var(--accent); }
+  /* ---- faq ---- */
+  .faq { background:var(--surface); border:1px solid var(--border);
+         border-radius:var(--r-card); margin-bottom:10px; overflow:hidden; }
+  .faq summary {
+    cursor:pointer; padding:17px var(--pad); font-weight:600; font-size:15px;
+    color:var(--text); list-style:none; display:flex; align-items:center; gap:12px;
+  }
+  .faq summary::-webkit-details-marker { display:none; }
+  .faq summary::after {
+    content:"+"; margin-left:auto; color:var(--accent); font-size:19px;
+    font-weight:400; line-height:1; transition:transform .2s var(--ease);
+  }
+  .faq[open] summary::after { transform:rotate(45deg); }
+  .faq p { padding:0 var(--pad) 19px; margin:0; }
+  .faq p + p { padding-top:0; }
 
-  .appearance { display: flex; flex-wrap: wrap; gap: 12px; align-items: end;
-    margin: 44px 0 0; padding: 14px 16px; background: var(--surface);
-    border: 1px solid var(--ring); border-radius: 13px; }
-  .appearance label { display: flex; flex-direction: column; gap: 4px;
-    font-size: 12px; color: var(--ink-2); }
-  .appearance select { background: var(--page); color: var(--ink);
-    border: 1px solid var(--ring); border-radius: 8px; padding: 7px 9px;
-    font: inherit; font-size: 14px; }
-  .appearance .hint { flex-basis: 100%; margin: 0; color: var(--muted);
-    font-size: 12px; }
+  /* ---- appearance ---- */
+  .appear { display:flex; flex-wrap:wrap; gap:22px; align-items:flex-end; }
+  .fieldset { display:grid; gap:7px; }
+  .fieldset .label { color:var(--muted); }
+  .segs { display:flex; gap:6px; flex-wrap:wrap; }
+  .seg {
+    padding:7px 13px; font:inherit; font-size:13px; cursor:pointer;
+    background:var(--surface-2); color:var(--muted);
+    border:1px solid var(--border); border-radius:var(--r-ctl);
+    transition:all .16s var(--ease);
+  }
+  .seg:hover { border-color:var(--border-hi); color:var(--text); }
+  .seg[aria-pressed="true"] { background:var(--accent-dim); border-color:var(--accent);
+                              color:var(--accent-hi); }
+
+  /* ---- footer ---- */
+  footer { border-top:1px solid var(--border); padding:44px 0 56px;
+           background:var(--surface); }
+  footer .fLinks { display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+                   font-size:14px; color:var(--muted); margin:10px 0 20px; }
+  .disc { font-size:12.5px; color:var(--dim); max-width:78ch; line-height:1.65; }
+  .disc b { color:var(--muted); font-weight:600; }
+
+  /* ---- reveal ---- */
+  .rv { opacity:0; transform:translateY(14px);
+        transition:opacity .6s var(--ease), transform .6s var(--ease);
+        transition-delay:calc(var(--i,0) * 70ms); }
+  .rv.in { opacity:1; transform:none; }
+  @media (prefers-reduced-motion:reduce){
+    .rv { opacity:1; transform:none; transition:none; }
+    .card:hover, .cta:hover { transform:none; }
+  }
+  .skip { position:absolute; left:-9999px; }
+  .skip:focus { left:16px; top:12px; z-index:99; background:var(--accent);
+                color:#fff; padding:9px 15px; border-radius:var(--r-ctl); }
 </style>
 </head>
 <body>
+<a class="skip" href="#main">Skip to content</a>
 
-<nav class="nav">
-  <div class="nav-in">
-    <a class="mark" href="#top"><img src="/logo.svg" alt=""> Trendkept</a>
-    <div class="links">
+<header class="nav" id="top">
+  <div class="wrap navIn">
+    <a class="brand" href="#top"><span class="dot"></span> Trendkept</a>
+    <nav class="navLinks">
       <a href="#how">How it works</a>
       <a href="#rules">The rules</a>
+      <a href="#tools">Free tools</a>
       <a href="#proof">Proof</a>
       <a href="#pricing">Pricing</a>
-      <a href="#tools">Free tools</a>
       <a href="#faq">FAQ</a>
-      <a class="cta" href="#signup">Get the free weekly</a>
-    </div>
+    </nav>
+    <a class="navCta" href="#signup">Get the free weekly</a>
   </div>
-</nav>
+</header>
 
-<main id="top">
+<main id="main">
 
-  <div class="heroWrap">
-  <section class="hero">
+<section class="hero">
+  <div class="wrap heroGrid">
     <div>
-      <span class="kicker">⛔ No predictions. Ever. That's the point.</span>
-      <h1>Trade the trend.<br><em>Follow the rules.</em></h1>
-      <p class="sub">Most traders don't lose because they lack predictions —
-      they lose because rules are hard to follow when money is moving.
-      Trendkept turns your written trend-following rules into software:
+      <span class="pill rv"><span class="dot"></span> <b>No predictions. Ever.</b> That's the point.</span>
+      <h1 class="display rv" style="--i:1">Trade the trend.<br>Follow the rules.</h1>
+      <p class="lede heroSub rv" style="--i:2">Most traders don't lose because they lack
+      predictions — they lose because rules are hard to follow when money is
+      moving. Trendkept turns your written trend-following rules into software:
       sized by risk, stop-loss sent with every entry, scored honestly in
       R-multiples.</p>
+
       <!-- CRO: capture the email inline, above the fold — the primary
            action is completable without a scroll or a second click. -->
-      <form class="signup hero-signup"
+      <form class="signup rv" style="--i:3"
             action="https://buttondown.com/api/emails/embed-subscribe/trendkept"
             method="post" target="_blank">
         <input type="email" name="email" required placeholder="you@example.com"
                aria-label="Email address">
         <button class="cta" type="submit">Get the free weekly &rarr;</button>
       </form>
-      <p class="fine" style="margin-top:8px">Free forever · one email a
-        Sunday · <b>check your inbox to confirm</b> · unsubscribe anytime.</p>
-      <div class="badges">
+      <p class="fine rv" style="--i:3">Free forever · one email a Sunday ·
+        <b>check your inbox to confirm</b> · unsubscribe anytime.</p>
+
+      <div class="badges rv" style="--i:4">
         <span class="badge lock"><svg width="13" height="13"
           viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          stroke-width="2.4" stroke-linecap="round"><rect x="4" y="11"
+          stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><rect x="4" y="11"
           width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/>
           </svg> Broker keys never leave your machine</span>
         <span class="badge">Open source (MIT)</span>
         <span class="badge">Runs on your computer</span>
       </div>
-      <p class="heroNote">The free toolkit is for traders comfortable with a
-      terminal (Python&nbsp;+&nbsp;GitHub —
-      <a href="https://github.com/adelvespayne-png/Trendkept">get it
-      here</a>). Pro, coming soon, is one-click for everyone else — the
-      weekly email is where we'll announce it.</p>
+
+      <p class="heroNote rv" style="--i:5">The free toolkit is for traders comfortable
+      with a terminal (Python&nbsp;+&nbsp;GitHub —
+      <a href="https://github.com/adelvespayne-png/Trendkept">get it here</a>).
+      Pro, coming soon, is one-click for everyone else — the weekly email is
+      where we'll announce it.</p>
     </div>
 
-    <div class="stack" aria-label="Product preview">
-      <div class="panel p-back">
-        <div class="bar"><i></i><i></i><i></i><span>Trade journal — scored
-          in R</span></div>
-        <div class="body">
-          <div class="jrow"><span><b>NVDA</b> · 3 days</span>
-            <span class="r-neg">−0.44R</span></div>
-          <div class="jrow"><span><b>V</b> · open</span>
-            <span class="r-open">stop 342.80 standing</span></div>
-          <div class="jrow"><span><b>SPY</b> · open</span>
-            <span class="r-open">stop 735.85 standing</span></div>
+    <div class="panel rv" style="--i:2" aria-label="Product preview">
+      <div class="panelHead">
+        <span class="label">Today&#39;s watchlist</span>
+        <span class="live mono"><i></i> LIVE RULESET</span>
+      </div>
+      <div class="row rowHead">
+        <span class="num mono">#</span>
+        <span class="mono hcell">Symbol</span>
+        <span class="mono hcell num2">Close</span>
+        <span class="mono hcell">What the rules say</span>
+      </div>
+      <div class="rows">
+        <div class="row">
+          <span class="num mono">01</span>
+          <span><span class="k">NVDA</span>
+            <span class="s">pullback &middot; stop 190.19</span></span>
+          <span class="v mono num2">211.35</span>
+          <span class="v"><span class="tag on">LONG ENTRY</span></span>
+        </div>
+        <div class="row">
+          <span class="num mono">02</span>
+          <span><span class="k">V</span>
+            <span class="s">in an uptrend &middot; stop 342.80 standing</span></span>
+          <span class="v mono num2">356.73</span>
+          <span class="v"><span class="tag">NO ENTRY TODAY</span></span>
+        </div>
+        <div class="row">
+          <span class="num mono">03</span>
+          <span><span class="k">SPY</span>
+            <span class="s">open &middot; stop 735.85 standing</span></span>
+          <span class="v mono num2">743.28</span>
+          <span class="v"><span class="tag">HOLDING</span></span>
+        </div>
+        <div class="row">
+          <span class="num mono">04</span>
+          <span><span class="k">AAPL</span>
+            <span class="s">close below the 50-day average</span></span>
+          <span class="v mono num2">314.95</span>
+          <span class="v"><span class="tag off">TREND BROKEN</span></span>
+        </div>
+        <div class="row">
+          <span class="num mono">05</span>
+          <span><span class="k">Trade journal &mdash; scored in R</span>
+            <span class="s">NVDA closed after 3 days</span></span>
+          <span class="v neg mono num2">&minus;0.44R</span>
+          <span class="v"><span class="tag off">CLOSED</span></span>
+        </div>
+        <div class="row">
+          <span class="num mono">06</span>
+          <span><span class="k">Risk per trade</span>
+            <span class="s">capped, sized automatically</span></span>
+          <span class="v mono num2">1.00%</span>
+          <span class="v"><span class="tag">ENFORCED</span></span>
         </div>
       </div>
-      <div class="panel p-front">
-        <div class="bar"><i></i><i></i><i></i><span>Today's watchlist</span></div>
-        <div class="body">
-          <table>
-            <tr><th>Symbol</th><th>Close</th><th>What the rules say</th></tr>
-            <tr><td><b>NVDA</b></td><td>211.35</td>
-              <td class="ok">LONG entry — pullback · stop 190.19</td></tr>
-            <tr><td>V</td><td>356.73</td>
-              <td>in an uptrend — no entry today</td></tr>
-            <tr><td>AAPL</td><td>314.95</td>
-              <td class="bad">trend broken</td></tr>
-          </table>
-          <svg viewBox="0 0 520 140" role="img"
-               aria-label="Price with moving averages and stop-loss">
-            <path d="M0 112 C60 106, 90 114, 140 102 S240 90, 300 78 S430 56, 520 38"
-                  fill="none" stroke="var(--muted)" stroke-width="1.5" opacity=".5"/>
-            <path d="M0 122 C70 118, 120 120, 180 112 S300 98, 380 86 S470 70, 520 60"
-                  fill="none" stroke="var(--muted)" stroke-width="1.5" opacity=".3"/>
-            <path class="draw"
-                  d="M0 106 L30 98 L55 104 L85 88 L110 94 L140 78 L170 86
-                     L205 66 L235 74 L270 54 L305 64 L340 42 L375 52 L410 32
-                     L450 40 L490 20 L520 26"
-                  fill="none" stroke="var(--accent)" stroke-width="2.6"
-                  stroke-linejoin="round" stroke-linecap="round"/>
-            <line x1="300" y1="90" x2="520" y2="90" stroke="var(--bad)"
-                  stroke-width="1.8" stroke-dasharray="6 5"/>
-            <rect x="304" y="94" width="86" height="20" rx="5"
-                  fill="color-mix(in srgb, var(--bad) 12%, transparent)"/>
-            <text x="312" y="108" font-size="11.5" fill="var(--bad)"
-                  font-family="Inter, system-ui">stop-loss 735.85</text>
-            <circle cx="270" cy="54" r="4.5" fill="var(--accent)"/>
-            <rect x="212" y="24" width="96" height="20" rx="5"
-                  fill="color-mix(in srgb, var(--accent) 12%, transparent)"/>
-            <text x="220" y="38" font-size="11.5" fill="var(--accent)"
-                  font-family="Inter, system-ui">entry — pullback</text>
-          </svg>
-          <p style="font-size:12px;color:var(--muted);margin:10px 2px 0">
-          Most rows, most days, say "not today" — the rules trade rarely,
-          on purpose.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <div class="tape" aria-hidden="true">
-    <div class="tape-in">
-      <span class="t"><b>AAPL</b><span class="s-bad">trend broken</span></span>
-      <span class="t"><b>MSFT</b><span class="s-bad">trend broken</span></span>
-      <span class="t"><b>NVDA</b><span class="s-bad">trend broken</span></span>
-      <span class="t"><b>GOOGL</b><span class="s-bad">trend broken</span></span>
-      <span class="t"><b>AMZN</b><span class="s-bad">trend broken</span></span>
-      <span class="t"><b>META</b><span class="s-q">nothing confirmed</span></span>
-      <span class="t"><b>TSLA</b><span class="s-bad">trend broken</span></span>
-      <span class="t"><b>AVGO</b><span class="s-bad">trend broken</span></span>
-      <span class="t"><b>JPM</b><span class="s-bad">trend broken</span></span>
-      <span class="t"><b>V</b><span class="s-ok">in an uptrend</span></span>
-      <span class="t"><b>UNH</b><span class="s-ok">in an uptrend</span></span>
-      <span class="t"><b>XOM</b><span class="s-bad">trend broken</span></span>
-      <span class="t"><b>COST</b><span class="s-bad">trend broken</span></span>
-      <span class="t"><b>PG</b><span class="s-bad">trend broken</span></span>
-      <span class="t"><b>HD</b><span class="s-q">nothing confirmed</span></span>
-      <span class="t"><b>NFLX</b><span class="s-bad">trend broken</span></span>
-      <span class="t"><b>AMD</b><span class="s-bad">trend broken</span></span>
-      <span class="t"><b>SPY</b><span class="s-q">nothing confirmed</span></span>
-      <span class="t"><b>QQQ</b><span class="s-bad">trend broken</span></span>
-      <span class="t"><b>IWM</b><span class="s-bad">trend broken</span></span>
-      <span class="t"><b>AAPL</b><span class="s-bad">trend broken</span></span>
-      <span class="t"><b>MSFT</b><span class="s-bad">trend broken</span></span>
-      <span class="t"><b>NVDA</b><span class="s-bad">trend broken</span></span>
-      <span class="t"><b>GOOGL</b><span class="s-bad">trend broken</span></span>
-      <span class="t"><b>AMZN</b><span class="s-bad">trend broken</span></span>
-      <span class="t"><b>META</b><span class="s-q">nothing confirmed</span></span>
-      <span class="t"><b>TSLA</b><span class="s-bad">trend broken</span></span>
-      <span class="t"><b>AVGO</b><span class="s-bad">trend broken</span></span>
-      <span class="t"><b>JPM</b><span class="s-bad">trend broken</span></span>
-      <span class="t"><b>V</b><span class="s-ok">in an uptrend</span></span>
-      <span class="t"><b>UNH</b><span class="s-ok">in an uptrend</span></span>
-      <span class="t"><b>XOM</b><span class="s-bad">trend broken</span></span>
-      <span class="t"><b>COST</b><span class="s-bad">trend broken</span></span>
-      <span class="t"><b>PG</b><span class="s-bad">trend broken</span></span>
-      <span class="t"><b>HD</b><span class="s-q">nothing confirmed</span></span>
-      <span class="t"><b>NFLX</b><span class="s-bad">trend broken</span></span>
-      <span class="t"><b>AMD</b><span class="s-bad">trend broken</span></span>
-      <span class="t"><b>SPY</b><span class="s-q">nothing confirmed</span></span>
-      <span class="t"><b>QQQ</b><span class="s-bad">trend broken</span></span>
-      <span class="t"><b>IWM</b><span class="s-bad">trend broken</span></span>
+      <div class="panelFoot">Most rows, most days, say &ldquo;not today&rdquo; &mdash;
+      the rules trade rarely, on purpose.</div>
     </div>
   </div>
-  <p class="tapeCap"><b>Most days, the answer is "do nothing." That's the
-  discipline part.</b> The board from Friday 18 July 2026 — what the rules
-  said, ticker by ticker. Descriptions of data, not advice.</p>
-  </div>
+</section>
 
-  <div class="stats rv">
-    <div class="stat"><b>5</b><span>rules, written down,
-      no exceptions</span></div>
-    <div class="stat"><b>1%</b><span>max risk per trade,
-      sized automatically</span></div>
-    <div class="stat"><b>20</b><span>tickers scanned
-      every trading day</span></div>
-    <div class="stat"><b>0</b><span>predictions —
-      by design, forever</span></div>
+<div class="tape" aria-label="Friday 18 July 2026 board">
+  <div class="tapeTrack">
+    <span class="tick mono"><b>AAPL</b> trend broken</span>
+    <span class="tick mono"><b>MSFT</b> trend broken</span>
+    <span class="tick mono"><b>NVDA</b> trend broken</span>
+    <span class="tick mono"><b>GOOGL</b> trend broken</span>
+    <span class="tick mono"><b>AMZN</b> trend broken</span>
+    <span class="tick mono"><b>META</b> nothing confirmed</span>
+    <span class="tick mono"><b>TSLA</b> trend broken</span>
+    <span class="tick mono"><b>AVGO</b> trend broken</span>
+    <span class="tick mono"><b>JPM</b> trend broken</span>
+    <span class="tick mono"><b>V</b> <span class="up">in an uptrend</span></span>
+    <span class="tick mono"><b>UNH</b> <span class="up">in an uptrend</span></span>
+    <span class="tick mono"><b>XOM</b> trend broken</span>
+    <span class="tick mono"><b>COST</b> trend broken</span>
+    <span class="tick mono"><b>PG</b> trend broken</span>
+    <span class="tick mono"><b>HD</b> nothing confirmed</span>
+    <span class="tick mono"><b>NFLX</b> trend broken</span>
+    <span class="tick mono"><b>AMD</b> trend broken</span>
+    <span class="tick mono"><b>SPY</b> nothing confirmed</span>
+    <span class="tick mono"><b>QQQ</b> trend broken</span>
+    <span class="tick mono"><b>IWM</b> trend broken</span>
+    <span class="tick mono" aria-hidden="true"><b>AAPL</b> trend broken</span>
+    <span class="tick mono" aria-hidden="true"><b>MSFT</b> trend broken</span>
+    <span class="tick mono" aria-hidden="true"><b>NVDA</b> trend broken</span>
+    <span class="tick mono" aria-hidden="true"><b>GOOGL</b> trend broken</span>
+    <span class="tick mono" aria-hidden="true"><b>AMZN</b> trend broken</span>
+    <span class="tick mono" aria-hidden="true"><b>META</b> nothing confirmed</span>
+    <span class="tick mono" aria-hidden="true"><b>TSLA</b> trend broken</span>
+    <span class="tick mono" aria-hidden="true"><b>AVGO</b> trend broken</span>
+    <span class="tick mono" aria-hidden="true"><b>JPM</b> trend broken</span>
+    <span class="tick mono" aria-hidden="true"><b>V</b> <span class="up">in an uptrend</span></span>
+    <span class="tick mono" aria-hidden="true"><b>UNH</b> <span class="up">in an uptrend</span></span>
+    <span class="tick mono" aria-hidden="true"><b>XOM</b> trend broken</span>
+    <span class="tick mono" aria-hidden="true"><b>COST</b> trend broken</span>
+    <span class="tick mono" aria-hidden="true"><b>PG</b> trend broken</span>
+    <span class="tick mono" aria-hidden="true"><b>HD</b> nothing confirmed</span>
+    <span class="tick mono" aria-hidden="true"><b>NFLX</b> trend broken</span>
+    <span class="tick mono" aria-hidden="true"><b>AMD</b> trend broken</span>
+    <span class="tick mono" aria-hidden="true"><b>SPY</b> nothing confirmed</span>
+    <span class="tick mono" aria-hidden="true"><b>QQQ</b> trend broken</span>
+    <span class="tick mono" aria-hidden="true"><b>IWM</b> trend broken</span>
   </div>
+</div>
 
-  <section id="how">
-    <p class="eyebrow">How it works</p>
-    <h2 class="rv">Three parts. One loop.<br>The software carries the hard
-      part.</h2>
-    <div class="grid3 rv" style="margin-top:20px">
-      <div class="step">
-        <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24"
-          fill="none" stroke="currentColor" stroke-width="2"
-          stroke-linecap="round"><path d="M12 20h9"/><path
-          d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg></div>
-        <b>Write your rules once</b>
-        <p>Describe how you trade in plain English — "My Trading Diagram."
-        Averages, entries, risk per trade. Every scan, chart and backtest
-        runs <i>your</i> ruleset, not ours.</p>
+<section>
+  <div class="wrap">
+    <p class="fine rv" style="margin:0 0 20px">Most days, the answer is “do
+    nothing.” That's the discipline part. The board from Friday 18 July 2026 —
+    what the rules said, ticker by ticker. Descriptions of data, not advice.</p>
+    <div class="metrics">
+      <div class="metric rv"><div class="big mono">5</div>
+        <div class="cap">rules, written down, no exceptions</div></div>
+      <div class="metric rv" style="--i:1"><div class="big mono">1%</div>
+        <div class="cap">max risk per trade, sized automatically</div></div>
+      <div class="metric rv" style="--i:2"><div class="big mono">20</div>
+        <div class="cap">tickers scanned every trading day</div></div>
+      <div class="metric rv" style="--i:3"><div class="big mono">0</div>
+        <div class="cap">predictions — by design, forever</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <div class="secHead">
+      <span class="label rv"><span class="n">01</span> &nbsp;How it works</span>
+      <h2 class="rv" style="--i:1">Three parts. One loop.</h2>
+      <p class="lede rv" style="--i:2">The software carries the hard part.</p>
+    </div>
+    <div class="grid3">
+      <div class="card rv">
+        <span class="idx mono">STEP 01</span>
+        <h3>Write your rules once</h3>
+        <p>Describe how you trade in plain English — “My Trading Diagram.”
+        Averages, entries, risk per trade. Every scan, chart and backtest runs
+        <i>your</i> ruleset, not ours.</p>
       </div>
-      <div class="step">
-        <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24"
-          fill="none" stroke="currentColor" stroke-width="2"
-          stroke-linecap="round"><rect x="3" y="4" width="18" height="16"
-          rx="2"/><path d="M7 13l3-3 2 2 5-5"/></svg></div>
-        <b>The engine enforces them</b>
-        <p>Daily scans say exactly what the rules say — including "do
-        nothing," the most common right answer. Entries go to your broker
-        with the stop-loss attached in the same order.</p>
+      <div class="card rv" style="--i:1">
+        <span class="idx mono">STEP 02</span>
+        <h3>The engine enforces them</h3>
+        <p>Daily scans say exactly what the rules say — including “do nothing,”
+        the most common right answer. Entries go to your broker with the
+        stop-loss attached in the same order.</p>
       </div>
-      <div class="step">
-        <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24"
-          fill="none" stroke="currentColor" stroke-width="2"
-          stroke-linecap="round"><path d="M4 19V5"/><path d="M4 19h16"/>
-          <path d="M8 15v-4M12 15V8M16 15v-7"/></svg></div>
-        <b>The journal keeps you honest</b>
+      <div class="card rv" style="--i:2">
+        <span class="idx mono">STEP 03</span>
+        <h3>The journal keeps you honest</h3>
         <p>Every completed trade is scored in R-multiples straight from your
-        broker's records — profit measured against planned risk. You can't
-        fool a journal that fills itself in.</p>
+        broker's records — profit measured against planned risk. You can't fool
+        a journal that fills itself in.</p>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <section id="different">
-    <p class="eyebrow">Why switch</p>
-    <h2 class="rv">Not another journal.<br>Not another broker order.</h2>
-    <div class="grid3 rv" style="margin-top:20px">
-      <div class="step">
-        <b>Trading journals</b>
+<section id="different">
+  <div class="wrap">
+    <div class="secHead">
+      <span class="label rv"><span class="n">02</span> &nbsp;Why switch</span>
+      <h2 class="rv" style="--i:1">Not another journal.<br>Not another broker order.</h2>
+    </div>
+    <div class="grid3">
+      <div class="card rv">
+        <span class="idx mono">AFTER THE FACT</span>
+        <h3>Trading journals</h3>
         <p>Edgewonk, TraderSync, Tradervue — good tools that score your
         discipline <i>after the fact</i>. By the time the journal sees the
         trade, the damage is already sized, entered and un-stopped.</p>
       </div>
-      <div class="step">
-        <b>Broker bracket orders</b>
+      <div class="card rv" style="--i:1">
+        <span class="idx mono">ONE STATIC RULE</span>
+        <h3>Broker bracket orders</h3>
         <p>A bracket enforces one static stop on a trade <i>you already
         chose</i>. It won't tell you whether the trend qualifies, size the
         position off your risk, or trail the stop as the structure moves.</p>
       </div>
-      <div class="step" style="border-color:
-        color-mix(in srgb, var(--accent) 45%, var(--ring))">
-        <b>Trendkept — the layer between</b>
+      <div class="card hi rv" style="--i:2">
+        <span class="idx mono">BEFORE · DURING · AFTER</span>
+        <h3>Trendkept — the layer between</h3>
         <p>It structures the trade <i>before it exists</i> — trend
         qualification, risk-based sizing, stop attached to the entry — then
-        trails the stop daily and scores adherence after. One ruleset,
-        enforced end to end.</p>
+        trails the stop daily and scores adherence after. One ruleset, enforced
+        end to end.</p>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <section id="rules">
-    <p class="eyebrow">The system</p>
-    <h2 class="rv">The five rules <span style="color:var(--muted);
-      font-size:.55em;font-weight:500">(free forever — the whole point is
-      following them)</span></h2>
-    <ol class="rules rv">
-      <li><b>Trade only a confirmed uptrend.</b><p>Price above the 50- and
-        200-day averages, averages aligned, higher highs and lows.
-        Otherwise: stay out. No exceptions.</p></li>
-      <li><b>Enter without chasing.</b><p>A pullback that resumes, or a
-        breakout — never a move that's already run far.</p></li>
-      <li><b>The stop goes in with the order.</b><p>Just below the last
-        swing low, enforced by your broker — decided before the trade,
-        not during the drawdown.</p></li>
-      <li><b>Size by risk, not by gut.</b><p>If the stop is hit, lose no
-        more than 1–2% of the account. The formula has no conviction
-        knob.</p></li>
-      <li><b>Let winners run; cut the break.</b><p>Trail the stop up under
-        each higher low. Exit completely when the trend breaks.</p></li>
-    </ol>
-    <div class="card honest rv">
-      <b>The honest part.</b> You can be wrong more than half the time and
-      still come out ahead — because each loss is capped small and winners
-      run. That only works if you follow the rules <i>every time</i>.
-      That's the hard part. That's what Trendkept is for.
+<section id="rules">
+  <div class="wrap">
+    <div class="secHead">
+      <span class="label rv"><span class="n">03</span> &nbsp;The system</span>
+      <h2 class="rv" style="--i:1">The five rules</h2>
+      <p class="lede rv" style="--i:2">Free forever — the whole point is
+      following them.</p>
     </div>
-  </section>
-
-  <section id="tools">
-    <p class="eyebrow">Free tools</p>
-    <h2 class="rv">Calculators — no sign-up, no catch</h2>
-    <p class="lead rv">The maths behind the rules, as four little tools you
-    can use right now. They're a taste of what Trendkept automates on every
-    trade.</p>
-    <div class="grid3 rv" style="margin-top:18px">
-      <a class="step" style="text-decoration:none;color:inherit"
-         href="/tools/position-size-calculator/">
-        <b>Position size calculator</b>
-        <p>How many shares to buy so a loss costs no more than you
-        decided. The flagship.</p></a>
-      <a class="step" style="text-decoration:none;color:inherit"
-         href="/tools/risk-per-trade-calculator/">
-        <b>Risk per trade calculator</b>
-        <p>What 0.5%, 1% or 2% of your account is per trade — the 1% rule,
-        in pounds.</p></a>
-      <a class="step" style="text-decoration:none;color:inherit"
-         href="/tools/r-multiple-calculator/">
-        <b>R-multiple calculator</b>
-        <p>Score a trade in R — profit measured in units of what you
-        risked.</p></a>
-      <a class="step" style="text-decoration:none;color:inherit"
-         href="/tools/stop-loss-calculator/">
-        <b>Stop-loss calculator</b>
-        <p>How far your stop sits and exactly how much money is on the
-        line.</p></a>
+    <div class="rules">
+      <div class="rule rv"><p><b>Trade only a confirmed uptrend.</b> Price above
+        the 50- and 200-day averages, averages aligned, higher highs and lows.
+        Otherwise: stay out. No exceptions.</p></div>
+      <div class="rule rv" style="--i:1"><p><b>Enter without chasing.</b> A
+        pullback that resumes, or a breakout — never a move that's already run
+        far.</p></div>
+      <div class="rule rv" style="--i:2"><p><b>The stop goes in with the
+        order.</b> Just below the last swing low, enforced by your broker —
+        decided before the trade, not during the drawdown.</p></div>
+      <div class="rule rv" style="--i:3"><p><b>Size by risk, not by gut.</b> If
+        the stop is hit, lose no more than 1–2% of the account. The formula has
+        no conviction knob.</p></div>
+      <div class="rule rv" style="--i:4"><p><b>Let winners run; cut the
+        break.</b> Trail the stop up under each higher low. Exit completely when
+        the trend breaks.</p></div>
     </div>
-  </section>
+    <p class="fine rv" style="margin-top:22px; font-size:14px; color:var(--muted); max-width:70ch">
+      <b>The honest part.</b> You can be wrong more than half the time and still
+      come out ahead — because each loss is capped small and winners run. That
+      only works if you follow the rules <i>every time</i>. That's the hard
+      part. That's what Trendkept is for.</p>
+  </div>
+</section>
 
-  <section id="proof">
-    <p class="eyebrow">Receipts</p>
-    <h2 class="rv">Proof, not promises</h2>
-    <p class="lead rv">Two kinds of evidence, both public: backtests that
-    refuse to cheat, and the rules trading a real paper account in the
-    open — wins, losses and boring days on the record.</p>
-    <div class="card rv">
-      <b>Backtests that can't peek — this is the report, not a pitch.</b>
-      <p style="color:var(--ink-2)">We show you this to demonstrate what an
-      honest backtest <i>refuses to do</i>: it can't peek at the future (a
-      signal at bar <i>i</i> uses only data up to bar <i>i</i>), it puts the
-      drawdown on the same line as the return, and it labels its own fills
-      as idealized. Backtests that peek look brilliant and trade terribly.
-      Run it yourself on any symbol — the number that comes out is
-      <i>yours</i>, not our marketing.</p>
-<pre><code>$ python -m trendkept.cli backtest --symbol AAPL --account 1000 --risk 0.02
+<section id="tools">
+  <div class="wrap">
+    <div class="secHead">
+      <span class="label rv"><span class="n">04</span> &nbsp;Free tools</span>
+      <h2 class="rv" style="--i:1">Calculators — no sign-up, no catch</h2>
+      <p class="lede rv" style="--i:2">The maths behind the rules, as four little
+      tools you can use right now. They're a taste of what Trendkept automates on
+      every trade.</p>
+    </div>
+    <div class="grid4">
+      <a class="card rv" href="/tools/position-size-calculator/">
+        <span class="idx mono">01</span>
+        <h3>Position size calculator</h3>
+        <p>How many shares to buy so a loss costs no more than you decided. The
+        flagship.</p>
+        <span class="go">Open &rarr;</span>
+      </a>
+      <a class="card rv" style="--i:1" href="/tools/risk-per-trade-calculator/">
+        <span class="idx mono">02</span>
+        <h3>Risk per trade calculator</h3>
+        <p>What 0.5%, 1% or 2% of your account is per trade — the 1% rule, in
+        pounds.</p>
+        <span class="go">Open &rarr;</span>
+      </a>
+      <a class="card rv" style="--i:2" href="/tools/r-multiple-calculator/">
+        <span class="idx mono">03</span>
+        <h3>R-multiple calculator</h3>
+        <p>Score a trade in R — profit measured in units of what you risked.</p>
+        <span class="go">Open &rarr;</span>
+      </a>
+      <a class="card rv" style="--i:3" href="/tools/stop-loss-calculator/">
+        <span class="idx mono">04</span>
+        <h3>Stop-loss calculator</h3>
+        <p>How far your stop sits and exactly how much money is on the line.</p>
+        <span class="go">Open &rarr;</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section id="proof">
+  <div class="wrap">
+    <div class="secHead">
+      <span class="label rv"><span class="n">05</span> &nbsp;Receipts</span>
+      <h2 class="rv" style="--i:1">Proof, not promises</h2>
+      <p class="lede rv" style="--i:2">Two kinds of evidence, both public:
+      backtests that refuse to cheat, and the rules trading a real paper account
+      in the open — wins, losses and boring days on the record.</p>
+    </div>
+
+    <div class="grid2" style="align-items:start">
+      <div class="rv">
+        <h3 style="margin-bottom:10px">Backtests that can't peek — this is the
+        report, not a pitch.</h3>
+        <p style="font-size:14px">We show you this to demonstrate what an
+        <b style="color:var(--text);font-weight:600">honest backtest refuses to
+        do</b>: it can't peek at the future (a signal at bar <i>i</i> uses only
+        data up to bar <i>i</i>), it puts the drawdown on the same line as the
+        return, and it labels its own fills as idealized. Backtests that peek
+        look brilliant and trade terribly. Run it yourself on any symbol — the
+        number that comes out is <i>yours</i>, not our marketing.</p>
+        <div class="term" style="margin-top:18px">
+          <div class="termHead"><i></i><i></i><i></i><span>trendkept — backtest</span></div>
+<pre><span class="c">$</span> python -m trendkept.cli backtest <span class="a">--symbol AAPL --account 1000 --risk 0.02</span>
 
 Starting equity  : 1,000.00
-Ending equity    : 1,252.00      &lt;- one bundled sample, not a promise
-Max drawdown     : -2.28%        &lt;- shown as prominently as the gain
-Expectancy       : +7.13R/trade  &lt;- idealized fills; reality slips</code></pre>
-      <p class="fine">Past and backtested performance do not predict future
-      results — which is why the strategy reacts to trends instead of
-      predicting them.</p>
-    </div>
-    <div class="card rv">
-      <b>Built in public — the log so far.</b>
-      <ul class="log">
-        <li><time>July 2026</time><b>The rules fly a paper account
-          nightly.</b> Every trading day the exact ruleset on this page
-          manages a practice-money account — stops trailed, entries taken,
-          most days sat out — and publishes every action to
-          <a href="https://github.com/adelvespayne-png/Trendkept/issues">the
-          open project log</a>.</li>
-        <li><time>July 2026</time><b>First trades, honestly scored.</b> The
-          first completed trade lost 0.44R — logged, published, and smaller
-          than the planned risk. That's the system working.</li>
-        <li><time>July 2026</time><b>The Trend Check #1 shipped.</b> The
-          weekly email now writes itself from the same engine and goes out
-          every Sunday.</li>
-        <li><time>July 2026</time><b>Open-source core released</b> — the
-          full engine, dashboard, backtester and journal, MIT-licensed,
-          zero dependencies.</li>
-      </ul>
-    </div>
-  </section>
+Ending equity    : 1,252.00      <span class="m">&lt;- one bundled sample, not a promise</span>
+Max drawdown     : -2.28%        <span class="m">&lt;- shown as prominently as the gain</span>
+Expectancy       : +7.13R/trade  <span class="m">&lt;- idealized fills; reality slips</span></pre>
+        </div>
+        <p class="fine" style="margin-top:12px">Past and backtested performance
+        do not predict future results — which is why the strategy reacts to
+        trends instead of predicting them.</p>
+      </div>
 
-  <section id="pricing">
-    <p class="eyebrow">Pricing</p>
-    <h2 class="rv">Free core. Pro when it's earned.</h2>
-    <p class="lead rv">The toolkit is free forever. Pro arrives only after
-    our public validation period — we'd rather earn the right to charge.</p>
-    <div class="tiers rv">
-      <div class="tier">
-        <div class="name">Open core</div>
+      <div class="rv" style="--i:1">
+        <h3 style="margin-bottom:10px">Built in public — the log so far.</h3>
+        <div class="tl">
+          <div class="tlItem">
+            <span class="when mono">JULY 2026</span>
+            <span><b>The rules fly a paper account nightly.</b> Every trading day
+            the exact ruleset on this page manages a practice-money account —
+            stops trailed, entries taken, most days sat out — and publishes every
+            action to <a href="https://github.com/adelvespayne-png/Trendkept/issues">the
+            open project log</a>.</span>
+          </div>
+          <div class="tlItem">
+            <span class="when mono">JULY 2026</span>
+            <span><b>First trades, honestly scored.</b> The first completed trade
+            lost 0.44R — logged, published, and smaller than the planned risk.
+            That's the system working.</span>
+          </div>
+          <div class="tlItem">
+            <span class="when mono">JULY 2026</span>
+            <span><b>The Trend Check #1 shipped.</b> The weekly email now writes
+            itself from the same engine.</span>
+          </div>
+          <div class="tlItem">
+            <span class="when mono">JULY 2026</span>
+            <span><b>Open-source core released</b> — the full engine, dashboard,
+            backtester and journal, MIT-licensed, zero dependencies.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="pricing">
+  <div class="wrap">
+    <div class="secHead">
+      <span class="label rv"><span class="n">06</span> &nbsp;Pricing</span>
+      <h2 class="rv" style="--i:1">Free core. Pro when it's earned.</h2>
+      <p class="lede rv" style="--i:2">The toolkit is free forever. Pro arrives
+      only after our public validation period — we'd rather earn the right to
+      charge.</p>
+    </div>
+    <div class="grid2">
+      <div class="card plan rv">
+        <span class="idx mono">OPEN CORE</span>
         <div class="price">Free</div>
-        <div class="per">MIT-licensed, forever</div>
+        <p style="font-size:13.5px; margin-top:6px">MIT-licensed, forever</p>
         <ul>
-          <li>The full rules engine &amp; dashboard</li>
-          <li>Honest backtesting (daily to 1-minute bars)</li>
-          <li>Watchlist scans &amp; paper trading</li>
-          <li>Broker stop management &amp; trade journal</li>
+          <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg> The full rules engine &amp; dashboard</li>
+          <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg> Honest backtesting (daily to 1-minute bars)</li>
+          <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg> Watchlist scans &amp; paper trading</li>
+          <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg> Broker stop management &amp; trade journal</li>
         </ul>
-        <a class="cta ghost"
-           href="https://github.com/adelvespayne-png/Trendkept">
-          Get it on GitHub</a>
+        <a class="btn" href="https://github.com/adelvespayne-png/Trendkept">Get it on GitHub</a>
       </div>
-      <div class="tier featured">
-        <div class="name">Trendkept Pro</div>
-        <div class="price">£12<span class="per">/mo</span></div>
-        <div class="per">or £99/yr · founding subscribers £79/yr, locked
-          forever</div>
+      <div class="card plan hi rv" style="--i:1">
+        <span class="idx mono">TRENDKEPT PRO</span>
+        <div class="price">£12 <small>/mo</small></div>
+        <p style="font-size:13.5px; margin-top:6px">or £99/yr · founding
+        subscribers £79/yr, locked forever</p>
         <ul>
-          <li>One-click install &amp; updates — no terminal, ever</li>
-          <li>Licensed market data (no scraped feeds)</li>
-          <li>Daily "what the rules say" email on your watchlist</li>
-          <li>Journal insights &amp; discipline scoring</li>
+          <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg> One-click install &amp; updates — no terminal, ever</li>
+          <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg> Licensed market data (no scraped feeds)</li>
+          <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg> Daily “what the rules say” email on your watchlist</li>
+          <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg> Journal insights &amp; discipline scoring</li>
         </ul>
-        <a class="cta" href="#signup">Join the waiting list</a>
+        <a class="btn solid" href="#signup">Join the waiting list</a>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <section id="signup">
-    <p class="eyebrow">The weekly</p>
-    <h2 class="rv">The Trend Check — free, every Sunday</h2>
-    <div class="card rv">
-      <p style="margin-top:0">The engine's verdict on 20 well-known tickers —
-      in an uptrend, nothing confirmed, or trend broken — plus one honest
-      lesson in risk. Written like a person, not a terminal. No predictions,
-      no hype, unsubscribe anytime.</p>
-      <!-- Live signup: Buttondown (The Trend Check), sending from
-           news.trendkept.com -->
-      <form class="signup"
-            action="https://buttondown.com/api/emails/embed-subscribe/trendkept"
-            method="post" target="_blank">
-        <input type="email" name="email" required placeholder="you@example.com"
-               aria-label="Email address">
-        <button class="cta" type="submit">Subscribe free</button>
-      </form>
-      <p class="fine"><b>One quick step:</b> we'll email you a confirmation
-      link — click it and you're in (check spam if it's shy). Unsubscribe
-      anytime; your address is never shared.</p>
+<section id="signup">
+  <div class="wrap">
+    <div class="panel rv" style="padding:0">
+      <div class="panelHead">
+        <span class="label">The weekly</span>
+        <span class="live mono"><i></i> EVERY SUNDAY</span>
+      </div>
+      <div style="padding:32px var(--pad)">
+        <h2 style="margin-bottom:10px">The Trend Check — free, every Sunday</h2>
+        <p class="lede" style="margin-bottom:22px">The engine's verdict on 20
+        well-known tickers — in an uptrend, nothing confirmed, or trend broken —
+        plus one honest lesson in risk. Written like a person, not a terminal.
+        No predictions, no hype, unsubscribe anytime.</p>
+        <!-- Live signup: Buttondown (The Trend Check), sending from
+             news.trendkept.com -->
+        <form class="signup"
+              action="https://buttondown.com/api/emails/embed-subscribe/trendkept"
+              method="post" target="_blank">
+          <input type="email" name="email" required placeholder="you@example.com"
+                 aria-label="Email address">
+          <button class="cta" type="submit">Subscribe free</button>
+        </form>
+        <p class="fine"><b>One quick step:</b> we'll email you a confirmation
+        link — click it and you're in (check spam if it's shy). Unsubscribe
+        anytime; your address is never shared.</p>
+      </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <section id="faq">
-    <p class="eyebrow">Fair questions</p>
-    <h2 class="rv">Asked and answered — honestly</h2>
+<section id="faq">
+  <div class="wrap">
+    <div class="secHead">
+      <span class="label rv"><span class="n">07</span> &nbsp;Fair questions</span>
+      <h2 class="rv" style="--i:1">Asked and answered — honestly</h2>
+    </div>
     <details class="faq rv">
       <summary>Does Trendkept predict which way a market will go?</summary>
       <p>No — and we'd be suspicious of anyone who says they can. Trendkept
@@ -750,142 +877,158 @@ Expectancy       : +7.13R/trade  &lt;- idealized fills; reality slips</code></pr
     </details>
     <details class="faq rv">
       <summary>Do I need a broker account to use it?</summary>
-      <p>No. Scanning, charts, backtesting and the watchlist work out of the
-      box with free public data. If you want it to place paper trades and
-      fill in the journal automatically, connect a free Alpaca paper account
-      (10 minutes, no deposit) — your API keys stay on your machine.</p>
+      <p>No. Scanning, charts, backtesting and the watchlist work out of the box
+      with free public data. If you want it to place paper trades and fill in the
+      journal automatically, connect a free Alpaca paper account (10 minutes, no
+      deposit) — your API keys stay on your machine.</p>
     </details>
     <details class="faq rv">
       <summary>Is my money or data ever in Trendkept's hands?</summary>
-      <p>Never. The software runs on your computer; broker keys never leave
-      it; we can't touch your account and don't want to. Trendkept is
-      analysis and education software, not a broker and not an advisor.</p>
+      <p>Never. The software runs on your computer; broker keys never leave it;
+      we can't touch your account and don't want to. Trendkept is analysis and
+      education software, not a broker and not an advisor.</p>
     </details>
     <details class="faq rv">
       <summary>What does it cost?</summary>
-      <p>The core toolkit is free and open source, forever. Pro (the
-      effortless version — one-click install, licensed data, journal
-      insights) will be £12/month when it launches, and the waiting list
-      gets the founding price of £79/year, locked for life.</p>
+      <p>The core toolkit is free and open source, forever. Pro (the effortless
+      version — one-click install, licensed data, journal insights) will be
+      £12/month when it launches, and the waiting list gets the founding price of
+      £79/year, locked for life.</p>
     </details>
     <details class="faq rv">
-      <summary>How is this different from Edgewonk, TraderSync or
-        Tradervue?</summary>
-      <p>Those are journals — genuinely useful, and they prove people pay
-      for discipline. But a journal can only score a trade <i>after</i> it
-      happened. Trendkept works before and during as well: it qualifies the
-      trend, sizes the position off your risk, sends the stop-loss with the
-      entry, trails it daily — and <i>then</i> journals the result. If a
-      journal is a mirror, Trendkept is a seatbelt that also keeps the
-      mirror.</p>
+      <summary>How is this different from Edgewonk, TraderSync or Tradervue?</summary>
+      <p>Those are journals — genuinely useful, and they prove people pay for
+      discipline. But a journal can only score a trade <i>after</i> it happened.
+      Trendkept works before and during as well: it qualifies the trend, sizes
+      the position off your risk, sends the stop-loss with the entry, trails it
+      daily — and <i>then</i> journals the result. If a journal is a mirror,
+      Trendkept is a seatbelt that also keeps the mirror.</p>
     </details>
     <details class="faq rv">
-      <summary>It's open source — can't someone just run it free and never
-        pay?</summary>
-      <p>Yes, and we hope they do — that's the point of the free core. Pro
-      is for people who'd rather not maintain software: one-click install
-      and updates, licensed clean data, insights, support. You pay for the
-      effortless version, not for secrets. (Every serious open-core company
-      works this way.)</p>
+      <summary>It's open source — can't someone just run it free and never pay?</summary>
+      <p>Yes, and we hope they do — that's the point of the free core. Pro is for
+      people who'd rather not maintain software: one-click install and updates,
+      licensed clean data, insights, support. You pay for the effortless version,
+      not for secrets. (Every serious open-core company works this way.)</p>
     </details>
     <details class="faq rv">
       <summary>Will following these rules make me money?</summary>
-      <p>Honestly: nobody can promise that, and we won't. What the rules do
-      is cap what any single mistake can cost and keep you out of most bad
-      trades. Our backtests are public and refuse to peek at the future;
-      our paper account trades in the open, losses included. Read both and
-      judge for yourself.</p>
+      <p>Honestly: nobody can promise that, and we won't. What the rules do is
+      cap what any single mistake can cost and keep you out of most bad trades.
+      Our backtests are public and refuse to peek at the future; our paper
+      account trades in the open, losses included. Read both and judge for
+      yourself.</p>
     </details>
-  </section>
-
-  <div class="appearance" aria-label="Appearance settings">
-    <label>Theme
-      <select data-ap="theme">
-        <option value="auto">Match my system</option>
-        <option value="light">Light</option>
-        <option value="dark">Dark</option>
-      </select></label>
-    <label>Accent
-      <select data-ap="accent">
-        <option value="default">Blue</option>
-        <option value="aqua">Aqua</option>
-        <option value="violet">Violet</option>
-        <option value="orange">Orange</option>
-        <option value="magenta">Magenta</option>
-      </select></label>
-    <label>Text size
-      <select data-ap="font">
-        <option value="default">Default</option>
-        <option value="small">Small</option>
-        <option value="large">Large</option>
-      </select></label>
-    <p class="hint">Make it yours — saved in your browser only. The same
-    personalisation runs through the whole Trendkept dashboard.</p>
   </div>
+</section>
 
-  <footer>
-    <div class="cols">
-      <span><b>Trendkept</b> — trade the trend. Follow the rules.</span>
-      <span>
-        <a href="mailto:hello@trendkept.com">hello@trendkept.com</a> ·
-        <a href="https://github.com/adelvespayne-png/Trendkept">GitHub</a> ·
-        <a href="#signup">The Trend Check</a>
-      </span>
+<section id="appearance">
+  <div class="wrap">
+    <div class="panel" style="padding:var(--pad)">
+      <div class="appear">
+        <div class="fieldset">
+          <span class="label">Theme</span>
+          <div class="segs" id="segTheme">
+            <button class="seg" type="button" data-k="theme" data-v="auto">Match my system</button>
+            <button class="seg" type="button" data-k="theme" data-v="light">Light</button>
+            <button class="seg" type="button" data-k="theme" data-v="dark">Dark</button>
+          </div>
+        </div>
+        <div class="fieldset">
+          <span class="label">Accent</span>
+          <div class="segs" id="segAccent">
+            <button class="seg" type="button" data-k="accent" data-v="default">Blue</button>
+            <button class="seg" type="button" data-k="accent" data-v="aqua">Aqua</button>
+            <button class="seg" type="button" data-k="accent" data-v="violet">Violet</button>
+            <button class="seg" type="button" data-k="accent" data-v="orange">Orange</button>
+            <button class="seg" type="button" data-k="accent" data-v="magenta">Magenta</button>
+          </div>
+        </div>
+        <div class="fieldset">
+          <span class="label">Text size</span>
+          <div class="segs" id="segFont">
+            <button class="seg" type="button" data-k="font" data-v="default">Default</button>
+            <button class="seg" type="button" data-k="font" data-v="small">Small</button>
+            <button class="seg" type="button" data-k="font" data-v="large">Large</button>
+          </div>
+        </div>
+      </div>
+      <p class="fine" style="margin-top:18px">Make it yours — saved in your
+      browser only. The same personalisation runs through the whole Trendkept
+      dashboard.</p>
     </div>
-    Trendkept is analysis software and education, <b>not investment
-    advice</b>. It makes no personal recommendations and never touches your
-    money — you connect your own broker. Trading involves risk of loss. Past
-    or backtested performance does not predict future results; backtests use
-    idealized fills. &copy; Trendkept.
-  </footer>
-</main>
-<script>
-  /* Appearance controls: persist per visitor in localStorage. */
-  (function () {
-    var KEY = 'trendkept-appearance';
-    var root = document.documentElement;
-    function load() {
-      try { return JSON.parse(localStorage.getItem(KEY)) || {}; }
-      catch (e) { return {}; }
-    }
-    function apply(s) {
-      ['theme', 'accent', 'font'].forEach(function (k) {
-        var v = s[k];
-        if (v && v !== 'auto' && v !== 'default') {
-          root.setAttribute('data-' + k, v);
-        } else {
-          root.removeAttribute('data-' + k);
-        }
-      });
-    }
-    var settings = load();
-    document.querySelectorAll('[data-ap]').forEach(function (sel) {
-      var k = sel.getAttribute('data-ap');
-      if (settings[k]) sel.value = settings[k];
-      sel.addEventListener('change', function () {
-        settings[k] = sel.value;
-        try { localStorage.setItem(KEY, JSON.stringify(settings)); }
-        catch (e) {}
-        apply(settings);
-      });
-    });
-  })();
+  </div>
+</section>
 
-  /* Reveal-on-scroll (respects reduced motion via CSS). */
+</main>
+
+<footer>
+  <div class="wrap">
+    <a class="brand" href="#top"><span class="dot"></span> Trendkept</a>
+    <p style="margin:10px 0 0; font-size:14px">— trade the trend. Follow the rules.</p>
+    <div class="fLinks">
+      <a href="mailto:hello@trendkept.com">hello@trendkept.com</a> ·
+      <a href="https://github.com/adelvespayne-png/Trendkept">GitHub</a> ·
+      <a href="#signup">The Trend Check</a>
+    </div>
+    <p class="disc">Trendkept is analysis software and education, <b>not
+    investment advice</b>. It makes no personal recommendations and never
+    touches your money — you connect your own broker. Trading involves risk of
+    loss. Past or backtested performance does not predict future results;
+    backtests use idealized fills. © Trendkept.</p>
+  </div>
+</footer>
+
+<script>
+  /* Staggered reveal on scroll — restrained, and a no-op when the visitor
+     prefers reduced motion or the browser lacks IntersectionObserver. */
   (function () {
-    if (!('IntersectionObserver' in window)) {
-      document.querySelectorAll('.rv').forEach(function (el) {
-        el.classList.add('in');
-      });
+    var els = document.querySelectorAll('.rv');
+    var reduce = window.matchMedia &&
+                 window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce || !('IntersectionObserver' in window)) {
+      els.forEach(function (el) { el.classList.add('in'); });
       return;
     }
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (e) {
-        if (e.isIntersecting) { e.target.classList.add('in');
-          io.unobserve(e.target); }
+        if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
       });
-    }, { threshold: 0.12 });
-    document.querySelectorAll('.rv').forEach(function (el) { io.observe(el); });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
+    els.forEach(function (el) { io.observe(el); });
+  })();
+
+  /* Appearance: theme / accent / text size, persisted to this browser only. */
+  (function () {
+    var KEY = 'trendkept-appearance';
+    function read() {
+      try { return JSON.parse(localStorage.getItem(KEY)) || {}; }
+      catch (e) { return {}; }
+    }
+    function save(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {} }
+    var state = read();
+    var defaults = { theme: 'auto', accent: 'default', font: 'default' };
+
+    function apply() {
+      ['theme', 'accent', 'font'].forEach(function (k) {
+        var v = state[k] || defaults[k];
+        if (v === 'auto' || v === 'default') {
+          document.documentElement.removeAttribute('data-' + k);
+        } else {
+          document.documentElement.setAttribute('data-' + k, v);
+        }
+        document.querySelectorAll('[data-k="' + k + '"]').forEach(function (b) {
+          b.setAttribute('aria-pressed', String(b.dataset.v === v));
+        });
+      });
+    }
+    document.querySelectorAll('.seg').forEach(function (b) {
+      b.addEventListener('click', function () {
+        state[b.dataset.k] = b.dataset.v;
+        save(state); apply();
+      });
+    });
+    apply();
   })();
 </script>
 </body>
