@@ -498,6 +498,21 @@ def _cmd_autopilot(args: argparse.Namespace) -> int:
     strat = TrendFollowingStrategy(StrategyConfig())
     args_ns = argparse.Namespace(confirm=args.confirm)
 
+    # Equity on every pass, not only on days with an entry. Without this the
+    # only way to answer "what's my balance?" between trades is to open the
+    # broker by hand, and a quiet week leaves no record of the curve at all.
+    try:
+        acct = client.account()
+        equity = float(acct.get("equity", 0.0))
+        last = float(acct.get("last_equity", 0.0) or 0.0)
+        start = 100_000.0  # the paper account's opening balance
+        day = f"{equity - last:+,.2f} today" if last else "day change n/a"
+        print(f"Equity {equity:,.2f} ({day}; "
+              f"{equity - start:+,.2f} = {(equity / start - 1) * 100:+.2f}% "
+              f"since the test began)")
+    except (AlpacaError, ValueError, TypeError) as exc:
+        print(f"Equity unavailable ({exc})")
+
     print(f"Autopilot pass (paper) — {len(positions)} open position(s)"
           + ("" if args.confirm else "  [DRY RUN]"))
     held = set()
@@ -578,17 +593,32 @@ def _cmd_autopilot(args: argparse.Namespace) -> int:
     # Safety roll-call: every open position must have a standing stop.
     # (Entries carry stops by construction and manage heals gaps, so this
     # should always pass — printing it makes the guarantee auditable.)
+    #
+    # A position being exited is the one legitimate exception: `manage`
+    # cancels its stop and queues a market sell, which sits until the next
+    # open. It is *leaving*, not unprotected — flagging it cries wolf and
+    # (via the auto-logger) marks an otherwise clean day as a rule breach.
     try:
         open_positions = client.positions()
+        try:
+            leaving = {
+                o.get("symbol", "").upper()
+                for o in client.list_orders(status="open")
+                if o.get("side") == "sell" and "stop" not in (o.get("type") or "")
+            }
+        except AlpacaError:
+            leaving = set()
         naked = [p.get("symbol", "?") for p in open_positions
-                 if not client.find_stop_order(p.get("symbol", ""))]
+                 if p.get("symbol", "").upper() not in leaving
+                 and not client.find_stop_order(p.get("symbol", ""))]
         if naked:
             print(f"  UNPROTECTED POSITION(S): {', '.join(naked)} — "
                   "no standing stop found; next manage pass will install "
                   "one, or add it by hand in Alpaca now.")
         else:
-            print(f"  Safety check: {len(open_positions)} open position(s), "
-                  "every one protected by a standing stop-loss.")
+            note = (f" ({len(leaving)} exiting)" if leaving else "")
+            print(f"  Safety check: {len(open_positions)} open position(s)"
+                  f"{note}, every one protected by a standing stop-loss.")
     except AlpacaError as exc:
         print(f"  Safety check skipped (broker unreachable: {exc})")
     return 0
