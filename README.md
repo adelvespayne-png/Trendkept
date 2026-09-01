@@ -7,6 +7,10 @@ risk.
 
 Pure Python standard library. No `pip install`. Runs on Python 3.9+.
 
+**[Watch the 60-second demo](https://trendkept.com/#demo)** &mdash; the scan,
+the dashboard, an honest backtest, and the real paper account, losses
+included.
+
 ---
 
 ## The rules (write them down — then never improvise)
