@@ -41,6 +41,21 @@ SaaS), design (`web-artifacts`, `ui-ux-pro-max`), ops (`launch-runbook`,
 replace a real solicitor). Compliance skill must respect the FCA
 bright line + descriptive-never-imperative rule already settled.
 
+## Build agents (`.claude/agents/`, Sept 2026)
+
+Four subagents the owner supplied, adapted to this project:
+**architect** (plan first, never code) -> **coder** (implement the plan,
+nothing more) -> **tester** (adversarially break it) -> **manager** (report
+to the owner in plain English). Use them for any non-trivial build.
+
+The tester carries this project's real failure list — the day-order stop that
+expired, the R-multiple divided by the trailed stop, the false UNPROTECTED
+warning, unquoted CSV, and the stale branch that nearly deleted a row from
+the public log. Those are the house bugs; check them first.
+
+**Every agent has the same two blockers:** never delete a row from
+`business/paper_log.csv`, and never weaken a safety rail.
+
 ## Hard rules settled in prior sessions (do not relax)
 
 1. **Honesty in all public content.** Every claim in marketing/posts must be
