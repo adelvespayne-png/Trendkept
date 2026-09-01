@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Trendkept — trade the trend. Follow the rules.</title>
 <link rel="icon" type="image/svg+xml" href="/logo.svg">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="description"
       content="Trendkept doesn't predict markets. It makes you follow your own
 trend-following rules — backtested honestly, with the stop enforced by your
@@ -55,6 +57,30 @@ broker instead of your nerves.">
   })();
 </script>
 <style>
+  /* ---- Metric-matched fallbacks ------------------------------------
+     Web fonts load after first paint, so text is first drawn in a
+     fallback and then reflows when the real face arrives — that reflow
+     is what Cloudflare reported as a Cumulative Layout Shift. These
+     faces adjust the fallback's metrics so it occupies almost exactly
+     the same space as Inter / JetBrains Mono, making the swap invisible
+     rather than a jump. */
+  @font-face {
+    font-family: "Inter Fallback";
+    src: local("Arial"), local("Helvetica"), local("Liberation Sans");
+    size-adjust: 107.12%;
+    ascent-override: 90.20%;
+    descent-override: 22.48%;
+    line-gap-override: 0%;
+  }
+  @font-face {
+    font-family: "JBMono Fallback";
+    src: local("Courier New"), local("Liberation Mono");
+    size-adjust: 100%;
+    ascent-override: 102%;
+    descent-override: 30%;
+    line-gap-override: 0%;
+  }
+
   /* ---- Design tokens: Mesh Operations Center -------------------------
      Dark is the designed mode. Light stays available because the
      appearance panel is a real product feature that also runs through
@@ -90,7 +116,8 @@ broker instead of your nerves.">
   @media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
   body {
     margin:0; background:var(--bg); color:var(--text);
-    font-family:Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-family:Inter, "Inter Fallback", system-ui, -apple-system,
+      "Segoe UI", sans-serif;
     font-size:var(--fs); line-height:1.6; font-weight:400;
     -webkit-font-smoothing:antialiased; overflow-x:hidden;
   }
@@ -114,7 +141,8 @@ broker instead of your nerves.">
   p  { margin:0 0 12px; color:var(--muted); }
   .lede { font-size:clamp(16px,1.35vw,18px); color:var(--muted); max-width:62ch; }
   .label, .mono {
-    font-family:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-family:"JetBrains Mono", "JBMono Fallback", ui-monospace,
+      "SF Mono", Menlo, Consolas, monospace;
   }
   .label {
     font-size:12px; font-weight:600; line-height:1.2; letter-spacing:.1em;
@@ -295,7 +323,7 @@ broker instead of your nerves.">
   .rule:hover { border-color:var(--border-hi); }
   .rule::before {
     counter-increment:rule; content:"0" counter(rule);
-    font-family:"JetBrains Mono", ui-monospace, monospace;
+    font-family:"JetBrains Mono", "JBMono Fallback", ui-monospace, monospace;
     font-size:12px; font-weight:700; color:var(--accent);
     letter-spacing:.06em; padding-top:2px;
   }
@@ -313,10 +341,10 @@ broker instead of your nerves.">
               border-bottom:1px solid #27272A; }
   .termHead i { width:10px; height:10px; border-radius:50%; background:#3F3F46; display:block; }
   .termHead span { margin-left:8px; font-size:11.5px; color:#71717A;
-                   font-family:"JetBrains Mono", ui-monospace, monospace; }
+                   font-family:"JetBrains Mono", "JBMono Fallback", ui-monospace, monospace; }
   .term pre {
     margin:0; padding:18px 16px; overflow-x:auto; font-size:12.5px; line-height:1.75;
-    font-family:"JetBrains Mono", ui-monospace, monospace; color:#D4D4D8;
+    font-family:"JetBrains Mono", "JBMono Fallback", ui-monospace, monospace; color:#D4D4D8;
   }
   .term .c { color:#3F8F5F; }
   .term .a { color:#60A5FA; }
